@@ -1,0 +1,59 @@
+{
+    "project_1": {
+        "connect_1": {
+            "type": "connection",
+            "protocol": "MODBUS",
+            "client": "modbus_slave_1",
+            "values": {
+                "host": "localhost",
+                "port": 5020
+            }
+        },
+        "request_1": {
+            "type": "request",
+            "protocol": "MODBUS",
+            "values": {
+                "client": "modbus_slave_1",
+                "operation": "read",
+                "register_type": "holding_register",
+                "slave": 0,
+                "address": 0,
+                "count": 6
+            }
+        },
+        "request_2": {
+            "type": "request",
+            "protocol": "MODBUS",
+            "values": {
+                "client": "modbus_slave_1",
+                "operation": "write",
+                "register_type": "holding_register",
+                "slave": 0,
+                "address": 1,
+                "value": 6
+            }
+        },
+        "project_1_1": {
+            "type": "folder",
+            "elements": {
+                "request_1_1": {
+                    "type": "request",
+                    "protocol": "MODBUS",
+                    "values": {
+                        "client": "modbus_slave_1",
+                        "operation": "read",
+                        "register_type": "holding_register",
+                        "slave": 0,
+                        "address": 0,
+                        "count": 6
+                    }
+                },
+                "disconnect_1_1": {
+                    "type": "disconnection",
+                    "protocol": "MODBUS",
+                    "client": "modbus_slave_1"
+                }
+            }
+        }
+    }
+}
