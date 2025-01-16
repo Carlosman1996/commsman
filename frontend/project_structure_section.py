@@ -23,6 +23,24 @@ class Button(QPushButton):
         self.adjustSize()
 
 
+class HierarchicalFilterProxyModel(QSortFilterProxyModel):
+    def filterAcceptsRow(self, source_row, source_parent):
+        # Get the source index for the current row:
+        source_index = self.sourceModel().index(source_row, 0, source_parent)
+
+        # Check if the current row matches the filter:
+        if self.filterRegularExpression().match(self.sourceModel().data(source_index)).hasMatch():
+            return True
+
+        # Recursively check if any child matches the filter:
+        for row in range(self.sourceModel().rowCount(source_index)):
+            if self.filterAcceptsRow(row, source_index):
+                return True
+
+        # If neither the current row nor its children match, filter out the row:
+        return False
+
+
 class ProjectStructureSection(QWidget):
     def __init__(self):
         super().__init__()
@@ -34,18 +52,20 @@ class ProjectStructureSection(QWidget):
         # Filter input:
         self.filter_input = QLineEdit()
         self.filter_input.setPlaceholderText("Filter by name...")
+        # self.filter_input.textChanged.connect(self.apply_filter)
         self.filter_input.textChanged.connect(self.apply_filter)
 
-        # Tree model and view:
-        self.model = QStandardItemModel()
-        self.model.setHorizontalHeaderLabels(["Project Structure"])
+        # Tree view:
         self.tree_view = QTreeView()
-        self.tree_view.setModel(self.model)
         self.tree_view.setSelectionMode(QTreeView.SelectionMode.SingleSelection)
         self.tree_view.viewport().installEventFilter(self)
 
+        # Data model:
+        self.model = QStandardItemModel()
+        self.model.setHorizontalHeaderLabels(["Project Structure"])
+
         # Proxy model to filter tree:
-        self.proxy_model = QSortFilterProxyModel(self)
+        self.proxy_model = HierarchicalFilterProxyModel(self)
         self.proxy_model.setSourceModel(self.model)
         self.proxy_model.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.tree_view.setModel(self.proxy_model)
@@ -74,14 +94,15 @@ class ProjectStructureSection(QWidget):
             self.delete_selected_item()
         super().keyPressEvent(event)
 
-    def apply_filter(self):
-        filter_text = self.filter_input.text()
-        self.proxy_model.setFilterFixedString(filter_text)
+    def apply_filter(self, text):
+        self.proxy_model.setFilterRegularExpression(text)
+        self.tree_view.expandAll()
 
     def get_selected_item(self):
         selected_indexes = self.tree_view.selectedIndexes()
         if selected_indexes:
-            return self.model.itemFromIndex(selected_indexes[0])
+            model_index = self.proxy_model.mapToSource(selected_indexes[0])
+            return self.model.itemFromIndex(model_index)
         return None
 
     def add_item(self):
@@ -107,7 +128,8 @@ class ProjectStructureSection(QWidget):
                                          QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
 
-                selected_item = self.model.itemFromIndex(selected_indexes[0])
+                model_index = self.proxy_model.mapToSource(selected_indexes[0])
+                selected_item = self.model.itemFromIndex(model_index)
                 parent_item = selected_item.parent() or self.model.invisibleRootItem()
                 parent_item.removeRow(selected_item.row())
 
