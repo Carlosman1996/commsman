@@ -1,28 +1,14 @@
 import sys
 from PyQt6.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QGridLayout,
     QSplitter,
-    QTextEdit,
     QLabel,
-    QVBoxLayout,
-    QWidget,
-    QHBoxLayout,
-    QPushButton,
     QApplication,
     QMainWindow,
     QVBoxLayout,
     QWidget,
-    QTreeView,
-    QHBoxLayout,
     QPushButton,
-    QInputDialog,
-    QMessageBox,
     QSizePolicy
 )
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QStandardItem, QStandardItemModel
 
 from frontend.project_structure_section import ProjectStructureSection
 

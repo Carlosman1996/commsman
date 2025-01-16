@@ -1,17 +1,18 @@
 import sys
 
 from PyQt6.QtCore import QEvent, Qt, QSortFilterProxyModel
-from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction
+from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtWidgets import (
-    QLabel,
     QApplication,
     QVBoxLayout,
     QWidget,
     QTreeView,
     QHBoxLayout,
     QPushButton,
-    QSizePolicy, QInputDialog, QMenu, QAbstractItemView, QMessageBox, QLineEdit
+    QSizePolicy, QInputDialog, QMessageBox, QLineEdit, QDialog
 )
+
+from frontend.item_creation_dialog import ItemCreationDialog
 
 
 class Button(QPushButton):
@@ -48,6 +49,9 @@ class ProjectStructureSection(QWidget):
         # Add button:
         self.add_button = Button("Add")
         self.add_button.clicked.connect(self.add_item)
+
+        # Item creation dialog:
+        self.item_creation_dialog = ItemCreationDialog()
 
         # Filter input:
         self.filter_input = QLineEdit()
@@ -110,9 +114,12 @@ class ProjectStructureSection(QWidget):
         if not selected_item:
             selected_item = self.model.invisibleRootItem()
 
-        item_name, ok = QInputDialog.getText(self, "Add Item", "Enter name:")
-        if ok and item_name.strip():
-            selected_item.appendRow(self._create_standard_item(item_name))
+        # Open the dialog
+        dialog = ItemCreationDialog()
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            print(f"Selected Item: {dialog.selected_item}")
+            print(f"Entered Name: {dialog.item_name}")
+            selected_item.appendRow(self._create_standard_item(dialog.item_name))
         self.tree_view.expandAll()
 
     def _create_standard_item(self, name: str):
@@ -127,18 +134,10 @@ class ProjectStructureSection(QWidget):
                                          QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                          QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
-
                 model_index = self.proxy_model.mapToSource(selected_indexes[0])
                 selected_item = self.model.itemFromIndex(model_index)
                 parent_item = selected_item.parent() or self.model.invisibleRootItem()
                 parent_item.removeRow(selected_item.row())
-
-    def edit_item(self):
-        selected_item = self.get_selected_item()
-        if selected_item:
-            new_name, ok = QInputDialog.getText(self, "Edit Item", "Enter new name:", text=selected_item.text())
-            if ok and new_name.strip():
-                selected_item.setText(new_name)
 
 
 if __name__ == "__main__":
