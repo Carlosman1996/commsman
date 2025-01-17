@@ -1,5 +1,5 @@
 import json
-from backend.utils.logger import CustomLogger
+from utils.logger import CustomLogger
 from backend.protocols.protocol_factory import ProtocolFactory
 
 

@@ -6,8 +6,8 @@ from PyQt6.QtCore import Qt
 
 
 class ItemCreationDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, parent_item=None):
+        super().__init__()
         self.setWindowTitle("Create New Item")
         self.setFixedSize(400, 300)
 
@@ -21,6 +21,7 @@ class ItemCreationDialog(QDialog):
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("Enter name for the new item")
         self.name_input.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.item_name = None
 
         # Grid layout for item types
         grid_layout = QGridLayout()
@@ -28,11 +29,19 @@ class ItemCreationDialog(QDialog):
 
         # Add buttons/icons for each type
         self.buttons = {}
-        item_types = ["Folder", "Modbus"]
+        self.item_type = "Folder"  # Preselect Folder by default
+        if parent_item:
+            item_types = ["Folder", "Modbus"]
+        else:
+            item_types = ["Folder"]
         for i, item in enumerate(item_types):
             button = QPushButton(item)
             button.clicked.connect(lambda _, t=item: self.select_item(t))
             button.setFixedSize(80, 50)
+            button.setCheckable(True)
+            if item == self.item_type:
+                button.setStyleSheet("background-color: lightblue;")
+                button.setChecked(True)
             grid_layout.addWidget(button, i // 3, i % 3)
             self.buttons[item] = button
 
@@ -60,13 +69,16 @@ class ItemCreationDialog(QDialog):
 
         self.setLayout(layout)
 
-        # Attributes to hold the selected item and name
-        self.selected_item = None
-        self.item_name = None
-
     def select_item(self, item_type):
-        """Set the selected item type."""
-        self.selected_item = item_type
+        """Set the selected item type and update styles."""
+        self.item_type = item_type
+        for item, button in self.buttons.items():
+            if item == item_type:
+                button.setStyleSheet("background-color: lightblue;")
+                button.setChecked(True)
+            else:
+                button.setStyleSheet("")
+                button.setChecked(False)
 
     def validate_and_accept(self):
         """Validate inputs and show an error message if needed."""
@@ -74,7 +86,7 @@ class ItemCreationDialog(QDialog):
         if not name:
             self.show_error("Error", "You must enter a name for the item.")
             return
-        if not self.selected_item:
+        if not self.item_type:
             self.show_error("Error", "You must select an item type.")
             return
         self.item_name = name
