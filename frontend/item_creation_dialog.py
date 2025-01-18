@@ -1,11 +1,24 @@
 import sys
+
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
-    QDialog, QGridLayout, QPushButton, QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox, QMessageBox, QApplication
+    QDialog,
+    QGridLayout,
+    QPushButton,
+    QLabel,
+    QVBoxLayout,
+    QLineEdit,
+    QDialogButtonBox,
+    QMessageBox,
+    QApplication, QToolButton
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QSize
+
+from frontend.common import ITEMS
 
 
 class ItemCreationDialog(QDialog):
+
     def __init__(self, parent_item=None):
         super().__init__()
         self.setWindowTitle("Create New Item")
@@ -29,15 +42,20 @@ class ItemCreationDialog(QDialog):
 
         # Add buttons/icons for each type
         self.buttons = {}
-        self.item_type = "Folder"  # Preselect Folder by default
+        self.item_type = "Collection"  # Preselect Folder by default
         if parent_item:
-            item_types = ["Folder", "Modbus"]
+            item_types = ["Collection", "Modbus"]
         else:
-            item_types = ["Folder"]
+            item_types = ["Collection"]
         for i, item in enumerate(item_types):
-            button = QPushButton(item)
+            button = QToolButton()
+            button.setFixedSize(QSize(100, 60))
+            button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+            button.setText(item)
+            button.setIcon(QIcon(ITEMS[item]["icon"]))
+            button.setIconSize(QSize(int(button.width() * 0.8), int(button.height() * 0.6)))
+
             button.clicked.connect(lambda _, t=item: self.select_item(t))
-            button.setFixedSize(80, 50)
             button.setCheckable(True)
             if item == self.item_type:
                 button.setStyleSheet("background-color: lightblue;")
@@ -105,7 +123,7 @@ class ItemCreationDialog(QDialog):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    window = ItemCreationDialog()
+    window = ItemCreationDialog(True)
     window.show()
 
     app.exec()

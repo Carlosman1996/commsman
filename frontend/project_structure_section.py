@@ -3,7 +3,6 @@ import os
 import pickle
 import sys
 
-from PyQt5.QtCore import QObject
 from PyQt6.QtCore import QEvent, Qt, QSortFilterProxyModel, QRect, pyqtSignal, QModelIndex
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QIcon
 from PyQt6.QtWidgets import (
@@ -13,9 +12,15 @@ from PyQt6.QtWidgets import (
     QTreeView,
     QHBoxLayout,
     QPushButton,
-    QSizePolicy, QMessageBox, QLineEdit, QDialog, QFileDialog, QStyledItemDelegate, QStyle
+    QSizePolicy,
+    QMessageBox,
+    QLineEdit,
+    QDialog,
+    QStyledItemDelegate,
+    QStyle
 )
 
+from frontend.common import ITEMS
 from frontend.item_creation_dialog import ItemCreationDialog
 from utils.common import PROJECT_PATH, FRONTEND_PATH, OUTPUTS_PATH
 
@@ -52,12 +57,12 @@ class HierarchicalFilterProxyModel(QSortFilterProxyModel):
 
 class CustomTreeItem(QStandardItem):
 
-    def __init__(self, name, type="Folder"):
+    def __init__(self, name, type="Collection"):
         super().__init__(name)
 
         self.name = name
         self.type = type
-        self.setIcon(QIcon(f"{FRONTEND_PATH}/icons/folder.png") if type == "Folder" else QIcon(f"{FRONTEND_PATH}/icons/modbus_simple.png"))
+        self.setIcon(QIcon(ITEMS[type]["icon_simple"]))
         self.setEditable(True)
 
 
@@ -273,7 +278,7 @@ class ProjectStructureSection(QWidget):
         def serialize_item(item):
             return {
                 "name": getattr(item, "name", item.text()),
-                "type": getattr(item, "type", "Folder"),
+                "type": getattr(item, "type", "Collection"),
                 "children": [serialize_item(item.child(i)) for i in range(item.rowCount())],
             }
 
