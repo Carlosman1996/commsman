@@ -11,6 +11,9 @@ from PyQt6.QtWidgets import (
 )
 
 from frontend.project_structure_section import ProjectStructureSection
+from qt_material import apply_stylesheet
+
+from utils.common import PROJECT_PATH, FRONTEND_PATH
 
 
 class Button(QPushButton):
@@ -50,6 +53,7 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    apply_stylesheet(app, theme="light_teal.xml", css_file=f"{FRONTEND_PATH}/styles.css")
 
     window = MainWindow()
     window.show()

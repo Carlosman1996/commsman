@@ -27,7 +27,6 @@ class ItemCreationDialog(QDialog):
         # Title Text
         title_label = QLabel("Create New Item")
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title_label.setStyleSheet("font-size: 16px; font-weight: bold;")
 
         # Input field for item name
         name_label = QLabel("Item Name:")
@@ -60,6 +59,8 @@ class ItemCreationDialog(QDialog):
             if item == self.item_type:
                 button.setStyleSheet("background-color: lightblue;")
                 button.setChecked(True)
+            else:
+                button.setStyleSheet("background-color: none;")
             grid_layout.addWidget(button, i // 3, i % 3)
             self.buttons[item] = button
 
@@ -95,7 +96,7 @@ class ItemCreationDialog(QDialog):
                 button.setStyleSheet("background-color: lightblue;")
                 button.setChecked(True)
             else:
-                button.setStyleSheet("")
+                button.setStyleSheet("background-color: none;")
                 button.setChecked(False)
 
     def validate_and_accept(self):
