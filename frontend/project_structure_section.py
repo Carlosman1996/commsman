@@ -57,12 +57,12 @@ class HierarchicalFilterProxyModel(QSortFilterProxyModel):
 
 class CustomTreeItem(QStandardItem):
 
-    def __init__(self, name, type="Collection"):
-        super().__init__(name)
+    def __init__(self, item_name, item_type="Collection"):
+        super().__init__(item_name)
 
-        self.name = name
-        self.type = type
-        self.setIcon(QIcon(ITEMS[type]["icon_simple"]))
+        self.item_name = item_name
+        self.item_type = item_type
+        self.setIcon(QIcon(ITEMS[item_type]["icon_simple"]))
         self.setEditable(True)
 
 
@@ -71,6 +71,7 @@ class CustomItemDelegate(QStyledItemDelegate):
     # Define signals for export and delete
     signal_delete_clicked = pyqtSignal(QModelIndex)
     signal_export_clicked = pyqtSignal(QModelIndex)
+    signal_item_clicled = pyqtSignal(QModelIndex)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -108,17 +109,35 @@ class CustomItemDelegate(QStyledItemDelegate):
             # Determine if the click was on the delete or export icon
             click_pos = event.pos()
 
+            self.signal_item_clicled.emit(index)
+
             if QRect(delete_x, rect.top(), icon_size, icon_size).contains(click_pos):
                 # Handle delete action
                 self.signal_delete_clicked.emit(index)
                 return True
 
-            elif QRect(export_x, rect.top(), icon_size, icon_size).contains(click_pos):
+            if not index.parent().isValid() and QRect(export_x, rect.top(), icon_size, icon_size).contains(click_pos):
                 # Handle export action
                 self.signal_export_clicked.emit(index)
                 return True
 
         return False
+
+
+# TODO: review why drag and drop duplicates data:
+class CustomModel(QStandardItemModel):
+    def dropMimeData(self, data, action, row, column, parent):
+        # Reject if the target is a request or project parent
+        parent_item = self.itemFromIndex(parent)
+        if not parent_item:
+            QMessageBox.information(None, "Move error", "Items can only be moved inside existing Collections")
+            return False
+        elif parent_item.item_type != "Collection":
+            QMessageBox.information(None, "Move error", "Items can only be moved into Collections")
+            return False
+
+        # Use the default dropMimeData behavior for adding the item
+        return super().dropMimeData(data, action, row, column, parent)
 
 
 class ProjectStructureSection(QWidget):
@@ -143,10 +162,19 @@ class ProjectStructureSection(QWidget):
         # Attach custom delegate
         self.delegate = CustomItemDelegate(self.tree_view)
         self.tree_view.setItemDelegate(self.delegate)
+        # TODO: review why drag and drop duplicates data:
+        # # Enable drag and drop:
+        # self.tree_view.setDragEnabled(True)
+        # self.tree_view.setAcceptDrops(True)
+        # self.tree_view.setDropIndicatorShown(True)
+        # self.tree_view.setDragDropMode(QTreeView.DragDropMode.InternalMove)
         self.delegate.signal_delete_clicked.connect(self.delete_selected_item)
         self.delegate.signal_export_clicked.connect(self.export_selected_item)
+        self.delegate.signal_item_clicled.connect(self.set_add_button_visibility)
 
         # Data model:
+        # TODO: review why drag and drop duplicates data:
+        # self.model = CustomModel()
         self.model = QStandardItemModel()
         self.model.setHorizontalHeaderLabels(["Project Structure"])
         self.model.itemChanged.connect(self.edit_item)
@@ -177,6 +205,7 @@ class ProjectStructureSection(QWidget):
             clicked_index = self.tree_view.indexAt(event.pos())
             if not clicked_index.isValid():
                 self.tree_view.clearSelection()
+                self.add_button.show()
         return super().eventFilter(source, event)
 
     def keyPressEvent(self, event):
@@ -212,11 +241,18 @@ class ProjectStructureSection(QWidget):
             self.tree_view.expandAll()
             self.autosave_tree_data()
 
+    def set_add_button_visibility(self):
+        selected_item = self.get_selected_item()
+        if selected_item.item_type == "Collection":
+            self.add_button.show()
+        else:
+            self.add_button.hide()
+
     def edit_item(self, item):
-        item.name = item.text()
+        item.item_name = item.text()
         self.autosave_tree_data()
 
-    def get_item_from_index(self, index):
+    def get_item_from_selected_index(self, index):
         model_index = self.proxy_model.mapToSource(index)
         return self.model.itemFromIndex(model_index)
 
@@ -233,29 +269,29 @@ class ProjectStructureSection(QWidget):
                                          QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                          QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
-                selected_item = self.get_item_from_index(indexes[0])
+                selected_item = self.get_item_from_selected_index(indexes[0])
                 parent_item = selected_item.parent() or self.model.invisibleRootItem()
                 parent_item.removeRow(selected_item.row())
                 self.autosave_tree_data()
 
     def export_selected_item(self, index):
-        item = self.get_item_from_index(index)
+        item = self.get_item_from_selected_index(index)
 
         reply = QMessageBox.question(
             None, "Export Confirmation",
-            f"Do you want to export '{item.name}' and its children to JSON?",
+            f"Do you want to export '{item.item_name}' and its children to JSON?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         if reply == QMessageBox.StandardButton.Yes:
             def serialize(item):
                 return {
-                    "name": item.name,
-                    "type": item.type,
+                    "name": item.item_name,
+                    "type": item.item_type,
                     "children": [serialize(item.child(row)) for row in range(item.rowCount())],
                 }
 
             data = serialize(item)
-            file_path = f"{OUTPUTS_PATH}/{item.name}.json"
+            file_path = f"{OUTPUTS_PATH}/{item.item_name}.json"
             with open(file_path, "w") as file:
                 json.dump(data, file, indent=4)
             QMessageBox.information(None, "Export Successful", f"Data exported to {file_path}")
@@ -277,8 +313,8 @@ class ProjectStructureSection(QWidget):
     def serialize_tree(self):
         def serialize_item(item):
             return {
-                "name": getattr(item, "name", item.text()),
-                "type": getattr(item, "type", "Collection"),
+                "name": getattr(item, "item_name", item.text()),
+                "type": getattr(item, "item_type", "Collection"),
                 "children": [serialize_item(item.child(i)) for i in range(item.rowCount())],
             }
 

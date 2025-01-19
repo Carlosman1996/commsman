@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    apply_stylesheet(app, theme="light_teal.xml", css_file=f"{FRONTEND_PATH}/styles.css")
+    # apply_stylesheet(app, theme="light_teal.xml", css_file=f"{FRONTEND_PATH}/styles.css")
 
     window = MainWindow()
     window.show()
