@@ -4,7 +4,7 @@ import pickle
 import sys
 
 from PyQt6.QtCore import QEvent, Qt, QSortFilterProxyModel, QRect, pyqtSignal, QModelIndex
-from PyQt6.QtGui import QStandardItemModel, QStandardItem, QIcon
+from PyQt6.QtGui import QStandardItemModel, QStandardItem, QIcon, QDrag, QAction, QPainter, QPen, QColor
 from PyQt6.QtWidgets import (
     QApplication,
     QVBoxLayout,
@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QDialog,
     QStyledItemDelegate,
-    QStyle
+    QStyle, QMenu
 )
 
 from frontend.common import ITEMS
@@ -54,14 +54,90 @@ class HierarchicalFilterProxyModel(QSortFilterProxyModel):
         # If neither the current row nor its children match, filter out the row:
         return False
 
+    def flags(self, index):
+        """Enable drag and drop."""
+        default_flags = super().flags(index)
+        if index.isValid():
+            return default_flags | Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsDropEnabled
+        return default_flags
+
+    def mimeData(self, indices):
+        """Create MIME data for drag operation."""
+        return self.sourceModel().mimeData([self.mapToSource(index) for index in indices])
+
+    def dropMimeData(self, data, action, row, column, parent):
+        """Handle drop operation."""
+        return self.sourceModel().dropMimeData(data, action, row, column, self.mapToSource(parent))
+
+
+class CustomTreeView(QTreeView):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setDragEnabled(True)
+        self.setAcceptDrops(True)
+        self.setDropIndicatorShown(True)
+
+        self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
+
+    def startDrag(self, supportedActions):
+        """Start drag operation."""
+        index = self.currentIndex()
+        if not index.isValid():
+            return
+
+        mime_data = self.model().mimeData([index])
+        drag = QDrag(self)
+        drag.setMimeData(mime_data)
+        drag.exec(supportedActions)
+
+    def dragEnterEvent(self, event):
+        """Handle drag enter event."""
+        if event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"):
+            event.accept()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        """Handle drag move event."""
+        if event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"):
+            event.setDropAction(Qt.DropAction.MoveAction)
+            event.accept()
+            super().dragMoveEvent(event)
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        """Handle the drop event."""
+        if not event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"):
+            event.ignore()
+            return
+
+        source_index = self.currentIndex()
+        destination_index = self.indexAt(event.position().toPoint())
+
+        proxy_model = self.model()
+        source_model_index = proxy_model.mapToSource(source_index)
+        destination_model_index = proxy_model.mapToSource(destination_index)
+
+        # Move the item in the source model
+        proxy_model.sourceModel().move_to_destination(source_model_index, destination_model_index)
+
+        # Emit itemChanged signal for the destination
+        destination_item = proxy_model.sourceModel().itemFromIndex(destination_model_index)
+        if destination_item:
+            destination_item.setText(destination_item.text())  # Trigger itemChanged signal
+
+        event.accept()
+
+        self.viewport().update()  # Redraw the view
+
 
 class CustomTreeItem(QStandardItem):
 
     def __init__(self, item_name, item_type="Collection"):
         super().__init__(item_name)
 
-        self.item_name = item_name
-        self.item_type = item_type
+        self.setData(item_type, Qt.ItemDataRole.UserRole)
         self.setIcon(QIcon(ITEMS[item_type]["icon_simple"]))
         self.setEditable(True)
 
@@ -124,20 +200,81 @@ class CustomItemDelegate(QStyledItemDelegate):
         return False
 
 
-# TODO: review why drag and drop duplicates data:
 class CustomModel(QStandardItemModel):
-    def dropMimeData(self, data, action, row, column, parent):
-        # Reject if the target is a request or project parent
-        parent_item = self.itemFromIndex(parent)
-        if not parent_item:
-            QMessageBox.information(None, "Move error", "Items can only be moved inside existing Collections")
-            return False
-        elif parent_item.item_type != "Collection":
-            QMessageBox.information(None, "Move error", "Items can only be moved into Collections")
-            return False
+    def move_to_destination(self, source_index, destination_index):
+        """Move an item to the exact drop location with restrictions."""
+        if not source_index.isValid():
+            return
 
-        # Use the default dropMimeData behavior for adding the item
-        return super().dropMimeData(data, action, row, column, parent)
+        source_item = self.itemFromIndex(source_index)
+        source_parent = source_item.parent() or self.invisibleRootItem()
+        source_row = source_item.row()
+
+        if destination_index.isValid():
+            destination_item = self.itemFromIndex(destination_index)
+            destination_parent = destination_item.parent() or self.invisibleRootItem()
+            destination_row = destination_index.row()
+        else:
+            # Dropping to the root
+            destination_item = None
+            destination_parent = self.invisibleRootItem()
+            destination_row = self.rowCount()
+
+        # Restriction 1: Items cannot be moved to the root
+        if destination_item is None or destination_item == self.invisibleRootItem():
+            QMessageBox.warning(
+                None, "Invalid Move", "Items cannot be moved to the root level."
+            )
+            return
+
+        # Restriction 2: Avoid moving the item to the same row
+        if source_parent == destination_parent and source_row == destination_row:
+            return
+
+        # Ensure that the destination row is valid
+        if destination_row < 0 or destination_row > destination_parent.rowCount():
+            # If the row is out of range, we avoid the operation.
+            return
+
+        # Restriction 3: Avoid moving an item to itself or to one of its descendants
+        if destination_item == source_item:
+            # Moving an item to itself
+            return
+
+        self.layoutAboutToBeChanged.emit()
+
+        # Remove the item from the source location
+        source_row_data = source_parent.takeRow(source_row)
+
+        print(source_row, destination_row, destination_item.rowCount(), source_item.text(), destination_item.text(), source_parent.text(), destination_parent.text())
+
+        print(f"Source: {source_parent}, Row Removed: {source_row}")
+        print(f"Destination: {destination_parent}, Row Inserted: {destination_row}")
+
+        if not source_row_data:
+            # If the row is already empty, skip further processing
+            self.layoutChanged.emit()
+            return
+
+        if destination_item.data(Qt.ItemDataRole.UserRole) == "Collection":
+            if destination_row > destination_item.rowCount():
+                destination_item.insertRow(destination_item.rowCount(), source_row_data)
+            else:
+                destination_item.insertRow(destination_row, source_row_data)
+            if source_parent != destination_item:
+                source_parent.removeRow(destination_row)
+        else:
+            destination_parent.insertRow(destination_row, source_row_data)
+
+        self.layoutChanged.emit()
+
+    def get_all_descendants(self, item):
+        descendants = []
+        for row in range(item.rowCount()):
+            child = item.child(row)
+            descendants.append(child.text())
+            descendants.extend(self.get_all_descendants(child))
+        return descendants
 
 
 class ProjectStructureSection(QWidget):
@@ -155,27 +292,23 @@ class ProjectStructureSection(QWidget):
         self.filter_input.textChanged.connect(self.apply_filter)
 
         # Tree view:
-        self.tree_view = QTreeView()
-        self.tree_view.setSelectionMode(QTreeView.SelectionMode.SingleSelection)
+        self.tree_view = CustomTreeView()
         self.tree_view.viewport().installEventFilter(self)
+        self.tree_view.setDragEnabled(True)
+        self.tree_view.setAcceptDrops(True)
+        self.tree_view.setDropIndicatorShown(True)
+        self.tree_view.setDragDropMode(QTreeView.DragDropMode.InternalMove)
+        self.tree_view.setSelectionMode(QTreeView.SelectionMode.SingleSelection)
 
         # Attach custom delegate
         self.delegate = CustomItemDelegate(self.tree_view)
         self.tree_view.setItemDelegate(self.delegate)
-        # TODO: review why drag and drop duplicates data:
-        # # Enable drag and drop:
-        # self.tree_view.setDragEnabled(True)
-        # self.tree_view.setAcceptDrops(True)
-        # self.tree_view.setDropIndicatorShown(True)
-        # self.tree_view.setDragDropMode(QTreeView.DragDropMode.InternalMove)
         self.delegate.signal_delete_clicked.connect(self.delete_selected_item)
         self.delegate.signal_export_clicked.connect(self.export_selected_item)
         self.delegate.signal_item_clicled.connect(self.set_add_button_visibility)
 
         # Data model:
-        # TODO: review why drag and drop duplicates data:
-        # self.model = CustomModel()
-        self.model = QStandardItemModel()
+        self.model = CustomModel()
         self.model.setHorizontalHeaderLabels(["Project Structure"])
         self.model.itemChanged.connect(self.edit_item)
 
@@ -224,10 +357,6 @@ class ProjectStructureSection(QWidget):
             return self.model.itemFromIndex(model_index)
         return None
 
-    def _instantiate_item(self, name, type):
-        item = CustomTreeItem(name, type)
-        return item
-
     def add_item(self):
         selected_item = self.get_selected_item()
         dialog = ItemCreationDialog(selected_item)
@@ -235,7 +364,7 @@ class ProjectStructureSection(QWidget):
             selected_item = self.model.invisibleRootItem()
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            new_item = self._instantiate_item(dialog.item_name, dialog.item_type)
+            new_item = CustomTreeItem(dialog.item_name, dialog.item_type)
             selected_item.appendRow(new_item)
 
             self.tree_view.expandAll()
@@ -243,7 +372,7 @@ class ProjectStructureSection(QWidget):
 
     def set_add_button_visibility(self):
         selected_item = self.get_selected_item()
-        if selected_item.item_type == "Collection":
+        if selected_item.data(Qt.ItemDataRole.UserRole) == "Collection":
             self.add_button.show()
         else:
             self.add_button.hide()
@@ -298,6 +427,7 @@ class ProjectStructureSection(QWidget):
 
     def autosave_tree_data(self):
         data = self.serialize_tree()
+        print(data)
         with open(TREE_DATA_FILE, "wb") as file:
             pickle.dump(data, file)
 
@@ -323,7 +453,7 @@ class ProjectStructureSection(QWidget):
 
     def deserialize_tree(self, data):
         def deserialize_item(data, parent):
-            item = self._instantiate_item(data["name"], data["type"])
+            item = CustomTreeItem(data["name"], data["type"])
 
             parent.appendRow(item)
             for child_data in data["children"]:
