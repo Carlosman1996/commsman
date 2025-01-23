@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QDialog,
     QStyledItemDelegate,
-    QStyle, QMenu
+    QStyle
 )
 
 from frontend.common import ITEMS
@@ -199,12 +199,12 @@ class CustomModel(QStandardItemModel):
             destination_row = destination_index.row()
         else:
             # Dropping to the root
-            destination_item = None
+            destination_item = self.invisibleRootItem()
             destination_parent = self.invisibleRootItem()
             destination_row = self.rowCount()
 
-        # Restriction 1: Items cannot be moved to the root
-        if destination_item is None or destination_item == self.invisibleRootItem():
+        # Restriction 1: No collection items cannot be moved to the root
+        if source_item.data(Qt.ItemDataRole.UserRole) != "Collection" and destination_item == self.invisibleRootItem():
             QMessageBox.warning(
                 None, "Invalid Move", "Items cannot be moved to the root level."
             )
@@ -213,7 +213,6 @@ class CustomModel(QStandardItemModel):
         # Restriction 2: Avoid moving the item to the same row
         if source_parent == destination_parent and source_row == destination_row:
             return
-
         # Ensure that the destination row is valid
         if destination_row < 0 or destination_row > destination_parent.rowCount():
             # If the row is out of range, we avoid the operation.
@@ -237,17 +236,22 @@ class CustomModel(QStandardItemModel):
             self.layoutChanged.emit()
             return
 
-        if destination_item.data(Qt.ItemDataRole.UserRole) == "Collection":
+        if destination_item and (destination_item.data(Qt.ItemDataRole.UserRole) == "Collection"):
             if destination_row > destination_item.rowCount():
                 destination_item.insertRow(destination_item.rowCount(), source_row_data)
             else:
                 destination_item.insertRow(destination_row, source_row_data)
+        elif destination_item == self.invisibleRootItem() and (source_item.data(Qt.ItemDataRole.UserRole) == "Collection"):
+            self.invisibleRootItem().appendRow(source_item)
         else:
             destination_parent.insertRow(destination_row, source_row_data)
 
         self.layoutChanged.emit()
 
-        self.signal_autosave.emit(destination_item)
+        if destination_item != self.invisibleRootItem():
+            self.signal_autosave.emit(destination_item)
+        else:
+            self.signal_autosave.emit(source_item)
 
 
 class ProjectStructureSection(QWidget):
@@ -284,7 +288,7 @@ class ProjectStructureSection(QWidget):
         self.model = CustomModel()
         self.model.setHorizontalHeaderLabels(["Project Structure"])
         self.model.itemChanged.connect(self.edit_item)
-        self.model.signal_autosave.connect(self.edit_item)
+        self.model.signal_autosave.connect(self.move_item)
 
         # Proxy model to filter tree:
         self.proxy_model = HierarchicalFilterProxyModel(self)
@@ -352,6 +356,10 @@ class ProjectStructureSection(QWidget):
             self.add_button.hide()
 
     def edit_item(self, item):
+        item.item_name = item.text()
+        self.autosave_tree_data()
+
+    def move_item(self, item):
         def expand_all_parents(index):
             while index.isValid():
                 self.tree_view.expand(index)
@@ -364,7 +372,6 @@ class ProjectStructureSection(QWidget):
         item_proxy_model_index = self.proxy_model.mapFromSource(item_index)
         expand_all_parents(item_proxy_model_index)
 
-        item.item_name = item.text()
         self.autosave_tree_data()
 
     def get_item_from_selected_index(self, index):
