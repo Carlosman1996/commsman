@@ -3,7 +3,7 @@ import os
 import pickle
 import sys
 
-from PyQt6.QtCore import QEvent, Qt, QSortFilterProxyModel, QRect, pyqtSignal, QModelIndex
+from PyQt6.QtCore import QEvent, Qt, QSortFilterProxyModel, QRect, pyqtSignal, QModelIndex, QTimer
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QIcon, QDrag, QAction, QPainter, QPen, QColor
 from PyQt6.QtWidgets import (
     QApplication,
@@ -53,21 +53,6 @@ class HierarchicalFilterProxyModel(QSortFilterProxyModel):
 
         # If neither the current row nor its children match, filter out the row:
         return False
-
-    def flags(self, index):
-        """Enable drag and drop."""
-        default_flags = super().flags(index)
-        if index.isValid():
-            return default_flags | Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsDropEnabled
-        return default_flags
-
-    def mimeData(self, indices):
-        """Create MIME data for drag operation."""
-        return self.sourceModel().mimeData([self.mapToSource(index) for index in indices])
-
-    def dropMimeData(self, data, action, row, column, parent):
-        """Handle drop operation."""
-        return self.sourceModel().dropMimeData(data, action, row, column, self.mapToSource(parent))
 
 
 class CustomTreeView(QTreeView):
@@ -121,11 +106,6 @@ class CustomTreeView(QTreeView):
 
         # Move the item in the source model
         proxy_model.sourceModel().move_to_destination(source_model_index, destination_model_index)
-
-        # Emit itemChanged signal for the destination
-        destination_item = proxy_model.sourceModel().itemFromIndex(destination_model_index)
-        if destination_item:
-            destination_item.setText(destination_item.text())  # Trigger itemChanged signal
 
         event.accept()
 
@@ -201,6 +181,9 @@ class CustomItemDelegate(QStyledItemDelegate):
 
 
 class CustomModel(QStandardItemModel):
+
+    signal_autosave = pyqtSignal(CustomTreeItem)
+
     def move_to_destination(self, source_index, destination_index):
         """Move an item to the exact drop location with restrictions."""
         if not source_index.isValid():
@@ -240,16 +223,14 @@ class CustomModel(QStandardItemModel):
         if destination_item == source_item:
             # Moving an item to itself
             return
+        if destination_item.child(0) == source_item:
+            # Moving an item to itself
+            return
 
         self.layoutAboutToBeChanged.emit()
 
         # Remove the item from the source location
         source_row_data = source_parent.takeRow(source_row)
-
-        print(source_row, destination_row, destination_item.rowCount(), source_item.text(), destination_item.text(), source_parent.text(), destination_parent.text())
-
-        print(f"Source: {source_parent}, Row Removed: {source_row}")
-        print(f"Destination: {destination_parent}, Row Inserted: {destination_row}")
 
         if not source_row_data:
             # If the row is already empty, skip further processing
@@ -261,20 +242,12 @@ class CustomModel(QStandardItemModel):
                 destination_item.insertRow(destination_item.rowCount(), source_row_data)
             else:
                 destination_item.insertRow(destination_row, source_row_data)
-            if source_parent != destination_item:
-                source_parent.removeRow(destination_row)
         else:
             destination_parent.insertRow(destination_row, source_row_data)
 
         self.layoutChanged.emit()
 
-    def get_all_descendants(self, item):
-        descendants = []
-        for row in range(item.rowCount()):
-            child = item.child(row)
-            descendants.append(child.text())
-            descendants.extend(self.get_all_descendants(child))
-        return descendants
+        self.signal_autosave.emit(destination_item)
 
 
 class ProjectStructureSection(QWidget):
@@ -311,6 +284,7 @@ class ProjectStructureSection(QWidget):
         self.model = CustomModel()
         self.model.setHorizontalHeaderLabels(["Project Structure"])
         self.model.itemChanged.connect(self.edit_item)
+        self.model.signal_autosave.connect(self.edit_item)
 
         # Proxy model to filter tree:
         self.proxy_model = HierarchicalFilterProxyModel(self)
@@ -378,6 +352,18 @@ class ProjectStructureSection(QWidget):
             self.add_button.hide()
 
     def edit_item(self, item):
+        def expand_all_parents(index):
+            while index.isValid():
+                self.tree_view.expand(index)
+                index = index.parent()
+
+        self.proxy_model.setSourceModel(None)
+        self.proxy_model.setSourceModel(self.model)
+
+        item_index = self.model.indexFromItem(item)
+        item_proxy_model_index = self.proxy_model.mapFromSource(item_index)
+        expand_all_parents(item_proxy_model_index)
+
         item.item_name = item.text()
         self.autosave_tree_data()
 
@@ -427,7 +413,6 @@ class ProjectStructureSection(QWidget):
 
     def autosave_tree_data(self):
         data = self.serialize_tree()
-        print(data)
         with open(TREE_DATA_FILE, "wb") as file:
             pickle.dump(data, file)
 
@@ -443,8 +428,8 @@ class ProjectStructureSection(QWidget):
     def serialize_tree(self):
         def serialize_item(item):
             return {
-                "name": getattr(item, "item_name", item.text()),
-                "type": getattr(item, "item_type", "Collection"),
+                "name": item.text(),
+                "type": item.data(Qt.ItemDataRole.UserRole),
                 "children": [serialize_item(item.child(i)) for i in range(item.rowCount())],
             }
 
