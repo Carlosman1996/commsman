@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import os
 import pickle
@@ -22,6 +23,8 @@ from PyQt6.QtWidgets import (
 
 from frontend.common import ITEMS
 from frontend.item_creation_dialog import ItemCreationDialog
+from frontend.models.collection import Collection
+from frontend.models.modbus import ModbusRequest
 from utils.common import PROJECT_PATH, FRONTEND_PATH, OUTPUTS_PATH
 
 
@@ -115,13 +118,23 @@ class CustomTreeView(QTreeView):
         self.viewport().update()  # Redraw the view
 
 
+class Item:
+    def __init__(self, item_name: str = None, item_type: str = None):
+        # TODO: create handler to automatically select dataclass depending on item_type
+        if item_type == "Collection":
+            self.dataclass = Collection(name=item_name, type=item_type)
+        elif item_type == "Modbus":
+            self.dataclass = ModbusRequest(name=item_name, type=item_type)
+        else:
+            raise NotImplementedError(f"Item type {item_type} not implemented")
+
+
 class CustomTreeItem(QStandardItem):
+    def __init__(self, dataclass_obj):
+        super().__init__(dataclass_obj.name)
 
-    def __init__(self, item_name, item_type="Collection"):
-        super().__init__(item_name)
-
-        self.setData(item_type, Qt.ItemDataRole.UserRole)
-        self.setIcon(QIcon(ITEMS[item_type]["icon_simple"]))
+        self.setData(dataclass_obj, Qt.ItemDataRole.UserRole)
+        self.setIcon(QIcon(ITEMS[dataclass_obj.type]["icon_simple"]))
         self.setEditable(True)
 
 
@@ -213,7 +226,7 @@ class CustomModel(QStandardItemModel):
             destination_row = self.rowCount()
 
         # Restriction 1: No collection items cannot be moved to the root
-        if source_item.data(Qt.ItemDataRole.UserRole) != "Collection" and destination_item == self.invisibleRootItem():
+        if source_item.data(Qt.ItemDataRole.UserRole).type != "Collection" and destination_item == self.invisibleRootItem():
             QMessageBox.warning(
                 None, "Invalid Move", "Items cannot be moved to the root level."
             )
@@ -245,12 +258,12 @@ class CustomModel(QStandardItemModel):
             self.layoutChanged.emit()
             return
 
-        if destination_item and (destination_item.data(Qt.ItemDataRole.UserRole) == "Collection"):
+        if destination_item and (destination_item.data(Qt.ItemDataRole.UserRole).type == "Collection"):
             if destination_row > destination_item.rowCount():
                 destination_item.insertRow(destination_item.rowCount(), source_row_data)
             else:
                 destination_item.insertRow(destination_row, source_row_data)
-        elif destination_item == self.invisibleRootItem() and (source_item.data(Qt.ItemDataRole.UserRole) == "Collection"):
+        elif destination_item == self.invisibleRootItem() and (source_item.data(Qt.ItemDataRole.UserRole).type == "Collection"):
             self.invisibleRootItem().appendRow(source_item)
         else:
             destination_parent.insertRow(destination_row, source_row_data)
@@ -343,7 +356,8 @@ class ProjectStructureSection(QWidget):
             selected_item = self.model.invisibleRootItem()
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            new_item = CustomTreeItem(dialog.item_name, dialog.item_type)
+            new_item_data = Item(dialog.item_name, dialog.item_type)
+            new_item = CustomTreeItem(new_item_data.dataclass)
             selected_item.appendRow(new_item)
 
             self.tree_view.expandAll()
@@ -351,13 +365,13 @@ class ProjectStructureSection(QWidget):
 
     def set_add_button_visibility(self):
         selected_item = self.get_selected_item()
-        if selected_item.data(Qt.ItemDataRole.UserRole) == "Collection":
+        if selected_item.data(Qt.ItemDataRole.UserRole).type == "Collection":
             self.add_button.show()
         else:
             self.add_button.hide()
 
     def edit_item(self, item):
-        item.item_name = item.text()
+        item.data(Qt.ItemDataRole.UserRole).name = item.text()
         self.autosave_tree_data()
 
     def move_item(self, item):
@@ -402,19 +416,18 @@ class ProjectStructureSection(QWidget):
 
         reply = QMessageBox.question(
             None, "Export Confirmation",
-            f"Do you want to export '{item.item_name}' and its children to JSON?",
+            f"Do you want to export '{item.text()}' and its children to JSON?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         if reply == QMessageBox.StandardButton.Yes:
             def serialize(item):
                 return {
-                    "name": item.item_name,
-                    "type": item.item_type,
+                    "data": dataclasses.asdict(item),
                     "children": [serialize(item.child(row)) for row in range(item.rowCount())],
                 }
 
             data = serialize(item)
-            file_path = f"{OUTPUTS_PATH}/{item.item_name}.json"
+            file_path = f"{OUTPUTS_PATH}/{item.text()}.json"
             with open(file_path, "w") as file:
                 json.dump(data, file, indent=4)
             QMessageBox.information(None, "Export Successful", f"Data exported to {file_path}")
@@ -436,8 +449,7 @@ class ProjectStructureSection(QWidget):
     def serialize_tree(self):
         def serialize_item(item):
             return {
-                "name": item.text(),
-                "type": item.data(Qt.ItemDataRole.UserRole),
+                "data": item.data(Qt.ItemDataRole.UserRole),
                 "children": [serialize_item(item.child(i)) for i in range(item.rowCount())],
             }
 
@@ -446,7 +458,7 @@ class ProjectStructureSection(QWidget):
 
     def deserialize_tree(self, data):
         def deserialize_item(data, parent):
-            item = CustomTreeItem(data["name"], data["type"])
+            item = CustomTreeItem(data["data"])
 
             parent.appendRow(item)
             for child_data in data["children"]:

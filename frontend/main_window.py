@@ -1,4 +1,6 @@
 import sys
+
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QSplitter,
     QLabel,
@@ -12,6 +14,7 @@ from PyQt6.QtWidgets import (
 
 from frontend.project_structure_section import ProjectStructureSection
 # from qt_material import apply_stylesheet
+from frontend.modbus_detail_widget import ModbusRequestDetails
 
 from utils.common import PROJECT_PATH, FRONTEND_PATH
 
@@ -32,23 +35,43 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Commsman")
 
         # Divide window in two sections:
-        main_window_sections_splitter = QSplitter()
+        self.main_window_sections_splitter = QSplitter()
+
+        # Left section:
+        self.project_structure_section = ProjectStructureSection()
+        self.project_structure_section.tree_view.selectionModel().selectionChanged.connect(self.set_detail_section)
 
         # Right section:
-        right_section_widget = QLabel("Right section: This is a label")
+        self.detail_section = self.set_detail_section()
 
         # Add sections to splitter
-        main_window_sections_splitter.addWidget(ProjectStructureSection())
-        main_window_sections_splitter.addWidget(right_section_widget)
+        self.main_window_sections_splitter.addWidget(self.project_structure_section)
+        self.main_window_sections_splitter.addWidget(self.detail_section)
 
         # Main layout:
-        main_window_layout = QVBoxLayout()
-        main_window_layout.addWidget(main_window_sections_splitter)
+        self.main_window_layout = QVBoxLayout()
+        self.main_window_layout.addWidget(self.main_window_sections_splitter)
 
         # Configurar el widget central
         container = QWidget()
-        container.setLayout(main_window_layout)
+        container.setLayout(self.main_window_layout)
         self.setCentralWidget(container)
+
+    def set_detail_section(self):
+        item = self.project_structure_section.get_selected_item()
+
+        if item is not None and item.parent() is not None:  # Check if it is not the root
+            item_dataclass = item.data(Qt.ItemDataRole.UserRole)
+            if item_dataclass.type == "Modbus":
+                self.detail_section = ModbusRequestDetails(item_dataclass)
+            else:
+                self.detail_section = QLabel("Not implemented yet")
+        else:
+            self.detail_section = QLabel("Select an item to display information")
+
+        if self.main_window_sections_splitter.count() > 1:
+            self.main_window_sections_splitter.replaceWidget(1, self.detail_section)
+        return self.detail_section
 
 
 if __name__ == "__main__":
