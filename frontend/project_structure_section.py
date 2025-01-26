@@ -58,11 +58,14 @@ class HierarchicalFilterProxyModel(QSortFilterProxyModel):
 class CustomTreeView(QTreeView):
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        self.viewport().installEventFilter(self)
         self.setDragEnabled(True)
         self.setAcceptDrops(True)
         self.setDropIndicatorShown(True)
 
         self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
+        self.setSelectionMode(QTreeView.SelectionMode.SingleSelection)
 
     def startDrag(self, supportedActions):
         """Start drag operation."""
@@ -145,7 +148,8 @@ class CustomItemDelegate(QStyledItemDelegate):
         delete_x = rect.right() - icon_size - spacing
         export_x = delete_x - icon_size - spacing
 
-        if not index.parent().isValid():
+        # Only show the export icon if the item is selected, and it is root collection:
+        if not index.parent().isValid() and (option.state & QStyle.StateFlag.State_Selected):
             self.export_icon.paint(painter, QRect(export_x, rect.top() + (rect.height() - icon_size) // 2, icon_size, icon_size))
 
         # Only show the delete icon if the item is selected
@@ -183,6 +187,11 @@ class CustomItemDelegate(QStyledItemDelegate):
 class CustomModel(QStandardItemModel):
 
     signal_autosave = pyqtSignal(CustomTreeItem)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setHorizontalHeaderLabels(["Project Structure"])
 
     def move_to_destination(self, source_index, destination_index):
         """Move an item to the exact drop location with restrictions."""
@@ -265,17 +274,10 @@ class ProjectStructureSection(QWidget):
         # Filter input:
         self.filter_input = QLineEdit()
         self.filter_input.setPlaceholderText("Filter by name...")
-        # self.filter_input.textChanged.connect(self.apply_filter)
         self.filter_input.textChanged.connect(self.apply_filter)
 
         # Tree view:
         self.tree_view = CustomTreeView()
-        self.tree_view.viewport().installEventFilter(self)
-        self.tree_view.setDragEnabled(True)
-        self.tree_view.setAcceptDrops(True)
-        self.tree_view.setDropIndicatorShown(True)
-        self.tree_view.setDragDropMode(QTreeView.DragDropMode.InternalMove)
-        self.tree_view.setSelectionMode(QTreeView.SelectionMode.SingleSelection)
 
         # Attach custom delegate
         self.delegate = CustomItemDelegate(self.tree_view)
@@ -286,7 +288,6 @@ class ProjectStructureSection(QWidget):
 
         # Data model:
         self.model = CustomModel()
-        self.model.setHorizontalHeaderLabels(["Project Structure"])
         self.model.itemChanged.connect(self.edit_item)
         self.model.signal_autosave.connect(self.move_item)
 

@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (
 )
 
 from frontend.project_structure_section import ProjectStructureSection
-from qt_material import apply_stylesheet
+# from qt_material import apply_stylesheet
 
 from utils.common import PROJECT_PATH, FRONTEND_PATH
 
