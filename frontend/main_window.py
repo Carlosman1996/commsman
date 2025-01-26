@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
 
 from frontend.project_structure_section import ProjectStructureSection
 # from qt_material import apply_stylesheet
-from frontend.modbus_detail_widget import ModbusRequestDetails
+from frontend.modbus_detail_widget import ModbusDetail
 
 from utils.common import PROJECT_PATH, FRONTEND_PATH
 
@@ -63,7 +63,7 @@ class MainWindow(QMainWindow):
         if item is not None and item.parent() is not None:  # Check if it is not the root
             item_dataclass = item.data(Qt.ItemDataRole.UserRole)
             if item_dataclass.type == "Modbus":
-                self.detail_section = ModbusRequestDetails(item_dataclass)
+                self.detail_section = ModbusDetail(item_dataclass)
             else:
                 self.detail_section = QLabel("Not implemented yet")
         else:
