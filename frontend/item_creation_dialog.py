@@ -22,7 +22,7 @@ class ItemCreationDialog(QDialog):
     def __init__(self, parent_item=None):
         super().__init__()
         self.setWindowTitle("Create New Item")
-        self.setFixedSize(400, 300)
+        self.setFixedSize(300, 300)
 
         # Title Text
         title_label = QLabel("Create New Item")
@@ -72,13 +72,17 @@ class ItemCreationDialog(QDialog):
         # Add input field for name
         name_layout = QVBoxLayout()
         name_layout.addWidget(name_label)
+        layout.addSpacing(10)
         name_layout.addWidget(self.name_input)
         layout.addLayout(name_layout)
 
         # Add grid of buttons
-        layout.addSpacing(15)
+        layout.addSpacing(20)
         layout.addWidget(QLabel("Select Item Type:", alignment=Qt.AlignmentFlag.AlignLeft))
+        layout.addSpacing(10)
         layout.addLayout(grid_layout)
+
+        layout.addStretch(1)
 
         # Add OK and Cancel buttons
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)

@@ -1,0 +1,18 @@
+<!--?xml version="1.0" encoding="UTF-8"?-->
+<resources>
+    <color name="primaryColor">#182939</color>
+    <color name="primaryLightColor">#D5D7D6</color>
+    <color name="secondaryColor">#D5D7D6</color>
+    <color name="secondaryLightColor">#182939</color>
+    <color name="secondaryDarkColor">#e6e6e6</color>
+    <color name="primaryTextColor">#182939</color>
+    <color name="secondaryTextColor">#182939</color>
+</resources>
+
+<!--<palette>-->
+<!--  <color name="Rich black" hex="14212F" r="20" g="33" b="47" />-->
+<!--  <color name="Prussian blue" hex="182939" r="24" g="41" b="57" />-->
+<!--  <color name="Timberwolf" hex="D5D7D6" r="213" g="215" b="214" />-->
+<!--  <color name="Safety orange" hex="F78434" r="247" g="132" b="52" />-->
+<!--  <color name="True Blue" hex="2D6AB7" r="45" g="106" b="183" />-->
+<!--</palette>-->

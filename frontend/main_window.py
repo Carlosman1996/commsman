@@ -11,9 +11,11 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QSizePolicy
 )
+from PyQt6.QtQuick import QSGMaterial
+
 
 from frontend.project_structure_section import ProjectStructureSection
-# from qt_material import apply_stylesheet
+from qt_material import apply_stylesheet
 from frontend.modbus_detail_widget import ModbusDetail
 
 from utils.common import PROJECT_PATH, FRONTEND_PATH
@@ -33,6 +35,8 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Commsman")
+        # self.showMaximized()
+        self.resize(1100, 600)
 
         # Divide window in two sections:
         self.main_window_sections_splitter = QSplitter()
@@ -66,8 +70,10 @@ class MainWindow(QMainWindow):
                 self.detail_section = ModbusDetail(item_dataclass)
             else:
                 self.detail_section = QLabel("Not implemented yet")
+                self.detail_section.setMinimumSize(500, 600)
         else:
             self.detail_section = QLabel("Select an item to display information")
+            self.detail_section.setMinimumSize(500, 600)
 
         if self.main_window_sections_splitter.count() > 1:
             self.main_window_sections_splitter.replaceWidget(1, self.detail_section)
@@ -76,7 +82,7 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    # apply_stylesheet(app, theme="light_teal.xml", css_file=f"{FRONTEND_PATH}/styles.css")
+    apply_stylesheet(app, theme=f"{FRONTEND_PATH}/theme.xml", css_file=f"{FRONTEND_PATH}/styles.css")
 
     window = MainWindow()
     window.show()

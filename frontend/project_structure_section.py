@@ -4,8 +4,8 @@ import os
 import pickle
 import sys
 
-from PyQt6.QtCore import QEvent, Qt, QSortFilterProxyModel, QRect, pyqtSignal, QModelIndex, QTimer
-from PyQt6.QtGui import QStandardItemModel, QStandardItem, QIcon, QDrag, QAction, QPainter, QPen, QColor
+from PyQt6.QtCore import QEvent, Qt, QSortFilterProxyModel, QRect, pyqtSignal, QModelIndex, QSize
+from PyQt6.QtGui import QStandardItemModel, QStandardItem, QIcon, QDrag
 from PyQt6.QtWidgets import (
     QApplication,
     QVBoxLayout,
@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QDialog,
     QStyledItemDelegate,
-    QStyle
+    QStyle, QProxyStyle
 )
 
 from frontend.common import ITEMS
@@ -69,6 +69,17 @@ class CustomTreeView(QTreeView):
 
         self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
         self.setSelectionMode(QTreeView.SelectionMode.SingleSelection)
+
+        self.setStyleSheet("""
+            QTreeView::item:selected {
+                background-color: #F78434;  /* Optional: Set a selection background color */
+            }
+            QTreeView::branch {
+                margin-left: -5px;  /* Pull branch indicators closer to items */
+                border-image: none;
+            }
+        """)
+        # self.setIndentation(40)
 
     def startDrag(self, supportedActions):
         """Start drag operation."""
@@ -184,12 +195,12 @@ class CustomItemDelegate(QStyledItemDelegate):
 
             self.signal_item_clicled.emit(index)
 
-            if QRect(delete_x, rect.top(), icon_size, icon_size).contains(click_pos):
+            if QRect(delete_x, rect.top() + (rect.height() - icon_size) // 2, icon_size, icon_size).contains(click_pos):
                 # Handle delete action
                 self.signal_delete_clicked.emit(index)
                 return True
 
-            if not index.parent().isValid() and QRect(export_x, rect.top(), icon_size, icon_size).contains(click_pos):
+            if not index.parent().isValid() and QRect(export_x, rect.top() + (rect.height() - icon_size) // 2, icon_size, icon_size).contains(click_pos):
                 # Handle export action
                 self.signal_export_clicked.emit(index)
                 return True
@@ -280,14 +291,18 @@ class ProjectStructureSection(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.setMinimumWidth(400)
+
         # Buttons:
         self.add_button = Button("Add")
         self.add_button.clicked.connect(self.add_item)
+        self.add_button.setFixedHeight(40)
 
         # Filter input:
         self.filter_input = QLineEdit()
         self.filter_input.setPlaceholderText("Filter by name...")
         self.filter_input.textChanged.connect(self.apply_filter)
+        self.filter_input.setFixedHeight(40)
 
         # Tree view:
         self.tree_view = CustomTreeView()

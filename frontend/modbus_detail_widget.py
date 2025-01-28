@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QLineEdit, QSpinBox, QComboBox, QPushButton,
                              QTabWidget, QTextEdit, QGridLayout, QPlainTextEdit,
                              QMessageBox, QHBoxLayout, QTableWidget, QAbstractItemView, QHeaderView, QGroupBox,
-                             QFormLayout)
+                             QFormLayout, QTableWidgetItem)
 
 from frontend.models.modbus import ModbusRequest
 from frontend.common import ITEMS
@@ -21,16 +21,56 @@ class IconTextWidget(QWidget):
 
         icon_label = QLabel()
         icon = QIcon(icon_path)
-        pixmap = icon.pixmap(32, 32)
+        pixmap = icon.pixmap(75, 75)
         icon_label.setPixmap(pixmap)
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         text_label = QLabel(text)
+        text_label.setFixedHeight(75)
 
         layout.addWidget(icon_label)
         layout.addWidget(text_label)
-        layout.setSpacing(5)
+        layout.setSpacing(20)
         layout.addStretch(1)
+
+
+class CustomFormLayout(QFormLayout):
+    def __init__(self, height=30, label_width=150, field_width=200):
+        super().__init__()
+        self.height = height  # Maximum height
+        self.label_width = label_width  # Maximum width for labels
+        self.field_width = field_width  # Maximum width for fields
+        self.rows = []  # Store references to rows for visibility control
+
+    def addRow(self, label, field):
+        label.setMaximumWidth(self.label_width)
+        label.setMinimumWidth(self.label_width)
+        label.setMaximumHeight(self.height)
+        label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+
+        field.setMaximumWidth(self.field_width)
+        field.setMinimumWidth(self.field_width)
+        if not isinstance(field, QTableWidget):
+            field.setMaximumHeight(self.height)
+
+        # Add the row to the layout
+        super().addRow(label, field)
+        # Store the row (label and field) for visibility control
+        self.rows.append((label, field))
+
+    def showRow(self, index):
+        """Show a specific row by index."""
+        if 0 <= index < len(self.rows):
+            label, field = self.rows[index]
+            label.show()
+            field.show()
+
+    def hideRow(self, index):
+        """Hide a specific row by index."""
+        if 0 <= index < len(self.rows):
+            label, field = self.rows[index]
+            label.hide()
+            field.hide()
 
 
 class ModbusConnectionWidget(QWidget):
@@ -38,27 +78,27 @@ class ModbusConnectionWidget(QWidget):
         super().__init__()
 
         connection_group = QGroupBox("Modbus Connection") # Groupbox for the connection
-        connection_layout = QFormLayout() # Form layout for labels and inputs
-        connection_group.setLayout(connection_layout)
+        self.form_layout = CustomFormLayout()
+        connection_group.setLayout(self.form_layout)
 
         self.connection_type_combo = QComboBox()
         self.connection_type_combo.addItems(["TCP", "RTU"])
-        connection_layout.addRow("Connection Type:", self.connection_type_combo)
+        self.form_layout.addRow(QLabel("Connection Type:"), self.connection_type_combo)
 
-        self.host_input = QLineEdit("127.0.0.1")  # Default localhost
-        connection_layout.addRow("Host/Port:", self.host_input)
+        self.form_layout.addRow(QLabel("Host/Port:"), QLineEdit("127.0.0.1"))
 
-        self.port_spinbox = QSpinBox()
-        self.port_spinbox.setMinimum(1)
-        self.port_spinbox.setMaximum(65535)
-        self.port_spinbox.setValue(502)  # Default Modbus TCP port
-        connection_layout.addRow("Port:", self.port_spinbox)
+        port_spinbox = QSpinBox()
+        port_spinbox.setMinimum(1)
+        port_spinbox.setMaximum(65535)
+        port_spinbox.setValue(502)  # Default Modbus TCP port
+        self.form_layout.addRow(QLabel("Port:"), port_spinbox)
 
-        self.serial_port_input = QLineEdit("/dev/ttyUSB0")
-        connection_layout.addRow("Serial Port:", self.serial_port_input)
-        self.serial_baudrate_combo = QComboBox()
-        self.serial_baudrate_combo.addItems(["9600", "19200", "38400", "57600", "115200"])
-        connection_layout.addRow("Baudrate:", self.serial_baudrate_combo)
+        self.form_layout.addRow(QLabel("Serial Port:"), QLineEdit("/dev/ttyUSB0"))
+
+        serial_baudrate_combo = QComboBox()
+        serial_baudrate_combo.addItems(["9600", "19200", "38400", "57600", "115200"])
+        self.form_layout.addRow(QLabel("Baudrate:"), serial_baudrate_combo)
+
         self.connection_type_combo.currentIndexChanged.connect(self.update_connection_fields)
         self.update_connection_fields()
 
@@ -68,27 +108,15 @@ class ModbusConnectionWidget(QWidget):
 
     def update_connection_fields(self):
         if self.connection_type_combo.currentText() == "TCP":
-            self.host_input.show()
-            self.port_spinbox.show()
-            self.serial_port_input.hide()
-            self.serial_baudrate_combo.hide()
+            self.form_layout.showRow(1)
+            self.form_layout.showRow(2)
+            self.form_layout.hideRow(3)
+            self.form_layout.hideRow(4)
         elif self.connection_type_combo.currentText() == "RTU":
-            self.host_input.hide()
-            self.port_spinbox.hide()
-            self.serial_port_input.show()
-            self.serial_baudrate_combo.show()
-
-    def get_connection_parameters(self):
-        connection_type = self.connection_type_combo.currentText()
-        if connection_type == "TCP":
-            host = self.host_input.text()
-            port = self.port_spinbox.value()
-            return {"type": "tcp", "host": host, "port": port}
-        elif connection_type == "RTU":
-            port = self.serial_port_input.text()
-            baudrate = int(self.serial_baudrate_combo.currentText())
-            return {"type": "rtu", "port": port, "baudrate": baudrate}
-        return None
+            self.form_layout.hideRow(1)
+            self.form_layout.hideRow(2)
+            self.form_layout.showRow(3)
+            self.form_layout.showRow(4)
 
 
 class ModbusRequestWidget(QWidget):
@@ -105,46 +133,48 @@ class ModbusRequestWidget(QWidget):
 
         main_layout = QVBoxLayout()
 
-        form_layout = QGridLayout()
+        self.form_layout = CustomFormLayout()
 
         self.function_combo = QComboBox()
         self.function_combo.addItems(self.functions)
-        form_layout.addWidget(QLabel("Modbus Function:"), 0, 0)
-        form_layout.addWidget(self.function_combo, 0, 1)
+        self.form_layout.addRow(QLabel("Modbus Function:"), self.function_combo)
 
         self.address_spinbox = QSpinBox()
-        form_layout.addWidget(QLabel("Address:"), 1, 0)
-        form_layout.addWidget(self.address_spinbox, 1, 1)
+        self.form_layout.addRow(QLabel("Address:"), self.address_spinbox)
 
         self.quantity_spinbox = QSpinBox()
-        self.quantity_label = QLabel("Count:")
-        self.quantity_spinbox.setMinimum(1) # Ensure at least 1
-        form_layout.addWidget(self.quantity_label, 2, 0)
-        form_layout.addWidget(self.quantity_spinbox, 2, 1)
+        self.form_layout.addRow(QLabel("Count:"), self.quantity_spinbox)
 
         self.slave_id_spinbox = QSpinBox()
-        self.slave_id_spinbox.setMinimum(1) # Ensure at least 1
-        form_layout.addWidget(QLabel("Slave ID:"), 3, 0)
-        form_layout.addWidget(self.slave_id_spinbox, 3, 1)
+        self.slave_id_spinbox.setMinimum(1)
+        self.form_layout.addRow(QLabel("Slave ID:"), self.slave_id_spinbox)
 
         self.data_type_combo = QComboBox()
         self.data_type_combo.addItems(["16-bit Integer", "16-bit Unsigned Integer", "32-bit Integer", "32-bit Unsigned Integer", "Hexadecimal", "Float"])
-        form_layout.addWidget(QLabel("Data Type:"), 4, 0)
-        form_layout.addWidget(self.data_type_combo, 4, 1)
+        self.form_layout.addRow(QLabel("Data Type:"), self.data_type_combo)
 
-        self.value_label = QLabel("Values to Write:") #Changed the label
         self.values_table = QTableWidget()
         self.values_table.setColumnCount(1)
         self.values_table.setHorizontalHeaderLabels(["Value"])
         self.values_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
         self.values_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        form_layout.addWidget(self.value_label, 5, 0)
-        form_layout.addWidget(self.values_table, 5, 1)
+        self.values_table.setStyleSheet("""
+            QTableWidget {
+                border: none; /* Remove any outer border */
+            }
+            QTableWidget::item:selected {
+                background-color: #D5D7D6;
+            }
+            QToolTip {
+                background-color: #D5D7D6;
+            }
+        """)
+        self.form_layout.addRow(QLabel("Values to Write:"), self.values_table)
 
-        main_layout.addLayout(form_layout)
+        main_layout.addLayout(self.form_layout)
 
         self.execute_button = QPushButton("Execute Request")
-        main_layout.addWidget(self.execute_button)
+        main_layout.addWidget(self.execute_button, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.tabs = QTabWidget()
 
@@ -174,37 +204,83 @@ class ModbusRequestWidget(QWidget):
         selected_function = self.function_combo.currentText()
 
         if selected_function in self.functions_dict["write"]:
-            self.value_label.show()
-            self.values_table.show()
+            self.form_layout.showRow(5)
         else:
-            self.value_label.hide()
-            self.values_table.hide()
+            self.form_layout.hideRow(5)
 
         self.validate_all_inputs()
 
     def validate_all_inputs(self):
         data_type = self.data_type_combo.currentText()
         enable_execute_button = True
+
         for row in range(self.values_table.rowCount()):
-            item = self.values_table.item(row, 0)
-            if item:
-                is_valid, error_message = self.validate_input(item.text(), data_type)
-                if not is_valid and error_message:
-                    palette = item.tableWidget().palette()
-                    palette.setColor(QPalette.ColorRole.Text, Qt.GlobalColor.red)
-                    item.setForeground(palette.color(QPalette.ColorRole.Text))
-                    item.setToolTip(error_message)
-                    enable_execute_button = False
-                elif not is_valid and not error_message:
-                    item.setForeground(Qt.GlobalColor.gray)
-                    item.setToolTip("Insert a value")
-                    enable_execute_button = False
-                else:
-                    item.setForeground(Qt.GlobalColor.black)
-                    item.setToolTip("")
+            item = self.values_table.item(row, 0)  # Get the item in the first column
+            if not item:
+                # Create a QTableWidgetItem if it's missing
+                item = QTableWidgetItem()
+                self.values_table.setItem(row, 0, item)
+
+            # Validate the input
+            is_valid, error_message = self.validate_input(item.text(), data_type)
+
+            if not is_valid and error_message:  # If invalid and there's an error message
+                # TODO: not working
+                item.setForeground(Qt.GlobalColor.red)  # Set text color to red
+                # TODO: open tooltip as default
+                item.setToolTip(error_message)  # Show the error message as a tooltip
+                enable_execute_button = False
+
+            elif not is_valid and not error_message:  # If invalid but no error message
+                # TODO: not working
+                item.setForeground(Qt.GlobalColor.gray)  # Set text color to gray
+                item.setToolTip("Insert a value")  # Show a generic tooltip
+                enable_execute_button = False
+
+            else:  # If valid
+                item.setForeground(Qt.GlobalColor.black)  # Reset text color to black
+                item.setToolTip("")  # Clear tooltip
 
         self.values_table.clearSelection()
         self.execute_button.setEnabled(enable_execute_button)
+
+    def validate_input(self, text, data_type):
+        """Validates input based on data type. Returns (is_valid, error_message)."""
+        text = text.strip()
+        if not text:
+            return False, ""
+
+        try:
+            if data_type == "16-bit Integer":
+                value = int(text)
+                if not -32768 <= value <= 32767:
+                    return False, "Value must be between -32768 and 32767"
+            elif data_type == "16-bit Unsigned Integer":
+                value = int(text)
+                if not 0 <= value <= 65535:
+                    return False, "Value must be between 0 and 65535"
+            elif data_type == "32-bit Integer":
+                value = int(text)
+                if not -2147483648 <= value <= 2147483647:
+                    return False, "Value must be between -2147483648 and 2147483647"
+            elif data_type == "32-bit Unsigned Integer":
+                value = int(text)
+                if not 0 <= value <= 4294967295:
+                    return False, "Value must be between 0 and 4294967295"
+            elif data_type == "Hexadecimal":
+                int(text, 16)
+                return True, ""
+            elif data_type == "Float":
+                float(text)
+                return True, ""
+            else:
+                return False, "Unknown data type"
+        except ValueError or BaseException:
+            return False, "Wrong format"
+        except OverflowError:
+            return False, "Value out of range"
+
+        return True, ""
 
     def update_table_rows(self, value):
         current_rows = self.values_table.rowCount()
@@ -219,6 +295,8 @@ class ModbusRequestWidget(QWidget):
 class ModbusDetail(QWidget):
     def __init__(self, dataclass):
         super().__init__()
+
+        self.setMinimumSize(500, 600)
 
         self.setWindowTitle("Modbus Request Details")
 
@@ -238,6 +316,8 @@ class ModbusDetail(QWidget):
         # Request Tab
         self.connection_widget = ModbusRequestWidget(dataclass)
         self.tabs.addTab(self.connection_widget, "Request")
+
+        # TODO: split view in title, tabs (connection and detail), results
 
         self.setLayout(main_layout)
 
