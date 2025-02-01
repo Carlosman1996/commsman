@@ -1,12 +1,14 @@
+import struct
 import sys
 
+from PyQt6.QtCharts import QChartView, QChart, QLineSeries, QValueAxis
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QPainter
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QLineEdit, QSpinBox, QComboBox, QPushButton,
                              QTabWidget, QTextEdit, QGridLayout, QPlainTextEdit,
                              QHBoxLayout, QTableWidget, QAbstractItemView, QHeaderView, QGroupBox,
-                             QTableWidgetItem, QSplitter)
+                             QTableWidgetItem, QSplitter, QMenu)
 
 from frontend.models.modbus import ModbusRequest
 from frontend.common import ITEMS
@@ -38,6 +40,7 @@ class IconTextWidget(QWidget):
 
 class CustomGridLayout(QGridLayout):
     def __init__(self, height=30, label_width=150, field_width=200):
+        # TODO: all layouts must have this format for reusability and consistency
         super().__init__()
         self.height = height  # Maximum height
         self.label_width = label_width  # Maximum width for labels
@@ -49,12 +52,15 @@ class CustomGridLayout(QGridLayout):
         label.setMaximumWidth(self.label_width)
         label.setMinimumWidth(self.label_width)
         label.setMaximumHeight(self.height)
-        label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
         field.setMaximumWidth(self.field_width)
         field.setMinimumWidth(self.field_width)
-        if not isinstance(field, QTableWidget):
-            field.setMaximumHeight(self.height)
+
+        if isinstance(field, CustomTable):
+            label.setContentsMargins(0, 5, 0, 0)
+            alignment = Qt.AlignmentFlag.AlignTop
+        else:
+            alignment = None
 
         # Store the row (label and field) for visibility control
         if column >= len(self.table):
@@ -67,9 +73,12 @@ class CustomGridLayout(QGridLayout):
             self.table[column].append((label, field))
 
         # Add the row to the layout
-        label.setContentsMargins(0, 5, 0, 0)
-        super().addWidget(label, index, column * 2, Qt.AlignmentFlag.AlignTop)
-        super().addWidget(field, index, (column * 2) + 1, Qt.AlignmentFlag.AlignTop)
+        if alignment:
+            super().addWidget(label, index, column * 2, alignment)
+            super().addWidget(field, index, (column * 2) + 1, alignment)
+        else:
+            super().addWidget(label, index, column * 2)
+            super().addWidget(field, index, (column * 2) + 1)
 
     def show_row(self, column, index):
         """Show a specific row by index."""
@@ -84,7 +93,7 @@ class CustomGridLayout(QGridLayout):
         field.hide()
 
 
-class ModbusConnectionWidget(QWidget):
+class ModbusConnectionTabWidget(QWidget):
     def __init__(self):
         super().__init__()
 
@@ -126,7 +135,53 @@ class ModbusConnectionWidget(QWidget):
             self.grid_layout.show_row(0, 4)
 
 
-class ModbusRequestWidget(QWidget):
+class CustomTable(QTableWidget):
+    def __init__(self, headers):
+        super().__init__()
+
+        self.setMaximumWidth(150 * len(headers))
+        self.setColumnCount(len(headers))
+        self.setHorizontalHeaderLabels(headers)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.setStyleSheet("""
+            QTableWidget {
+                border: none; /* Remove any outer border */
+            }
+            QTableWidget::item:selected {
+                background-color: #D5D7D6;
+            }
+            QToolTip {
+                background-color: #D5D7D6;
+            }
+        """)
+
+    def setItem(self, *args, **kwargs):
+        super().setItem(*args, **kwargs)
+        self.adjust_table_height()
+
+    def insertRow(self, *args, **kwargs):
+        super().insertRow(*args, **kwargs)
+        self.adjust_table_height()
+
+    def removeRow(self, *args, **kwargs):
+        super().removeRow(*args, **kwargs)
+        self.adjust_table_height()
+
+    def adjust_table_height(self):
+        header_height = self.horizontalHeader().height()
+        row_height = self.rowHeight(0) if self.rowCount() > 0 else 30  # Default if no rows
+
+        # Limit height to max_visible_rows
+        visible_rows = self.rowCount() + 1
+
+        # Total height = header + visible rows + padding
+        total_height = header_height + (row_height * visible_rows) + 4
+
+        self.setMaximumHeight(total_height)
+
+
+class ModbusRequestTabWidget(QWidget):
     def __init__(self, dataclass):
         super().__init__()
 
@@ -138,9 +193,6 @@ class ModbusRequestWidget(QWidget):
         for functions in self.functions_dict.values():
             self.functions += functions
 
-        main_layout = QVBoxLayout()
-        submain_layout = QHBoxLayout()
-
         self.grid_layout = CustomGridLayout()
 
         self.function_combo = QComboBox()
@@ -151,6 +203,7 @@ class ModbusRequestWidget(QWidget):
         self.grid_layout.add_widget(QLabel("Address:"), self.address_spinbox)
 
         self.quantity_spinbox = QSpinBox()
+        self.quantity_spinbox.setMinimum(1)
         self.grid_layout.add_widget(QLabel("Count:"), self.quantity_spinbox)
 
         self.slave_id_spinbox = QSpinBox()
@@ -158,34 +211,13 @@ class ModbusRequestWidget(QWidget):
         self.grid_layout.add_widget(QLabel("Slave ID:"), self.slave_id_spinbox)
 
         self.data_type_combo = QComboBox()
-        self.data_type_combo.addItems(["16-bit Integer", "16-bit Unsigned Integer", "32-bit Integer", "32-bit Unsigned Integer", "Hexadecimal", "Float"])
+        self.data_type_combo.addItems(["16-bit Integer", "16-bit Unsigned Integer", "32-bit Integer", "32-bit Unsigned Integer", "Hexadecimal", "Float", "String"])
         self.grid_layout.add_widget(QLabel("Data Type:"), self.data_type_combo)
 
-        submain_layout.addLayout(self.grid_layout)
+        self.values_table = CustomTable(["Value"])
+        self.grid_layout.add_widget(QLabel("Values to Write:"), self.values_table)
 
-        self.table_layout = CustomGridLayout()
-        self.values_table = QTableWidget()
-        self.values_table.setColumnCount(1)
-        self.values_table.setHorizontalHeaderLabels(["Value"])
-        self.values_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
-        self.values_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.values_table.setStyleSheet("""
-            QTableWidget {
-                border: none; /* Remove any outer border */
-            }
-            QTableWidget::item:selected {
-                background-color: #D5D7D6;
-            }
-            QToolTip {
-                background-color: #D5D7D6;
-            }
-        """)
-        self.table_layout.add_widget(QLabel("Values to Write:"), self.values_table)
-
-        submain_layout.addLayout(self.table_layout)
-        main_layout.addLayout(submain_layout)
-
-        self.setLayout(main_layout)
+        self.setLayout(self.grid_layout)
 
         # Signals:
         self.function_combo.currentIndexChanged.connect(self.update_input_visibility) # Connect the signal
@@ -200,9 +232,9 @@ class ModbusRequestWidget(QWidget):
         selected_function = self.function_combo.currentText()
 
         if selected_function in self.functions_dict["write"]:
-            self.table_layout.show_row(0, 0)
+            self.grid_layout.show_row(0, 5)
         else:
-            self.table_layout.hide_row(0, 0)
+            self.grid_layout.hide_row(0, 5)
 
         self.validate_all_inputs()
 
@@ -270,6 +302,9 @@ class ModbusRequestWidget(QWidget):
             elif data_type == "Float":
                 float(text)
                 return True, ""
+            elif data_type == "String":
+                str(text)
+                return True, ""
             else:
                 return False, "Unknown data type"
         except ValueError or BaseException:
@@ -283,10 +318,224 @@ class ModbusRequestWidget(QWidget):
         current_rows = self.values_table.rowCount()
         if value > current_rows:
             for _ in range(value - current_rows):
-                self.values_table.insertRow(self.values_table.rowCount())
+                self.values_table.insertRow(current_rows)
         elif value < current_rows:
             for _ in range(current_rows - value):
-                self.values_table.removeRow(self.values_table.rowCount() - 1)
+                self.values_table.removeRow(current_rows - 1)
+
+
+class ModbusRequestWidget(QWidget):
+    def __init__(self, dataclass):
+        super().__init__()
+
+        # Main layout
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        # Set tabs:
+        detail_tabs = QTabWidget()
+
+        connection_widget = ModbusConnectionTabWidget()
+        detail_tabs.addTab(connection_widget, "Connection")
+
+        connection_widget = ModbusRequestTabWidget(dataclass)
+        detail_tabs.addTab(connection_widget, "Request")
+
+        main_layout.addWidget(detail_tabs)
+
+
+class CustomGroupBox(QGroupBox):
+    def __init__(self, title, information):
+        super().__init__(title)
+
+        status_layout = QVBoxLayout()
+        self.status_label = QLabel(information)
+        status_layout.addWidget(self.status_label)
+        self.setLayout(status_layout)
+
+
+class ModbusResponseWidget(QWidget):
+    def __init__(self, dataclass):
+        super().__init__()
+
+        # Main layout
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        # Tabs
+        self.tabs = QTabWidget()
+        main_layout.addWidget(self.tabs)
+
+        # Response Tab
+        self.response_tab = QWidget()
+        self.response_layout = QVBoxLayout()
+        self.response_tab.setLayout(self.response_layout)
+
+        # Response values table (initially hidden)
+        self.values_table = CustomTable(["Address", "Value"])
+        self.values_table.setRowCount(2)
+        self.values_table.setItem(0, 0, QTableWidgetItem("40001"))
+        self.values_table.setItem(0, 1, QTableWidgetItem("1234"))
+        self.values_table.setItem(1, 0, QTableWidgetItem("40002"))
+        self.values_table.setItem(1, 1, QTableWidgetItem("5678"))
+        self.response_layout.addWidget(self.values_table)
+
+        # Data type menu button
+        self.data_type_layout = QHBoxLayout()
+        self.data_type_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+
+        self.data_type_menu = QComboBox()
+        self.data_type_menu.addItem("16-bit Integer")
+        self.data_type_menu.addItem("16-bit Unsigned Integer")
+        self.data_type_menu.addItem("32-bit Integer")
+        self.data_type_menu.addItem("32-bit Unsigned Integer")
+        self.data_type_menu.addItem("Hexadecimal")
+        self.data_type_menu.addItem("Float")
+        self.data_type_menu.addItem("String")
+        self.data_type_menu.setMaximumWidth(200)
+        data_type_label = QLabel("Data type:")
+
+        data_type_label.setMaximumWidth(150)
+        data_type_label.setMinimumWidth(150)
+        data_type_label.setMaximumHeight(30)
+
+        self.data_type_menu.setMaximumWidth(200)
+        self.data_type_menu.setMinimumWidth(200)
+
+        self.data_type_layout.addWidget(data_type_label)
+        self.data_type_layout.addWidget(self.data_type_menu)
+        self.response_layout.addLayout(self.data_type_layout)
+
+        # Error display (initially hidden)
+        self.error_data_edit = QTextEdit()
+        self.error_data_edit.setReadOnly(True)
+        self.error_data_edit.setStyleSheet("color: red;")
+        self.response_layout.addWidget(self.error_data_edit)
+        self.error_data_edit.hide()  # Hide error group by default
+
+        self.response_layout.addStretch()
+
+        self.tabs.addTab(self.response_tab, "Response")
+
+        # Metadata Tab
+        metadata_tab = QWidget()
+        metadata_layout = QVBoxLayout()
+        metadata_tab.setLayout(metadata_layout)
+
+        # General Information
+        general_info_group = QGroupBox("General Information")
+        general_info_layout = CustomGridLayout()
+        self.status_label = QLabel("N/A")
+        self.elapsed_time_label = QLabel("N/A")
+        self.timestamp_label = QLabel("N/A")
+        general_info_layout.add_widget(QLabel("Status:"), self.status_label)
+        general_info_layout.add_widget(QLabel("Elapsed Time:"), self.elapsed_time_label)
+        general_info_layout.add_widget(QLabel("Timestamp:"), self.timestamp_label)
+        general_info_group.setLayout(general_info_layout)
+        metadata_layout.addWidget(general_info_group)
+
+        # Headers and Data
+        headers_group = QGroupBox("Headers and Data")
+        headers_layout = CustomGridLayout()
+        self.transaction_id_label = QLabel("N/A")
+        self.protocol_id_label = QLabel("N/A")
+        self.unit_id_label = QLabel("N/A")
+        self.function_code_label = QLabel("N/A")
+        self.byte_count_label = QLabel("N/A")
+        headers_layout.add_widget(QLabel("Transaction ID:"), self.transaction_id_label)
+        headers_layout.add_widget(QLabel("Protocol ID:"), self.protocol_id_label)
+        headers_layout.add_widget(QLabel("Unit ID:"), self.unit_id_label)
+        headers_layout.add_widget(QLabel("Function Code:"), self.function_code_label)
+        headers_layout.add_widget(QLabel("Byte Count:"), self.byte_count_label)
+        headers_group.setLayout(headers_layout)
+        metadata_layout.addWidget(headers_group)
+
+        self.tabs.addTab(metadata_tab, "Metadata")
+
+        # Raw Data Tab
+        raw_data_tab = QWidget()
+        raw_data_layout = QVBoxLayout()
+        raw_data_tab.setLayout(raw_data_layout)
+
+        # Raw data display
+        self.raw_data_edit = QTextEdit()
+        self.raw_data_edit.setReadOnly(True)
+        raw_data_layout.addWidget(self.raw_data_edit)
+
+        self.tabs.addTab(raw_data_tab, "Raw Data")
+
+    def simulate_error_response(self):
+        """Simulate an error response for demonstration."""
+        self.status_label.setText("Fail")
+        self.status_label.setStyleSheet("color: red;")
+        self.error_data_edit.setText(f"Status: {self.status_label.text()}\n\nError: Illegal Data Address (Code: 2)\nAdditional details: Invalid register address.")
+        self.error_data_edit.show()  # Show error group
+        self.data_type_menu.hide()
+        self.values_table.hide()  # Hide values table
+
+    def update_data_type(self, action):
+        """Update the data type and convert values accordingly."""
+        data_type = action.text()
+
+        # Sample raw data (replace with actual Modbus response)
+        raw_values = [1234, 5678]
+
+        # Convert values based on selected data type
+        converted_values = []
+        for value in raw_values:
+            if data_type == "16-bit Integer":
+                converted_values.append(self.convert_to_16bit_int(value))
+            elif data_type == "16-bit Unsigned Integer":
+                converted_values.append(self.convert_to_16bit_uint(value))
+            elif data_type == "32-bit Integer":
+                converted_values.append(self.convert_to_32bit_int([value, 0]))  # Example for 32-bit
+            elif data_type == "32-bit Unsigned Integer":
+                converted_values.append(self.convert_to_32bit_uint([value, 0]))  # Example for 32-bit
+            elif data_type == "Hexadecimal":
+                converted_values.append(self.convert_to_hex(value))
+            elif data_type == "Float":
+                converted_values.append(self.convert_to_float([value, 0]))  # Example for 32-bit float
+            elif data_type == "String":
+                converted_values.append(self.convert_to_string(value))
+
+        # Update the table with converted values
+        self.update_table(converted_values)
+
+    def update_table(self, values):
+        """Update the table with the converted values."""
+        self.values_table.setRowCount(len(values))
+        for row, value in enumerate(values):
+            self.values_table.setItem(row, 0, QTableWidgetItem(f"4000{row + 1}"))
+            self.values_table.setItem(row, 1, QTableWidgetItem(str(value)))
+
+    # Conversion functions
+    def convert_to_16bit_int(self, value):
+        """Convert to 16-bit signed integer."""
+        return struct.unpack('>h', value.to_bytes(2, byteorder='big'))[0]
+
+    def convert_to_16bit_uint(self, value):
+        """Convert to 16-bit unsigned integer."""
+        return value
+
+    def convert_to_32bit_int(self, values):
+        """Convert to 32-bit signed integer."""
+        return struct.unpack('>i', bytes(values))[0]
+
+    def convert_to_32bit_uint(self, values):
+        """Convert to 32-bit unsigned integer."""
+        return struct.unpack('>I', bytes(values))[0]
+
+    def convert_to_hex(self, value):
+        """Convert to hexadecimal string."""
+        return hex(value)
+
+    def convert_to_float(self, values):
+        """Convert to 32-bit float."""
+        return struct.unpack('>f', bytes(values))[0]
+
+    def convert_to_string(self, value):
+        """Convert to string."""
+        return str(value)
 
 
 class ModbusDetail(QWidget):
@@ -325,34 +574,20 @@ class ModbusDetail(QWidget):
         # Añadir la cabecera al layout principal
         main_layout.addWidget(header)
 
-        splitter = QSplitter(Qt.Orientation.Vertical)
+        splitter = QSplitter()
 
         # Detail
-        self.detail_tabs = QTabWidget()
-
-        self.connection_widget = ModbusConnectionWidget()
-        self.detail_tabs.addTab(self.connection_widget, "Connection")
-
-        self.connection_widget = ModbusRequestWidget(dataclass)
-        self.detail_tabs.addTab(self.connection_widget, "Request")
+        detail_tabs = ModbusRequestWidget(dataclass)
 
         # Results
-        self.results_tabs = QTabWidget()
-
-        self.raw_data_text = QPlainTextEdit()
-        self.results_tabs.addTab(self.raw_data_text, "Raw Data")
-
-        self.parsed_data_text = QPlainTextEdit()
-        self.results_tabs.addTab(self.parsed_data_text, "Parsed Data")
-
-        self.log_text = QTextEdit()
-        self.results_tabs.addTab(self.log_text, "Log/Console")
+        results_tabs = ModbusResponseWidget(dataclass)
 
         # Fill splitter:
-        splitter.addWidget(self.detail_tabs)
-        splitter.addWidget(self.results_tabs)
+        splitter.addWidget(detail_tabs)
+        splitter.addWidget(results_tabs)
 
         main_layout.addWidget(splitter)
+        main_layout.addStretch()
 
         self.setLayout(main_layout)
 
