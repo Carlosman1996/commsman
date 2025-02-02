@@ -1,8 +1,9 @@
 import struct
 import sys
 
+from PyQt5.QtWidgets import QComboBox
 from PyQt6.QtCharts import QChartView, QChart, QLineSeries, QValueAxis
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QThread
 from PyQt6.QtGui import QIcon, QPainter
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QLineEdit, QSpinBox, QComboBox, QPushButton,
@@ -10,7 +11,8 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QHBoxLayout, QTableWidget, QAbstractItemView, QHeaderView, QGroupBox,
                              QTableWidgetItem, QSplitter, QMenu)
 
-from frontend.models.modbus import ModbusRequest
+from backend.core.backend_manager import BackendManager
+from frontend.models.modbus import ModbusRequest, ModbusClient
 from frontend.common import ITEMS
 
 
@@ -93,48 +95,6 @@ class CustomGridLayout(QGridLayout):
         field.hide()
 
 
-class ModbusConnectionTabWidget(QWidget):
-    def __init__(self):
-        super().__init__()
-
-        self.grid_layout = CustomGridLayout()
-
-        self.connection_type_combo = QComboBox()
-        self.connection_type_combo.addItems(["TCP", "RTU"])
-        self.grid_layout.add_widget(QLabel("Connection Type:"), self.connection_type_combo)
-
-        self.grid_layout.add_widget(QLabel("Host/Port:"), QLineEdit("127.0.0.1"))
-
-        port_spinbox = QSpinBox()
-        port_spinbox.setMinimum(1)
-        port_spinbox.setMaximum(65535)
-        port_spinbox.setValue(502)  # Default Modbus TCP port
-        self.grid_layout.add_widget(QLabel("Port:"), port_spinbox)
-
-        self.grid_layout.add_widget(QLabel("Serial Port:"), QLineEdit("/dev/ttyUSB0"))
-
-        serial_baudrate_combo = QComboBox()
-        serial_baudrate_combo.addItems(["9600", "19200", "38400", "57600", "115200"])
-        self.grid_layout.add_widget(QLabel("Baudrate:"), serial_baudrate_combo)
-
-        self.connection_type_combo.currentIndexChanged.connect(self.update_connection_fields)
-        self.update_connection_fields()
-
-        self.setLayout(self.grid_layout)
-
-    def update_connection_fields(self):
-        if self.connection_type_combo.currentText() == "TCP":
-            self.grid_layout.show_row(0, 1)
-            self.grid_layout.show_row(0, 2)
-            self.grid_layout.hide_row(0, 3)
-            self.grid_layout.hide_row(0, 4)
-        elif self.connection_type_combo.currentText() == "RTU":
-            self.grid_layout.hide_row(0, 1)
-            self.grid_layout.hide_row(0, 2)
-            self.grid_layout.show_row(0, 3)
-            self.grid_layout.show_row(0, 4)
-
-
 class CustomTable(QTableWidget):
     def __init__(self, headers):
         super().__init__()
@@ -180,10 +140,109 @@ class CustomTable(QTableWidget):
 
         self.setMaximumHeight(total_height)
 
+    def set_items(self, items):
+        for row, item in enumerate(items):
+            self.setItem(row, 0, QTableWidgetItem(item))
+
+    def get_values(self):
+        """Read values from the table and print them."""
+        row_data = []
+        for row in range(self.rowCount()):
+            item = self.item(row, 0)
+            if not item:
+                row_data.append("")
+            else:
+                row_data.append(item.text())
+        return row_data
+
+
+class CustomComboBox(QComboBox):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def set_item(self, item):
+        # Set item based on class attribute
+        if item in [self.itemText(i) for i in range(self.count())]:
+            self.setCurrentText(item)
+        else:
+            self.setCurrentIndex(0)  # Fallback if not found
+
+
+class ModbusConnectionTabWidget(QWidget):
+    def __init__(self, model):
+        super().__init__()
+
+        self.model = model
+        self.item = self.model.get_selected_item()
+
+        self.grid_layout = CustomGridLayout()
+
+        self.connection_type_combo = CustomComboBox()
+        self.connection_type_combo.addItems(["TCP", "RTU"])
+        self.connection_type_combo.set_item(self.item.client.client_type)
+        self.grid_layout.add_widget(QLabel("Connection Type:"), self.connection_type_combo)
+
+        self.host_line_edit = QLineEdit(self.item.client.tcp_host)
+        self.grid_layout.add_widget(QLabel("Host/Port:"), self.host_line_edit)
+
+        self.port_spinbox = QSpinBox()
+        self.port_spinbox.setMinimum(1)
+        self.port_spinbox.setMaximum(65535)
+        self.port_spinbox.setValue(self.item.client.tcp_port)
+        self.grid_layout.add_widget(QLabel("Port:"), self.port_spinbox)
+
+        self.serial_port_line_edit = QLineEdit(self.item.client.serial_port)
+        self.grid_layout.add_widget(QLabel("Serial Port:"), self.serial_port_line_edit)
+
+        self.serial_baudrate_combo = CustomComboBox()
+        self.serial_baudrate_combo.addItems(["9600", "19200", "38400", "57600", "115200"])
+        index = self.serial_baudrate_combo.findText(str(self.item.client.serial_baudrate))
+        self.serial_baudrate_combo.setCurrentIndex(index)
+        self.grid_layout.add_widget(QLabel("Baudrate:"), self.serial_baudrate_combo)
+        self.setLayout(self.grid_layout)
+
+        # Set initial state and connect signals:
+        self.update_item()
+
+        self.connection_type_combo.currentIndexChanged.connect(self.update_item)
+        self.host_line_edit.textChanged.connect(self.update_item)
+        self.port_spinbox.textChanged.connect(self.update_item)
+        self.serial_port_line_edit.textChanged.connect(self.update_item)
+        self.serial_baudrate_combo.currentIndexChanged.connect(self.update_item)
+
+    def update_connection_fields(self):
+        if self.connection_type_combo.currentText() == "TCP":
+            self.grid_layout.show_row(0, 1)
+            self.grid_layout.show_row(0, 2)
+            self.grid_layout.hide_row(0, 3)
+            self.grid_layout.hide_row(0, 4)
+        elif self.connection_type_combo.currentText() == "RTU":
+            self.grid_layout.hide_row(0, 1)
+            self.grid_layout.hide_row(0, 2)
+            self.grid_layout.show_row(0, 3)
+            self.grid_layout.show_row(0, 4)
+
+    def update_item(self):
+        self.update_connection_fields()
+
+        modbus_client = ModbusClient(
+            name=self.item.name,
+            client_type=self.connection_type_combo.currentText(),
+            tcp_host=self.host_line_edit.text(),
+            tcp_port=int(self.port_spinbox.text()),
+            serial_port=self.serial_port_line_edit.text(),
+            serial_baudrate=int(self.serial_baudrate_combo.currentText()),
+
+        )
+        self.model.update_item(client=modbus_client)
+
 
 class ModbusRequestTabWidget(QWidget):
-    def __init__(self, dataclass):
+    def __init__(self, model):
         super().__init__()
+
+        self.model = model
+        self.item = self.model.get_selected_item()
 
         self.functions_dict = {
             "read": ["Read Holding Registers", "Read Input Registers", "Read Coils", "Read Discrete Inputs"],
@@ -195,38 +254,46 @@ class ModbusRequestTabWidget(QWidget):
 
         self.grid_layout = CustomGridLayout()
 
-        self.function_combo = QComboBox()
+        self.function_combo = CustomComboBox()
         self.function_combo.addItems(self.functions)
+        self.function_combo.set_item(self.item.function)
         self.grid_layout.add_widget(QLabel("Modbus Function:"), self.function_combo)
 
         self.address_spinbox = QSpinBox()
+        self.address_spinbox.setValue(self.item.address)
         self.grid_layout.add_widget(QLabel("Address:"), self.address_spinbox)
 
         self.quantity_spinbox = QSpinBox()
         self.quantity_spinbox.setMinimum(1)
+        self.quantity_spinbox.setValue(self.item.count)
         self.grid_layout.add_widget(QLabel("Count:"), self.quantity_spinbox)
 
         self.slave_id_spinbox = QSpinBox()
         self.slave_id_spinbox.setMinimum(1)
+        self.slave_id_spinbox.setValue(self.item.slave)
         self.grid_layout.add_widget(QLabel("Slave ID:"), self.slave_id_spinbox)
 
-        self.data_type_combo = QComboBox()
+        self.data_type_combo = CustomComboBox()
         self.data_type_combo.addItems(["16-bit Integer", "16-bit Unsigned Integer", "32-bit Integer", "32-bit Unsigned Integer", "Hexadecimal", "Float", "String"])
+        self.data_type_combo.set_item(self.item.data_type)
         self.grid_layout.add_widget(QLabel("Data Type:"), self.data_type_combo)
 
         self.values_table = CustomTable(["Value"])
+        self.update_table_rows()
+        self.values_table.set_items(self.item.values)
         self.grid_layout.add_widget(QLabel("Values to Write:"), self.values_table)
 
         self.setLayout(self.grid_layout)
 
-        # Signals:
-        self.function_combo.currentIndexChanged.connect(self.update_input_visibility) # Connect the signal
-        self.quantity_spinbox.valueChanged.connect(self.update_table_rows)
-        self.data_type_combo.currentIndexChanged.connect(self.validate_all_inputs)
-        self.values_table.itemChanged.connect(self.validate_all_inputs)
+        # Set initial state and connect signals:
+        self.update_item()
 
-        self.update_table_rows(1)
-        self.update_input_visibility()
+        self.function_combo.currentIndexChanged.connect(self.update_item)
+        self.address_spinbox.valueChanged.connect(self.update_item)
+        self.quantity_spinbox.valueChanged.connect(self.update_item)
+        self.slave_id_spinbox.valueChanged.connect(self.update_item)
+        self.data_type_combo.currentIndexChanged.connect(self.update_item)
+        self.values_table.itemChanged.connect(self.update_item)
 
     def update_input_visibility(self):
         selected_function = self.function_combo.currentText()
@@ -236,8 +303,6 @@ class ModbusRequestTabWidget(QWidget):
         else:
             self.grid_layout.hide_row(0, 5)
 
-        self.validate_all_inputs()
-
     def validate_all_inputs(self):
         self.values_table.blockSignals(True)
 
@@ -245,6 +310,7 @@ class ModbusRequestTabWidget(QWidget):
         enable_execute_button = True
 
         for row in range(self.values_table.rowCount()):
+            # TODO: bug related with fails in first row
             item = self.values_table.item(row, 0)  # Get the item in the first column
             if not item:
                 # Create a QTableWidgetItem if it's missing
@@ -255,7 +321,7 @@ class ModbusRequestTabWidget(QWidget):
             is_valid, error_message = self.validate_input(item.text(), data_type)
 
             if not is_valid and error_message:  # If invalid and there's an error message
-                item.setText(f"⚠ {item.text()}")
+                item.setText(f"⚠ {item.text().replace('⚠ ', '')}")
                 item.setToolTip(error_message)  # Show the error message as a tooltip
                 enable_execute_button = False
 
@@ -314,7 +380,8 @@ class ModbusRequestTabWidget(QWidget):
 
         return True, ""
 
-    def update_table_rows(self, value):
+    def update_table_rows(self):
+        value = self.quantity_spinbox.value()
         current_rows = self.values_table.rowCount()
         if value > current_rows:
             for _ in range(value - current_rows):
@@ -323,9 +390,25 @@ class ModbusRequestTabWidget(QWidget):
             for _ in range(current_rows - value):
                 self.values_table.removeRow(current_rows - 1)
 
+    def update_item(self):
+        update_data = {
+            "function": self.function_combo.currentText(),
+            "address": int(self.address_spinbox.text()),
+            "count": int(self.quantity_spinbox.text()),
+            "slave": int(self.slave_id_spinbox.text()),
+            "data_type": self.data_type_combo.currentText(),
+            "values": self.values_table.get_values(),
+        }
+
+        self.update_table_rows()
+        self.update_input_visibility()
+        self.validate_all_inputs()
+
+        self.model.update_item(**update_data)
+
 
 class ModbusRequestWidget(QWidget):
-    def __init__(self, dataclass):
+    def __init__(self, model):
         super().__init__()
 
         # Main layout
@@ -335,10 +418,10 @@ class ModbusRequestWidget(QWidget):
         # Set tabs:
         detail_tabs = QTabWidget()
 
-        connection_widget = ModbusConnectionTabWidget()
+        connection_widget = ModbusConnectionTabWidget(model)
         detail_tabs.addTab(connection_widget, "Connection")
 
-        connection_widget = ModbusRequestTabWidget(dataclass)
+        connection_widget = ModbusRequestTabWidget(model)
         detail_tabs.addTab(connection_widget, "Request")
 
         main_layout.addWidget(detail_tabs)
@@ -355,8 +438,11 @@ class CustomGroupBox(QGroupBox):
 
 
 class ModbusResponseWidget(QWidget):
-    def __init__(self, dataclass):
+    def __init__(self, model):
         super().__init__()
+
+        self.model = model
+        self.item = self.model.get_selected_item()
 
         # Main layout
         main_layout = QVBoxLayout()
@@ -384,7 +470,7 @@ class ModbusResponseWidget(QWidget):
         self.data_type_layout = QHBoxLayout()
         self.data_type_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
-        self.data_type_menu = QComboBox()
+        self.data_type_menu = CustomComboBox()
         self.data_type_menu.addItem("16-bit Integer")
         self.data_type_menu.addItem("16-bit Unsigned Integer")
         self.data_type_menu.addItem("32-bit Integer")
@@ -463,6 +549,7 @@ class ModbusResponseWidget(QWidget):
         raw_data_layout.addWidget(self.raw_data_edit)
 
         self.tabs.addTab(raw_data_tab, "Raw Data")
+        self.hide()
 
     def simulate_error_response(self):
         """Simulate an error response for demonstration."""
@@ -539,12 +626,15 @@ class ModbusResponseWidget(QWidget):
 
 
 class ModbusDetail(QWidget):
-    def __init__(self, dataclass):
+    def __init__(self, model):
         super().__init__()
 
         self.setMinimumSize(800, 600)
 
         self.setWindowTitle("Modbus Request Details")
+
+        self.model = model
+        item = self.model.get_selected_item()
 
         main_layout = QVBoxLayout()
 
@@ -554,7 +644,7 @@ class ModbusDetail(QWidget):
         header.setLayout(header_layout)
 
         # Title:
-        self.title_label = IconTextWidget(dataclass.name, QIcon(ITEMS[dataclass.type]["icon"]))
+        self.title_label = IconTextWidget(item.name, QIcon(ITEMS[item.item_type]["icon"]))
         header_layout.addWidget(self.title_label)
 
         # Execute request:
@@ -577,10 +667,10 @@ class ModbusDetail(QWidget):
         splitter = QSplitter()
 
         # Detail
-        detail_tabs = ModbusRequestWidget(dataclass)
+        detail_tabs = ModbusRequestWidget(model)
 
         # Results
-        results_tabs = ModbusResponseWidget(dataclass)
+        results_tabs = ModbusResponseWidget(model)
 
         # Fill splitter:
         splitter.addWidget(detail_tabs)
@@ -590,6 +680,28 @@ class ModbusDetail(QWidget):
         main_layout.addStretch()
 
         self.setLayout(main_layout)
+
+        # Create backend worker and thread:
+        self.worker = BackendManager()
+        self.thread = QThread()
+        # self.worker.moveToThread(self.thread)
+
+        # Connect signals and slots
+        self.execute_button.clicked.connect(self.execute)
+        # self.worker.result_ready.connect(self.update_label)
+        # self.worker.finished.connect(self.thread.quit)
+
+    def execute(self):
+        # Start the thread
+        self.thread.start()
+
+    def update_label(self, result):
+        print(result)
+
+    def closeEvent(self, event):
+        self.thread.quit()
+        self.thread.wait()
+        super().closeEvent(event)
 
 
 if __name__ == "__main__":

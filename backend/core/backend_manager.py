@@ -4,12 +4,9 @@ from backend.protocols.protocol_factory import ProtocolFactory
 
 
 class BackendManager:
-    def __init__(self, project_file_path: str):
+    def __init__(self):
         self._logger = CustomLogger(name=__name__)
         self.clients = {}
-
-        with open(project_file_path) as file:
-            self.project_file = json.load(file)
 
     def _process_project_file(self, folder: dict):
         for element, data in folder.items():
@@ -27,10 +24,15 @@ class BackendManager:
                 request_result = self.clients[request.client].execute_request(request)
                 self._logger.info(f"Request {request} result: {request_result}")
 
-    def run(self, element: str):
-        self._process_project_file(self.project_file[element])
+    def run_project(self, project_file_path: str, element: str):
+        with open(project_file_path) as file:
+            project_file = json.load(file)
+            self._process_project_file(project_file[element])
+
+    def execute_request(self):
+        pass
 
 
 if __name__ == "__main__":
-    backend_manager = BackendManager("inputs/project.json")
-    backend_manager.run("project_1")
+    backend_manager = BackendManager()
+    backend_manager.run_project("inputs/project.json", "project_1")
