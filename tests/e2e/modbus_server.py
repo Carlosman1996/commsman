@@ -22,7 +22,7 @@ def run_modbus_server():
 
     # Configuración del dispositivo (opcional)
     identity = ModbusDeviceIdentification()
-    identity.VendorName = "OpenAI"
+    identity.VendorName = "MyCompany"
     identity.ProductCode = "ModbusServer"
     identity.ProductName = "Modbus Test Server"
     identity.ModelName = "ModbusServerModel"

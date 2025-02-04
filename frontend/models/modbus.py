@@ -40,6 +40,7 @@ class ModbusRequest:
     address: int = 0
     count: int = 1
     values: list = field(default_factory=list)
+    last_response: dict = None
 
     def __setattr__(self, key, value):
         if key == "item_type" and not isinstance(value, str):

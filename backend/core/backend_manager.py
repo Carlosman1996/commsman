@@ -1,4 +1,5 @@
 import json
+from dataclasses import dataclass, asdict
 from utils.logger import CustomLogger
 from backend.protocols.protocol_factory import ProtocolFactory
 

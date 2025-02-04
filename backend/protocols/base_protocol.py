@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from PyQt6.QtCore import pyqtSignal
+
 
 class BaseProtocol(ABC):
     @abstractmethod
@@ -8,13 +10,8 @@ class BaseProtocol(ABC):
         pass
 
     @abstractmethod
-    def read(self, *args, **kwargs):
-        """Lee datos desde el dispositivo"""
-        pass
-
-    @abstractmethod
-    def write(self, *args, **kwargs):
-        """Escribe datos en el dispositivo"""
+    def execute_request(self, *args, **kwargs):
+        """Execute request"""
         pass
 
     @abstractmethod

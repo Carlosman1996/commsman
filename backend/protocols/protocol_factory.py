@@ -1,4 +1,4 @@
-from backend.protocols.modbus_handler import ModbusHandler, ModbusRequest
+from backend.protocols.modbus_handler import ModbusHandler
 
 
 class ProtocolFactory:

@@ -1,5 +1,6 @@
 import os
 import pickle
+from dataclasses import asdict
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QStandardItem, QIcon, QStandardItemModel

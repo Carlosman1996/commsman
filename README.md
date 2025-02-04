@@ -1,7 +1,11 @@
+TODO: sometimes, the request have results in wrong format
+TODO: shadow window is shown when some request details are open
+TODO: map information in response results tab
+TODO: improve usability: edit number easily and values higher than 99. Spin boxes are the best option?
+TODO: Apply values formats
+TODO: more information about errors due to table values like "" or incorrect
+TODO: improve usability: save last tab opened in each request
 
-TODO: Hide/unhide depending on modbus TCP/RTU
-TODO: save detail data in pickle
-TODO: Connect to backend to perform calls
 TODO: Print all results in different format types
 TODO: add connection name for reusability
 TODO: allow to reuse "previous" connections

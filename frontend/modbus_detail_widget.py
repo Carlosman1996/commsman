@@ -1,6 +1,7 @@
 import struct
 import sys
 
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QComboBox
 from PyQt6.QtCharts import QChartView, QChart, QLineSeries, QValueAxis
 from PyQt6.QtCore import Qt, QThread
@@ -12,6 +13,8 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QTableWidgetItem, QSplitter, QMenu)
 
 from backend.core.backend_manager import BackendManager
+from backend.protocols.modbus_handler import ModbusHandler
+from frontend.model import Model
 from frontend.models.modbus import ModbusRequest, ModbusClient
 from frontend.common import ITEMS
 
@@ -152,7 +155,10 @@ class CustomTable(QTableWidget):
             if not item:
                 row_data.append("")
             else:
-                row_data.append(item.text())
+                try:
+                    row_data.append(int(item.text()))
+                except:
+                    row_data.append(item.text())
         return row_data
 
 
@@ -166,6 +172,16 @@ class CustomComboBox(QComboBox):
             self.setCurrentText(item)
         else:
             self.setCurrentIndex(0)  # Fallback if not found
+
+
+class CustomGroupBox(QGroupBox):
+    def __init__(self, title, information):
+        super().__init__(title)
+
+        status_layout = QVBoxLayout()
+        self.status_label = QLabel(information)
+        status_layout.addWidget(self.status_label)
+        self.setLayout(status_layout)
 
 
 class ModbusConnectionTabWidget(QWidget):
@@ -307,7 +323,6 @@ class ModbusRequestTabWidget(QWidget):
         self.values_table.blockSignals(True)
 
         data_type = self.data_type_combo.currentText()
-        enable_execute_button = True
 
         for row in range(self.values_table.rowCount()):
             # TODO: bug related with fails in first row
@@ -323,7 +338,6 @@ class ModbusRequestTabWidget(QWidget):
             if not is_valid and error_message:  # If invalid and there's an error message
                 item.setText(f"⚠ {item.text().replace('⚠ ', '')}")
                 item.setToolTip(error_message)  # Show the error message as a tooltip
-                enable_execute_button = False
 
             elif not is_valid and not error_message:  # If invalid but no error message
                 item.setText(item.text().replace("⚠ ", ""))
@@ -335,8 +349,6 @@ class ModbusRequestTabWidget(QWidget):
                 item.setToolTip("")  # Clear tooltip
 
         self.values_table.clearSelection()
-        # self.execute_button.setEnabled(enable_execute_button)
-
         self.values_table.blockSignals(False)
 
     def validate_input(self, text, data_type):
@@ -427,17 +439,8 @@ class ModbusRequestWidget(QWidget):
         main_layout.addWidget(detail_tabs)
 
 
-class CustomGroupBox(QGroupBox):
-    def __init__(self, title, information):
-        super().__init__(title)
-
-        status_layout = QVBoxLayout()
-        self.status_label = QLabel(information)
-        status_layout.addWidget(self.status_label)
-        self.setLayout(status_layout)
-
-
 class ModbusResponseWidget(QWidget):
+
     def __init__(self, model):
         super().__init__()
 
@@ -459,11 +462,6 @@ class ModbusResponseWidget(QWidget):
 
         # Response values table (initially hidden)
         self.values_table = CustomTable(["Address", "Value"])
-        self.values_table.setRowCount(2)
-        self.values_table.setItem(0, 0, QTableWidgetItem("40001"))
-        self.values_table.setItem(0, 1, QTableWidgetItem("1234"))
-        self.values_table.setItem(1, 0, QTableWidgetItem("40002"))
-        self.values_table.setItem(1, 1, QTableWidgetItem("5678"))
         self.response_layout.addWidget(self.values_table)
 
         # Data type menu button
@@ -549,16 +547,36 @@ class ModbusResponseWidget(QWidget):
         raw_data_layout.addWidget(self.raw_data_edit)
 
         self.tabs.addTab(raw_data_tab, "Raw Data")
-        self.hide()
 
-    def simulate_error_response(self):
-        """Simulate an error response for demonstration."""
-        self.status_label.setText("Fail")
-        self.status_label.setStyleSheet("color: red;")
-        self.error_data_edit.setText(f"Status: {self.status_label.text()}\n\nError: Illegal Data Address (Code: 2)\nAdditional details: Invalid register address.")
-        self.error_data_edit.show()  # Show error group
-        self.data_type_menu.hide()
-        self.values_table.hide()  # Hide values table
+        if self.item.last_response:
+            self.process_response(self.item.last_response)
+        else:
+            self.hide()
+
+    def process_response(self, response):
+        if "error_message" in response:
+            self.status_label.setText("Fail")
+            self.status_label.setStyleSheet("color: red;")
+            self.error_data_edit.setText(
+                f"Status: {self.status_label.text()}\n\nError: {response['error_message']}")
+            self.error_data_edit.show()  # Show error group
+            self.data_type_menu.hide()
+            self.values_table.hide()  # Hide values table
+        else:
+            self.status_label.setText("Pass")
+            self.status_label.setStyleSheet("color: green;")
+            self.values_table.setRowCount(len(response["registers"]))
+            for row, register in enumerate(response["registers"]):
+                self.values_table.setItem(row, 0, QTableWidgetItem(str(response["address"] + row)))
+                self.values_table.setItem(row, 1, QTableWidgetItem(str(register)))
+            self.error_data_edit.hide()  # Show error group
+            self.data_type_menu.show()
+            self.values_table.show()  # Hide values table
+
+        if self.isHidden():
+            self.show()
+
+        self.model.update_item(last_response=response)
 
     def update_data_type(self, action):
         """Update the data type and convert values accordingly."""
@@ -587,13 +605,6 @@ class ModbusResponseWidget(QWidget):
 
         # Update the table with converted values
         self.update_table(converted_values)
-
-    def update_table(self, values):
-        """Update the table with the converted values."""
-        self.values_table.setRowCount(len(values))
-        for row, value in enumerate(values):
-            self.values_table.setItem(row, 0, QTableWidgetItem(f"4000{row + 1}"))
-            self.values_table.setItem(row, 1, QTableWidgetItem(str(value)))
 
     # Conversion functions
     def convert_to_16bit_int(self, value):
@@ -634,7 +645,7 @@ class ModbusDetail(QWidget):
         self.setWindowTitle("Modbus Request Details")
 
         self.model = model
-        item = self.model.get_selected_item()
+        self.item = self.model.get_selected_item()
 
         main_layout = QVBoxLayout()
 
@@ -644,7 +655,7 @@ class ModbusDetail(QWidget):
         header.setLayout(header_layout)
 
         # Title:
-        self.title_label = IconTextWidget(item.name, QIcon(ITEMS[item.item_type]["icon"]))
+        self.title_label = IconTextWidget(self.item.name, QIcon(ITEMS[self.item.item_type]["icon"]))
         header_layout.addWidget(self.title_label)
 
         # Execute request:
@@ -667,47 +678,42 @@ class ModbusDetail(QWidget):
         splitter = QSplitter()
 
         # Detail
-        detail_tabs = ModbusRequestWidget(model)
+        self.detail_tabs = ModbusRequestWidget(model)
 
         # Results
-        results_tabs = ModbusResponseWidget(model)
+        self.results_tabs = ModbusResponseWidget(model)
 
         # Fill splitter:
-        splitter.addWidget(detail_tabs)
-        splitter.addWidget(results_tabs)
+        splitter.addWidget(self.detail_tabs)
+        splitter.addWidget(self.results_tabs)
 
         main_layout.addWidget(splitter)
         main_layout.addStretch()
 
         self.setLayout(main_layout)
 
-        # Create backend worker and thread:
-        self.worker = BackendManager()
-        self.thread = QThread()
-        # self.worker.moveToThread(self.thread)
-
         # Connect signals and slots
         self.execute_button.clicked.connect(self.execute)
-        # self.worker.result_ready.connect(self.update_label)
-        # self.worker.finished.connect(self.thread.quit)
 
     def execute(self):
-        # Start the thread
-        self.thread.start()
+        modbus_handler = ModbusHandler()
+        modbus_handler.connect(host=self.item.client.tcp_host,
+                               port=self.item.client.tcp_port)
+        request_result = modbus_handler.execute_request(function=self.item.function,
+                                                        address=self.item.address,
+                                                        count=self.item.count,
+                                                        slave=self.item.slave,
+                                                        values=[value for value in self.item.values])
+        modbus_handler.disconnect()
 
-    def update_label(self, result):
-        print(result)
-
-    def closeEvent(self, event):
-        self.thread.quit()
-        self.thread.wait()
-        super().closeEvent(event)
+        self.results_tabs.process_response(response=request_result)
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    dataclass = ModbusRequest(name="Demo")
-    window = ModbusDetail(dataclass)
+    model = Model()
+    model.set_selected_item(ModbusRequest(name="Request"))
+    window = ModbusDetail(model)
     window.show()
     sys.exit(app.exec())
