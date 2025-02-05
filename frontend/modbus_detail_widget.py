@@ -202,8 +202,7 @@ class ModbusConnectionTabWidget(QWidget):
         self.grid_layout.add_widget(QLabel("Host/Port:"), self.host_line_edit)
 
         self.port_spinbox = QSpinBox()
-        self.port_spinbox.setMinimum(1)
-        self.port_spinbox.setMaximum(65535)
+        self.port_spinbox.setRange(1, 65535)
         self.port_spinbox.setValue(self.item.client.tcp_port)
         self.grid_layout.add_widget(QLabel("Port:"), self.port_spinbox)
 
@@ -276,16 +275,17 @@ class ModbusRequestTabWidget(QWidget):
         self.grid_layout.add_widget(QLabel("Modbus Function:"), self.function_combo)
 
         self.address_spinbox = QSpinBox()
+        self.address_spinbox.setRange(1, 999999)
         self.address_spinbox.setValue(self.item.address)
         self.grid_layout.add_widget(QLabel("Address:"), self.address_spinbox)
 
         self.quantity_spinbox = QSpinBox()
-        self.quantity_spinbox.setMinimum(1)
+        self.quantity_spinbox.setRange(1, 999999)
         self.quantity_spinbox.setValue(self.item.count)
         self.grid_layout.add_widget(QLabel("Count:"), self.quantity_spinbox)
 
         self.slave_id_spinbox = QSpinBox()
-        self.slave_id_spinbox.setMinimum(1)
+        self.slave_id_spinbox.setRange(1, 999999)
         self.slave_id_spinbox.setValue(self.item.slave)
         self.grid_layout.add_widget(QLabel("Slave ID:"), self.slave_id_spinbox)
 
