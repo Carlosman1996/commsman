@@ -317,6 +317,7 @@ class ProjectStructureSection(QWidget):
                 parent_item = selected_item.parent() or self.model.invisibleRootItem()
                 parent_item.removeRow(selected_item.row())
                 self.model.autosave_tree_data()
+                self.set_add_button_visibility()
 
     def export_selected_item(self, index):
         item = self.get_item_from_selected_index(index)
