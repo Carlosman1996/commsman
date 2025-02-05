@@ -40,7 +40,11 @@ class ModbusHandler(BaseProtocol):
 
     @decode_response
     def execute_request(self, function: str, address: int, count: int, slave: int, values: list = None):
-        # TODO: review this information:
+
+        # Validate values:
+        if any(not isinstance(value, int) for value in values):
+            raise ValueError("Values to write have incorrect format")
+
         match function:
             case "Read Coils":
                 return self.client.read_coils(address=address, count=count, slave=slave)
