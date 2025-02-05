@@ -550,8 +550,6 @@ class ModbusResponseWidget(QWidget):
 
         if self.item.last_response:
             self.process_response(self.item.last_response)
-        else:
-            self.hide()
 
     def process_response(self, response):
         if "error_message" in response:
@@ -572,9 +570,6 @@ class ModbusResponseWidget(QWidget):
             self.error_data_edit.hide()  # Show error group
             self.data_type_menu.show()
             self.values_table.show()  # Hide values table
-
-        if self.isHidden():
-            self.show()
 
         self.model.update_item(last_response=response)
 
@@ -682,6 +677,8 @@ class ModbusDetail(QWidget):
 
         # Results
         self.results_tabs = ModbusResponseWidget(model)
+        if not self.item.last_response:
+            self.results_tabs.setVisible(False)
 
         # Fill splitter:
         splitter.addWidget(self.detail_tabs)
@@ -707,6 +704,7 @@ class ModbusDetail(QWidget):
         modbus_handler.disconnect()
 
         self.results_tabs.process_response(response=request_result)
+        self.results_tabs.setVisible(True)
 
 
 if __name__ == "__main__":
