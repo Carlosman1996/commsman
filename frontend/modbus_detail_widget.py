@@ -21,7 +21,7 @@ from frontend.common import ITEMS
 
 FUNCTIONS_DICT = {
     "read": ["Read Holding Registers", "Read Input Registers", "Read Coils", "Read Discrete Inputs"],
-    "write": ["Write Coils", "Write Registers"]
+    "write": ["Write Coil", "Write Coils", "Write Register", "Write Registers"]
 }
 FUNCTIONS = []
 for functions in FUNCTIONS_DICT.values():
@@ -154,7 +154,7 @@ class CustomTable(QTableWidget):
 
     def set_items(self, items):
         for row, item in enumerate(items):
-            self.setItem(row, 0, QTableWidgetItem(item))
+            self.setItem(row, 0, QTableWidgetItem(str(item)))
 
     def get_values(self):
         """Read values from the table and print them."""
@@ -285,10 +285,10 @@ class ModbusRequestTabWidget(QWidget):
         self.quantity_spinbox.setValue(self.item.count)
         self.grid_layout.add_widget(QLabel("Count:"), self.quantity_spinbox)
 
-        self.slave_id_spinbox = QSpinBox()
-        self.slave_id_spinbox.setRange(1, 999999)
-        self.slave_id_spinbox.setValue(self.item.slave)
-        self.grid_layout.add_widget(QLabel("Slave ID:"), self.slave_id_spinbox)
+        self.unit_id_spinbox = QSpinBox()
+        self.unit_id_spinbox.setRange(1, 247)
+        self.unit_id_spinbox.setValue(self.item.slave)
+        self.grid_layout.add_widget(QLabel("Unit ID:"), self.unit_id_spinbox)
 
         self.data_type_combo = CustomComboBox()
         self.data_type_combo.addItems(["16-bit Integer", "16-bit Unsigned Integer", "32-bit Integer", "32-bit Unsigned Integer", "Hexadecimal", "Float", "String"])
@@ -308,7 +308,7 @@ class ModbusRequestTabWidget(QWidget):
         self.function_combo.currentIndexChanged.connect(self.update_item)
         self.address_spinbox.valueChanged.connect(self.update_item)
         self.quantity_spinbox.valueChanged.connect(self.update_item)
-        self.slave_id_spinbox.valueChanged.connect(self.update_item)
+        self.unit_id_spinbox.valueChanged.connect(self.update_item)
         self.data_type_combo.currentIndexChanged.connect(self.update_item)
         self.values_table.itemChanged.connect(self.update_item)
 
@@ -317,8 +317,13 @@ class ModbusRequestTabWidget(QWidget):
 
         if selected_function in FUNCTIONS_DICT["write"]:
             self.grid_layout.show_row(0, 5)
+            if selected_function in ["Write Coil", "Write Register"]:
+                self.quantity_spinbox.setRange(1, 1)
+            else:
+                self.quantity_spinbox.setRange(1, 247)
         else:
             self.grid_layout.hide_row(0, 5)
+            self.quantity_spinbox.setRange(1, 247)
 
     def validate_all_inputs(self):
         self.values_table.blockSignals(True)
@@ -400,22 +405,23 @@ class ModbusRequestTabWidget(QWidget):
             for _ in range(value - current_rows):
                 self.values_table.insertRow(current_rows)
         elif value < current_rows:
-            for _ in range(current_rows - value):
-                self.values_table.removeRow(current_rows - 1)
+            for index in range(current_rows - value):
+                self.values_table.removeRow(current_rows - index - 1)
 
     def update_item(self):
+
+        self.update_input_visibility()
+        self.update_table_rows()
+        self.validate_all_inputs()
+
         update_data = {
             "function": self.function_combo.currentText(),
             "address": int(self.address_spinbox.text()),
             "count": int(self.quantity_spinbox.text()),
-            "slave": int(self.slave_id_spinbox.text()),
+            "slave": int(self.unit_id_spinbox.text()),
             "data_type": self.data_type_combo.currentText(),
             "values": self.values_table.get_values(),
         }
-
-        self.update_table_rows()
-        self.update_input_visibility()
-        self.validate_all_inputs()
 
         self.model.update_item(**update_data)
 
@@ -511,9 +517,12 @@ class ModbusResponseWidget(QWidget):
         general_info_group = QGroupBox("General Information")
         general_info_layout = CustomGridLayout()
         self.status_label = QLabel("N/A")
+        self.status_message_label = QLabel("N/A")
+        self.status_message_label.setWordWrap(True)
         self.elapsed_time_label = QLabel("N/A")
         self.timestamp_label = QLabel("N/A")
         general_info_layout.add_widget(QLabel("Status:"), self.status_label)
+        general_info_layout.add_widget(QLabel("Status Message:"), self.status_message_label)
         general_info_layout.add_widget(QLabel("Elapsed Time:"), self.elapsed_time_label)
         general_info_layout.add_widget(QLabel("Timestamp:"), self.timestamp_label)
         general_info_group.setLayout(general_info_layout)
@@ -554,27 +563,44 @@ class ModbusResponseWidget(QWidget):
             self.process_response(self.item.last_response)
 
     def update_input_visibility(self):
-        response_tab_index = self.tabs.indexOf(self.response_tab)
-        if self.item.function in FUNCTIONS_DICT["write"]:
-            self.tabs.removeTab(response_tab_index)
-        elif response_tab_index < 0:
-            self.tabs.insertTab(0, self.response_tab, "Response")
+        pass
+        # Hide response tab in write registers operations:
+        # response_tab_index = self.tabs.indexOf(self.response_tab)
+        # if self.item.function in FUNCTIONS_DICT["write"]:
+        #     self.tabs.removeTab(response_tab_index)
+        # elif response_tab_index < 0:
+        #     self.tabs.insertTab(0, self.response_tab, "Response")
 
     def process_response(self, response):
-        if "error_message" in response:
+        self.elapsed_time_label.setText(str(response.get("elapsed_time")) + " ms")
+        self.timestamp_label.setText(str(response.get("timestamp")))
+
+        self.transaction_id_label.setText(str(response.get("transaction_id", "-")))
+        self.protocol_id_label.setText(str(response.get("protocol_id", "-")))
+        self.unit_id_label.setText(str(response.get("slave_id", "-")))
+        self.function_code_label.setText(str(response.get("function_code", "-")))
+        self.byte_count_label.setText(str(response.get("byte_count", "-")))
+
+        self.raw_data_edit.setText(
+            f"SEND: {response.get('raw_packet_send', '-')}\n\nRECV: {response.get('raw_packet_recv', '-')}")
+
+        if response.get("error_message"):
             self.status_label.setText("Fail")
             self.status_label.setStyleSheet("color: red;")
+            self.status_message_label.setText(
+                f"Error: {response.get('error_message')}")
             self.error_data_edit.setText(
-                f"Status: {self.status_label.text()}\n\nError: {response['error_message']}")
+                f"Status: {self.status_label.text()}\n\nError: {response.get('error_message')}")
             self.error_data_edit.show()  # Show error group
             self.data_type_menu.hide()
             self.values_table.hide()  # Hide values table
         else:
             self.status_label.setText("Pass")
             self.status_label.setStyleSheet("color: green;")
-            self.values_table.setRowCount(len(response["registers"]))
-            for row, register in enumerate(response["registers"]):
-                self.values_table.setItem(row, 0, QTableWidgetItem(str(response["address"] + row)))
+            self.status_message_label.setText("-")
+            self.values_table.setRowCount(len(response.get("registers")))
+            for row, register in enumerate(response.get("registers")):
+                self.values_table.setItem(row, 0, QTableWidgetItem(str(response.get("address") + row)))
                 self.values_table.setItem(row, 1, QTableWidgetItem(str(register)))
             self.error_data_edit.hide()  # Show error group
             self.data_type_menu.show()
