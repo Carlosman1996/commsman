@@ -51,6 +51,7 @@ class CustomStandardItem(QStandardItem):
 class Model(QStandardItemModel):
 
     signal_move_item = pyqtSignal(CustomStandardItem)
+    signal_update_item = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -71,6 +72,7 @@ class Model(QStandardItemModel):
                 else:
                     raise ValueError(f"Item {self.selected_item} has not attribute {key}. Could not save value {value}")
         self.autosave_tree_data()
+        self.signal_update_item.emit()
 
     def autosave_tree_data(self):
         data = self.serialize_tree()

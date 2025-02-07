@@ -19,6 +19,15 @@ from frontend.models.modbus import ModbusRequest, ModbusClient
 from frontend.common import ITEMS
 
 
+FUNCTIONS_DICT = {
+    "read": ["Read Holding Registers", "Read Input Registers", "Read Coils", "Read Discrete Inputs"],
+    "write": ["Write Coils", "Write Registers"]
+}
+FUNCTIONS = []
+for functions in FUNCTIONS_DICT.values():
+    FUNCTIONS += functions
+
+
 class IconTextWidget(QWidget):
     def __init__(self, text, icon_path, parent=None):
         super().__init__(parent)
@@ -259,18 +268,10 @@ class ModbusRequestTabWidget(QWidget):
         self.model = model
         self.item = self.model.get_selected_item()
 
-        self.functions_dict = {
-            "read": ["Read Holding Registers", "Read Input Registers", "Read Coils", "Read Discrete Inputs"],
-            "write": ["Write Coils", "Write Registers"]
-        }
-        self.functions = []
-        for functions in self.functions_dict.values():
-            self.functions += functions
-
         self.grid_layout = CustomGridLayout()
 
         self.function_combo = CustomComboBox()
-        self.function_combo.addItems(self.functions)
+        self.function_combo.addItems(FUNCTIONS)
         self.function_combo.set_item(self.item.function)
         self.grid_layout.add_widget(QLabel("Modbus Function:"), self.function_combo)
 
@@ -314,7 +315,7 @@ class ModbusRequestTabWidget(QWidget):
     def update_input_visibility(self):
         selected_function = self.function_combo.currentText()
 
-        if selected_function in self.functions_dict["write"]:
+        if selected_function in FUNCTIONS_DICT["write"]:
             self.grid_layout.show_row(0, 5)
         else:
             self.grid_layout.hide_row(0, 5)
@@ -548,8 +549,16 @@ class ModbusResponseWidget(QWidget):
 
         self.tabs.addTab(raw_data_tab, "Raw Data")
 
+        self.model.signal_update_item.connect(self.update_input_visibility)
         if self.item.last_response:
             self.process_response(self.item.last_response)
+
+    def update_input_visibility(self):
+        response_tab_index = self.tabs.indexOf(self.response_tab)
+        if self.item.function in FUNCTIONS_DICT["write"]:
+            self.tabs.removeTab(response_tab_index)
+        elif response_tab_index < 0:
+            self.tabs.insertTab(0, self.response_tab, "Response")
 
     def process_response(self, response):
         if "error_message" in response:
