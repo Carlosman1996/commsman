@@ -1,4 +1,3 @@
-TODO: map information in response results tab
 TODO: Apply values formats
 TODO: execute button maintains like clicked. Avoid to be clicked until request has reached
 

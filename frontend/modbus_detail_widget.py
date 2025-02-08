@@ -484,16 +484,16 @@ class ModbusResponseWidget(QWidget):
         self.data_type_menu.addItem("Float")
         self.data_type_menu.addItem("String")
         self.data_type_menu.setMaximumWidth(200)
-        data_type_label = QLabel("Data type:")
+        self.data_type_label = QLabel("Data type:")
 
-        data_type_label.setMaximumWidth(150)
-        data_type_label.setMinimumWidth(150)
-        data_type_label.setMaximumHeight(30)
+        self.data_type_label.setMaximumWidth(150)
+        self.data_type_label.setMinimumWidth(150)
+        self.data_type_label.setMaximumHeight(30)
 
         self.data_type_menu.setMaximumWidth(200)
         self.data_type_menu.setMinimumWidth(200)
 
-        self.data_type_layout.addWidget(data_type_label)
+        self.data_type_layout.addWidget(self.data_type_label)
         self.data_type_layout.addWidget(self.data_type_menu)
         self.response_layout.addLayout(self.data_type_layout)
 
@@ -517,12 +517,9 @@ class ModbusResponseWidget(QWidget):
         general_info_group = QGroupBox("General Information")
         general_info_layout = CustomGridLayout()
         self.status_label = QLabel("N/A")
-        self.status_message_label = QLabel("N/A")
-        self.status_message_label.setWordWrap(True)
         self.elapsed_time_label = QLabel("N/A")
         self.timestamp_label = QLabel("N/A")
         general_info_layout.add_widget(QLabel("Status:"), self.status_label)
-        general_info_layout.add_widget(QLabel("Status Message:"), self.status_message_label)
         general_info_layout.add_widget(QLabel("Elapsed Time:"), self.elapsed_time_label)
         general_info_layout.add_widget(QLabel("Timestamp:"), self.timestamp_label)
         general_info_group.setLayout(general_info_layout)
@@ -587,22 +584,21 @@ class ModbusResponseWidget(QWidget):
         if response.get("error_message"):
             self.status_label.setText("Fail")
             self.status_label.setStyleSheet("color: red;")
-            self.status_message_label.setText(
-                f"Error: {response.get('error_message')}")
             self.error_data_edit.setText(
                 f"Status: {self.status_label.text()}\n\nError: {response.get('error_message')}")
             self.error_data_edit.show()  # Show error group
+            self.data_type_label.hide()
             self.data_type_menu.hide()
             self.values_table.hide()  # Hide values table
         else:
             self.status_label.setText("Pass")
             self.status_label.setStyleSheet("color: green;")
-            self.status_message_label.setText("-")
             self.values_table.setRowCount(len(response.get("registers")))
             for row, register in enumerate(response.get("registers")):
                 self.values_table.setItem(row, 0, QTableWidgetItem(str(response.get("address") + row)))
                 self.values_table.setItem(row, 1, QTableWidgetItem(str(register)))
             self.error_data_edit.hide()  # Show error group
+            self.data_type_label.show()
             self.data_type_menu.show()
             self.values_table.show()  # Hide values table
 

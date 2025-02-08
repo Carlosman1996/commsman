@@ -25,6 +25,8 @@ class ModbusHandler(BaseProtocol):
         def wrap(*args, **kwargs):
             start_time = time.time()
 
+            packet_recv = ""
+            packet_send = ""
             try:
                 response = func(*args, **kwargs)
                 packet_recv = args[0].last_packet_recv
@@ -44,9 +46,7 @@ class ModbusHandler(BaseProtocol):
                     "transaction_id": transaction_id,
                     "protocol_id": protocol_id,
                     "function_code": function_code,
-                    "byte_count": byte_count,
-                    "raw_packet_recv": " ".join(f"0x{byte:02X}" for byte in packet_recv),
-                    "raw_packet_send": " ".join(f"0x{byte:02X}" for byte in packet_send)
+                    "byte_count": byte_count
                 }
 
                 if "Read" in kwargs.get("function"):
@@ -58,6 +58,9 @@ class ModbusHandler(BaseProtocol):
 
             except Exception as e:
                 response_dict = {"error_message": e}
+
+            response_dict["raw_packet_recv"] = " ".join(f"0x{byte:02X}" for byte in packet_recv)
+            response_dict["raw_packet_send"] = " ".join(f"0x{byte:02X}" for byte in packet_send)
 
             end_time = time.time()
             elapsed_time = end_time - start_time
@@ -72,6 +75,8 @@ class ModbusHandler(BaseProtocol):
 
     @decode_response
     def execute_request(self, function: str, address: int, count: int, slave: int, values: list = None):
+        self.last_packet_send = None
+        self.last_packet_recv = None
 
         def check_values():
             # Validate values:
