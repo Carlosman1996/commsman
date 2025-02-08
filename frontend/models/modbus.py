@@ -30,6 +30,25 @@ class ModbusClient:
 
 
 @dataclass
+class ModbusResponse:
+    name: str
+    item_type: str = "Modbus"
+    slave: int = None
+    transaction_id: int = None
+    protocol_id: int = None
+    function_code: int = None
+    address: int = None
+    registers: list[int] = field(default_factory=list)
+    raw_packet_recv: str = ""
+    raw_packet_send: str = ""
+    elapsed_time: float = None
+    timestamp: str = None
+    data_type: str = "16-bit Integer"
+    byte_count: int = None
+    error_message: str = ""
+
+
+@dataclass
 class ModbusRequest:
     name: str
     item_type: str = "Modbus"
@@ -40,7 +59,7 @@ class ModbusRequest:
     address: int = 0
     count: int = 1
     values: list = field(default_factory=list)
-    last_response: dict = None
+    last_response: ModbusResponse = None
 
     def __setattr__(self, key, value):
         if key == "item_type" and not isinstance(value, str):

@@ -1,4 +1,5 @@
-TODO: Apply values formats
+TODO: process raw data to extract registers from write multiple registers
+TODO: disable edit items on response table
 TODO: execute button maintains like clicked. Avoid to be clicked until request has reached
 
 

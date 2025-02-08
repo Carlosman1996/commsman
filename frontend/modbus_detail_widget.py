@@ -1,21 +1,16 @@
-import struct
 import sys
 
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QComboBox
-from PyQt6.QtCharts import QChartView, QChart, QLineSeries, QValueAxis
-from PyQt6.QtCore import Qt, QThread
-from PyQt6.QtGui import QIcon, QPainter
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QLineEdit, QSpinBox, QComboBox, QPushButton,
-                             QTabWidget, QTextEdit, QGridLayout, QPlainTextEdit,
+                             QTabWidget, QTextEdit, QGridLayout,
                              QHBoxLayout, QTableWidget, QAbstractItemView, QHeaderView, QGroupBox,
-                             QTableWidgetItem, QSplitter, QMenu)
+                             QTableWidgetItem, QSplitter)
 
-from backend.core.backend_manager import BackendManager
-from backend.protocols.modbus_handler import ModbusHandler
+from backend.protocols.modbus_handler import ModbusHandler, convert_value_after_sending
 from frontend.model import Model
-from frontend.models.modbus import ModbusRequest, ModbusClient
+from frontend.models.modbus import ModbusRequest, ModbusClient, ModbusResponse
 from frontend.common import ITEMS
 
 
@@ -291,7 +286,7 @@ class ModbusRequestTabWidget(QWidget):
         self.grid_layout.add_widget(QLabel("Unit ID:"), self.unit_id_spinbox)
 
         self.data_type_combo = CustomComboBox()
-        self.data_type_combo.addItems(["16-bit Integer", "16-bit Unsigned Integer", "32-bit Integer", "32-bit Unsigned Integer", "Hexadecimal", "Float", "String"])
+        self.data_type_combo.addItems(["16-bit Integer", "16-bit Unsigned Integer", "32-bit Integer", "32-bit Unsigned Integer", "Hexadecimal", "Float", "Double", "String"])
         self.data_type_combo.set_item(self.item.data_type)
         self.grid_layout.add_widget(QLabel("Data Type:"), self.data_type_combo)
 
@@ -325,79 +320,6 @@ class ModbusRequestTabWidget(QWidget):
             self.grid_layout.hide_row(0, 5)
             self.quantity_spinbox.setRange(1, 247)
 
-    def validate_all_inputs(self):
-        self.values_table.blockSignals(True)
-
-        data_type = self.data_type_combo.currentText()
-
-        for row in range(self.values_table.rowCount()):
-            # TODO: bug related with fails in first row
-            item = self.values_table.item(row, 0)  # Get the item in the first column
-            if not item:
-                # Create a QTableWidgetItem if it's missing
-                item = QTableWidgetItem()
-                self.values_table.setItem(row, 0, item)
-
-            # Validate the input
-            is_valid, error_message = self.validate_input(item.text(), data_type)
-
-            if not is_valid and error_message:  # If invalid and there's an error message
-                item.setText(f"⚠ {item.text().replace('⚠ ', '')}")
-                item.setToolTip(error_message)  # Show the error message as a tooltip
-
-            elif not is_valid and not error_message:  # If invalid but no error message
-                item.setText(item.text().replace("⚠ ", ""))
-                item.setToolTip("Insert a value")  # Show a generic tooltip
-                enable_execute_button = False
-
-            else:  # If valid
-                item.setText(item.text().replace("⚠ ", ""))
-                item.setToolTip("")  # Clear tooltip
-
-        self.values_table.clearSelection()
-        self.values_table.blockSignals(False)
-
-    def validate_input(self, text, data_type):
-        """Validates input based on data type. Returns (is_valid, error_message)."""
-        text = text.strip()
-        if not text:
-            return False, ""
-
-        try:
-            if data_type == "16-bit Integer":
-                value = int(text)
-                if not -32768 <= value <= 32767:
-                    return False, "Value must be between -32768 and 32767"
-            elif data_type == "16-bit Unsigned Integer":
-                value = int(text)
-                if not 0 <= value <= 65535:
-                    return False, "Value must be between 0 and 65535"
-            elif data_type == "32-bit Integer":
-                value = int(text)
-                if not -2147483648 <= value <= 2147483647:
-                    return False, "Value must be between -2147483648 and 2147483647"
-            elif data_type == "32-bit Unsigned Integer":
-                value = int(text)
-                if not 0 <= value <= 4294967295:
-                    return False, "Value must be between 0 and 4294967295"
-            elif data_type == "Hexadecimal":
-                int(text, 16)
-                return True, ""
-            elif data_type == "Float":
-                float(text)
-                return True, ""
-            elif data_type == "String":
-                str(text)
-                return True, ""
-            else:
-                return False, "Unknown data type"
-        except ValueError or BaseException:
-            return False, "Wrong format"
-        except OverflowError:
-            return False, "Value out of range"
-
-        return True, ""
-
     def update_table_rows(self):
         value = self.quantity_spinbox.value()
         current_rows = self.values_table.rowCount()
@@ -412,7 +334,6 @@ class ModbusRequestTabWidget(QWidget):
 
         self.update_input_visibility()
         self.update_table_rows()
-        self.validate_all_inputs()
 
         update_data = {
             "function": self.function_combo.currentText(),
@@ -475,26 +396,20 @@ class ModbusResponseWidget(QWidget):
         self.data_type_layout = QHBoxLayout()
         self.data_type_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
-        self.data_type_menu = CustomComboBox()
-        self.data_type_menu.addItem("16-bit Integer")
-        self.data_type_menu.addItem("16-bit Unsigned Integer")
-        self.data_type_menu.addItem("32-bit Integer")
-        self.data_type_menu.addItem("32-bit Unsigned Integer")
-        self.data_type_menu.addItem("Hexadecimal")
-        self.data_type_menu.addItem("Float")
-        self.data_type_menu.addItem("String")
-        self.data_type_menu.setMaximumWidth(200)
-        self.data_type_label = QLabel("Data type:")
+        self.data_type_combo = CustomComboBox()
+        self.data_type_combo.addItems(["16-bit Integer", "16-bit Unsigned Integer", "32-bit Integer", "32-bit Unsigned Integer", "Hexadecimal", "Float", "Double", "String"])
+        if self.item.last_response:
+            self.data_type_combo.set_item(self.item.last_response.data_type)
+        self.data_type_combo.setMaximumWidth(200)
+        self.data_type_combo.setMinimumWidth(200)
+        self.data_type_label = QLabel("Show data type:")
 
         self.data_type_label.setMaximumWidth(150)
         self.data_type_label.setMinimumWidth(150)
         self.data_type_label.setMaximumHeight(30)
 
-        self.data_type_menu.setMaximumWidth(200)
-        self.data_type_menu.setMinimumWidth(200)
-
         self.data_type_layout.addWidget(self.data_type_label)
-        self.data_type_layout.addWidget(self.data_type_menu)
+        self.data_type_layout.addWidget(self.data_type_combo)
         self.response_layout.addLayout(self.data_type_layout)
 
         # Error display (initially hidden)
@@ -553,113 +468,68 @@ class ModbusResponseWidget(QWidget):
         self.raw_data_edit.setReadOnly(True)
         raw_data_layout.addWidget(self.raw_data_edit)
 
+        self.data_type_combo.currentIndexChanged.connect(self.update_table)
         self.tabs.addTab(raw_data_tab, "Raw Data")
 
-        self.model.signal_update_item.connect(self.update_input_visibility)
-        if self.item.last_response:
-            self.process_response(self.item.last_response)
+        self.process_response(load_data=True)
 
-    def update_input_visibility(self):
-        pass
-        # Hide response tab in write registers operations:
-        # response_tab_index = self.tabs.indexOf(self.response_tab)
-        # if self.item.function in FUNCTIONS_DICT["write"]:
-        #     self.tabs.removeTab(response_tab_index)
-        # elif response_tab_index < 0:
-        #     self.tabs.insertTab(0, self.response_tab, "Response")
+    def process_response(self, response=None, load_data=False):
+        if not load_data:
+            response_dataclass = ModbusResponse(name=self.item.name, **response)
+            self.model.update_item(last_response=response_dataclass)
+        else:
+            if self.item.last_response is None:
+                return
 
-    def process_response(self, response):
-        self.elapsed_time_label.setText(str(response.get("elapsed_time")) + " ms")
-        self.timestamp_label.setText(str(response.get("timestamp")))
+        self.elapsed_time_label.setText(str(self.item.last_response.elapsed_time) + " ms")
+        self.timestamp_label.setText(str(self.item.last_response.timestamp))
 
-        self.transaction_id_label.setText(str(response.get("transaction_id", "-")))
-        self.protocol_id_label.setText(str(response.get("protocol_id", "-")))
-        self.unit_id_label.setText(str(response.get("slave_id", "-")))
-        self.function_code_label.setText(str(response.get("function_code", "-")))
-        self.byte_count_label.setText(str(response.get("byte_count", "-")))
+        self.transaction_id_label.setText(str(self.item.last_response.transaction_id))
+        self.protocol_id_label.setText(str(self.item.last_response.protocol_id))
+        self.unit_id_label.setText(str(self.item.last_response.slave))
+        self.function_code_label.setText(str(self.item.last_response.function_code))
+        self.byte_count_label.setText(str(self.item.last_response.byte_count))
 
         self.raw_data_edit.setText(
-            f"SEND: {response.get('raw_packet_send', '-')}\n\nRECV: {response.get('raw_packet_recv', '-')}")
+            f"SEND: {self.item.last_response.raw_packet_send}\n\nRECV: {self.item.last_response.raw_packet_recv}")
 
-        if response.get("error_message"):
+        if self.item.last_response.error_message:
+            self.data_type_label.hide()
+            self.data_type_combo.hide()
+            self.values_table.hide()
+
             self.status_label.setText("Fail")
             self.status_label.setStyleSheet("color: red;")
             self.error_data_edit.setText(
-                f"Status: {self.status_label.text()}\n\nError: {response.get('error_message')}")
+                f"Status: {self.status_label.text()}\n\nError: {self.item.last_response.error_message}")
             self.error_data_edit.show()  # Show error group
-            self.data_type_label.hide()
-            self.data_type_menu.hide()
-            self.values_table.hide()  # Hide values table
         else:
+            self.error_data_edit.hide()
+            self.data_type_label.show()
+            self.data_type_combo.show()
+            self.values_table.show()
+
             self.status_label.setText("Pass")
             self.status_label.setStyleSheet("color: green;")
-            self.values_table.setRowCount(len(response.get("registers")))
-            for row, register in enumerate(response.get("registers")):
-                self.values_table.setItem(row, 0, QTableWidgetItem(str(response.get("address") + row)))
-                self.values_table.setItem(row, 1, QTableWidgetItem(str(register)))
-            self.error_data_edit.hide()  # Show error group
-            self.data_type_label.show()
-            self.data_type_menu.show()
-            self.values_table.show()  # Hide values table
+            self.data_type_combo.set_item(self.item.last_response.data_type)
+            self.update_table()
 
-        self.model.update_item(last_response=response)
+    def update_table(self):
+        self.item.last_response.data_type = self.data_type_combo.currentText()
+        self.model.update_item(last_response=self.item.last_response)
 
-    def update_data_type(self, action):
-        """Update the data type and convert values accordingly."""
-        data_type = action.text()
+        data_type = self.data_type_combo.currentText()
+        self.values_table.clear()
 
-        # Sample raw data (replace with actual Modbus response)
-        raw_values = [1234, 5678]
-
-        # Convert values based on selected data type
-        converted_values = []
-        for value in raw_values:
-            if data_type == "16-bit Integer":
-                converted_values.append(self.convert_to_16bit_int(value))
-            elif data_type == "16-bit Unsigned Integer":
-                converted_values.append(self.convert_to_16bit_uint(value))
-            elif data_type == "32-bit Integer":
-                converted_values.append(self.convert_to_32bit_int([value, 0]))  # Example for 32-bit
-            elif data_type == "32-bit Unsigned Integer":
-                converted_values.append(self.convert_to_32bit_uint([value, 0]))  # Example for 32-bit
-            elif data_type == "Hexadecimal":
-                converted_values.append(self.convert_to_hex(value))
-            elif data_type == "Float":
-                converted_values.append(self.convert_to_float([value, 0]))  # Example for 32-bit float
-            elif data_type == "String":
-                converted_values.append(self.convert_to_string(value))
-
-        # Update the table with converted values
-        self.update_table(converted_values)
-
-    # Conversion functions
-    def convert_to_16bit_int(self, value):
-        """Convert to 16-bit signed integer."""
-        return struct.unpack('>h', value.to_bytes(2, byteorder='big'))[0]
-
-    def convert_to_16bit_uint(self, value):
-        """Convert to 16-bit unsigned integer."""
-        return value
-
-    def convert_to_32bit_int(self, values):
-        """Convert to 32-bit signed integer."""
-        return struct.unpack('>i', bytes(values))[0]
-
-    def convert_to_32bit_uint(self, values):
-        """Convert to 32-bit unsigned integer."""
-        return struct.unpack('>I', bytes(values))[0]
-
-    def convert_to_hex(self, value):
-        """Convert to hexadecimal string."""
-        return hex(value)
-
-    def convert_to_float(self, values):
-        """Convert to 32-bit float."""
-        return struct.unpack('>f', bytes(values))[0]
-
-    def convert_to_string(self, value):
-        """Convert to string."""
-        return str(value)
+        address_values = convert_value_after_sending(data_type, self.item.last_response.address, self.item.last_response.registers)
+        self.values_table.setRowCount(len(list(address_values.keys())))
+        row = 0
+        for address, value in address_values.items():
+            address_item = QTableWidgetItem(str(address))
+            self.values_table.setItem(row, 0, address_item)
+            value_item = QTableWidgetItem(str(value))
+            self.values_table.setItem(row, 1, value_item)
+            row += 1
 
 
 class ModbusDetail(QWidget):
@@ -708,7 +578,7 @@ class ModbusDetail(QWidget):
 
         # Results
         self.results_tabs = ModbusResponseWidget(model)
-        if not self.item.last_response:
+        if not isinstance(self.item.last_response, ModbusResponse):
             self.results_tabs.setVisible(False)
 
         # Fill splitter:
@@ -727,7 +597,8 @@ class ModbusDetail(QWidget):
         modbus_handler = ModbusHandler()
         modbus_handler.connect(host=self.item.client.tcp_host,
                                port=self.item.client.tcp_port)
-        request_result = modbus_handler.execute_request(function=self.item.function,
+        request_result = modbus_handler.execute_request(data_type=self.item.data_type,
+                                                        function=self.item.function,
                                                         address=self.item.address,
                                                         count=self.item.count,
                                                         slave=self.item.slave,
