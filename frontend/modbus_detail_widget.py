@@ -318,6 +318,7 @@ class ModbusRequestTabWidget(QWidget):
                 self.quantity_spinbox.setRange(1, 247)
         else:
             self.grid_layout.hide_row(0, 5)
+            self.values_table.clear()
             self.quantity_spinbox.setRange(1, 247)
 
     def update_table_rows(self):
@@ -331,7 +332,6 @@ class ModbusRequestTabWidget(QWidget):
                 self.values_table.removeRow(current_rows - index - 1)
 
     def update_item(self):
-
         self.update_input_visibility()
         self.update_table_rows()
 
