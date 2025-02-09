@@ -2,7 +2,6 @@ import struct
 import time
 
 from pymodbus.client import ModbusTcpClient
-from backend.protocols.base_protocol import BaseProtocol
 
 
 def convert_value_before_sending(data_type: str, values: list):
@@ -86,7 +85,7 @@ def convert_value_after_sending(data_type: str, address: int, values: list):
     return address_values
 
 
-class ModbusHandler(BaseProtocol):
+class ModbusHandler:
     def __init__(self):
         self.client = None
         self.last_packet_send = None

@@ -441,7 +441,7 @@ class ModbusResponseWidget(QWidget):
         metadata_layout.addWidget(general_info_group)
 
         # Headers and Data
-        self.headers_group = QGroupBox("Headers and Data")
+        headers_group = QGroupBox("Headers and Data")
         headers_layout = CustomGridLayout()
         self.transaction_id_label = QLabel("N/A")
         self.protocol_id_label = QLabel("N/A")
@@ -453,8 +453,8 @@ class ModbusResponseWidget(QWidget):
         headers_layout.add_widget(QLabel("Unit ID:"), self.unit_id_label)
         headers_layout.add_widget(QLabel("Function Code:"), self.function_code_label)
         headers_layout.add_widget(QLabel("Byte Count:"), self.byte_count_label)
-        self.headers_group.setLayout(headers_layout)
-        metadata_layout.addWidget(self.headers_group)
+        headers_group.setLayout(headers_layout)
+        metadata_layout.addWidget(headers_group)
 
         self.tabs.addTab(metadata_tab, "Metadata")
 
@@ -475,7 +475,6 @@ class ModbusResponseWidget(QWidget):
 
     def process_response(self, response=None, load_data=False):
         if not load_data:
-            print(response)
             response_dataclass = ModbusResponse(name=self.item.name, **response)
             self.model.update_item(last_response=response_dataclass)
         else:
@@ -485,6 +484,12 @@ class ModbusResponseWidget(QWidget):
         self.elapsed_time_label.setText(str(self.item.last_response.elapsed_time) + " ms")
         self.timestamp_label.setText(str(self.item.last_response.timestamp))
 
+        self.transaction_id_label.setText(str(self.item.last_response.transaction_id))
+        self.protocol_id_label.setText(str(self.item.last_response.protocol_id))
+        self.unit_id_label.setText(str(self.item.last_response.slave))
+        self.function_code_label.setText(str(self.item.last_response.function_code))
+        self.byte_count_label.setText(str(self.item.last_response.byte_count))
+
         self.raw_data_edit.setText(
             f"SEND: {self.item.last_response.raw_packet_send}\n\nRECV: {self.item.last_response.raw_packet_recv}")
 
@@ -492,7 +497,6 @@ class ModbusResponseWidget(QWidget):
             self.data_type_label.hide()
             self.data_type_combo.hide()
             self.values_table.hide()
-            self.headers_group.setVisible(False)
 
             self.status_label.setText("Fail")
             self.status_label.setStyleSheet("color: red;")
@@ -504,13 +508,6 @@ class ModbusResponseWidget(QWidget):
             self.data_type_label.show()
             self.data_type_combo.show()
             self.values_table.show()
-            self.headers_group.setVisible(True)
-
-            self.transaction_id_label.setText(str(self.item.last_response.transaction_id))
-            self.protocol_id_label.setText(str(self.item.last_response.protocol_id))
-            self.unit_id_label.setText(str(self.item.last_response.slave))
-            self.function_code_label.setText(str(self.item.last_response.function_code))
-            self.byte_count_label.setText(str(self.item.last_response.byte_count))
 
             self.status_label.setText("Pass")
             self.status_label.setStyleSheet("color: green;")
