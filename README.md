@@ -1,19 +1,268 @@
-TODO: process raw data to extract registers from write multiple registers
-TODO: disable edit items on response table
-TODO: execute button maintains like clicked. Avoid to be clicked until request has reached
+# *Business plan*
+Actualmente, no hay una solución tan completa y amigable como Postman para trabajar específicamente con MODBUS o protocolos industriales como MQTT, OPC-UA o CAN. Hay herramientas que permiten probar MODBUS (como **Simply Modbus**, **Modbus Poll**, o bibliotecas en Python como `pymodbus`), pero carecen de una interfaz moderna y extensibilidad comparable a Postman. Esto representa una excelente oportunidad para desarrollar algo innovador.
 
-TODO: results table. Think about how to adjunts results table to show all return text
-TODO: add description tab to all requests
-TODO: think about moving general results tab to top view. Or add vertical splitter to show all information directly
+---
 
-TODO: improve usability: save last tab opened in each request
-TODO: Print all results in different format types
-TODO: add connection name for reusability
-TODO: allow to reuse "previous" connections
-TODO: allow to export results
-TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
+## **Idea del Proyecto: "Postman para Protocolos Industriales"**  
 
-FEATURES PLAN:
+Crea una herramienta moderna, extensible y fácil de usar para pruebas y simulación de protocolos industriales, con énfasis en MODBUS. 
+
+---
+
+### **Características Clave:**
+
+#### 1. **Compatibilidad Multiplataforma**  
+- Aplicación de escritorio y web (Electron o Tauri para escritorio, con una API backend para conectividad).  
+- Soporte para MODBUS RTU, MODBUS TCP, MQTT, OPC-UA, y otros protocolos industriales comunes.  
+
+#### 2. **Interfaz Gráfica Intuitiva**  
+- Interfaz similar a Postman, con:  
+  - Espacio para configurar parámetros como dirección IP, puerto, dirección del esclavo y registros.  
+  - Ventanas para enviar y recibir datos de manera visual.  
+  - Guardado de "colecciones" de pruebas (similar a Postman).  
+
+#### 3. **Simulación de Dispositivos**  
+- Simulación de un esclavo MODBUS (o maestro), ideal para pruebas sin hardware físico.  
+
+#### 4. **Pruebas Automatizadas**  
+- Posibilidad de programar scripts para enviar solicitudes repetitivas y validar respuestas.  
+- Uso de Python (por ejemplo, `pymodbus`) o un lenguaje propio embebido.  
+
+#### 5. **Análisis Avanzado**  
+- Gráficos y visualización de datos en tiempo real para registros leídos.  
+- Alertas de errores en el protocolo, como CRC inválidos o timeouts.  
+
+#### 6. **Extensibilidad y Plugins**  
+- Soporte para agregar protocolos adicionales mediante un sistema de plugins.  
+- API para que los usuarios desarrollen extensiones personalizadas.  
+
+#### 7. **Integración con Hardware**  
+- Compatibilidad con interfaces USB-RS485, Ethernet y tarjetas GPIO (como Raspberry Pi).  
+
+---
+
+### **Tecnologías Sugeridas:**
+
+#### **Frontend:**  
+- **Electron.js**: Para crear una aplicación de escritorio multiplataforma con una experiencia similar a Postman.  
+- **React.js o Vue.js**: Para la interfaz gráfica.  
+
+#### **Backend:**  
+- **Python**: Usando `pymodbus` o similares para implementar las llamadas MODBUS.  
+- **Node.js**: Para manejar protocolos adicionales como MQTT o OPC-UA.  
+
+#### **Protocolos:**  
+- MODBUS RTU/TCP (`pymodbus`, `minimalmodbus`).  
+- MQTT (`paho-mqtt`).  
+- OPC-UA (`python-opcua`).  
+
+---
+
+### **Monetización:**
+
+1. **Versión Freemium:**  
+   - Funcionalidad básica gratuita para MODBUS.  
+   - Versión premium con características avanzadas como simulación, automatización de pruebas, y compatibilidad con otros protocolos.  
+
+2. **Suscripciones:**  
+   - Cobrar una suscripción mensual o anual por acceso a características premium.  
+
+3. **Venta de Plugins:**  
+   - Cobrar por plugins adicionales (soporte para más protocolos o análisis avanzados).  
+
+4. **Servicios de Consultoría:**  
+   - Ofrecer soporte técnico o personalización para empresas.  
+
+5. **Hardware Asociado:**  
+   - Vender hardware preconfigurado compatible con la herramienta (conversores MODBUS, kits de prueba).  
+
+---
+
+### **Pasos para Llevarlo a Producción:**
+
+1. **Prototipo:**  
+   - Crea una herramienta básica que permita leer y escribir registros MODBUS TCP/RTU.  
+   - Usa Python (`pymodbus`) y una interfaz sencilla con Tkinter o PyQt para comenzar.  
+
+2. **Validación:**  
+   - Comparte el prototipo con comunidades de QA y electrónica para recibir feedback.  
+   - Pregunta a potenciales usuarios qué funcionalidades necesitarían.  
+
+3. **Escalabilidad:**  
+   - Mejora la interfaz y agrega protocolos adicionales.  
+   - Lanza una versión Beta pública en GitHub.  
+
+4. **Monetización Inicial:**  
+   - Ofrece servicios de soporte y personalización para pequeñas empresas que usen la herramienta.  
+
+5. **Marketing:**  
+   - Publicita en foros de automatización industrial, QA y electrónica (Reddit, Hackster.io).  
+   - Participa en eventos tecnológicos relacionados con la industria 4.0 e IoT.  
+
+---
+
+## *Puntos clave*
+
+---
+
+### **1. Es un nicho con alta especialización y poca competencia directa**  
+Herramientas como Postman dominan en HTTP, pero en protocolos industriales (MODBUS, MQTT, SPI, I2C) hay muy pocas opciones accesibles, centralizadas y fáciles de usar. **Si logras cubrir esa brecha, podrías convertirte en la referencia del sector**.  
+
+### **2. Estás construyendo algo con una necesidad real**  
+Tú mismo trabajas en **QA de software para hardware**, así que **sabes de primera mano** lo que falta en las herramientas actuales. Esto significa que ya tienes validación previa: **el problema existe y lo sufres en tu día a día**.  
+
+Si lo necesitas tú, lo necesitan otros testers, ingenieros de automatización y desarrolladores de hardware.  
+
+---
+
+### **3. Todo software de nicho puede ser rentable**  
+- Empresas están dispuestas a pagar por herramientas especializadas que mejoran su productividad.  
+- Si CommsMan **ahorra tiempo en pruebas y automatización**, **se vende solo** porque el ROI es inmediato para empresas que trabajan con estos protocolos.  
+- Un SaaS bien planteado puede generar ingresos recurrentes sin necesidad de miles de usuarios.  
+
+Ejemplo: **Postman empezó como una herramienta sencilla y ahora es un estándar en APIs**.  
+
+---
+
+### **4. No necesitas que sea un éxito global para que sea rentable**  
+A diferencia de productos de consumo masivo, **con pocos clientes B2B puedes generar ingresos sólidos**.  
+- Supongamos que CommsMan ofrece una versión premium a **30€/mes por usuario**.  
+- Con **100 usuarios de pago**, ya tienes **3.000€/mes**.  
+- Empresas pueden pagar aún más si ofreces integraciones avanzadas o soporte premium.  
+
+---
+
+Entiendo que deseas realizar un análisis de la competencia para **CommsMan**, enfocándote en herramientas similares a Postman pero orientadas a protocolos industriales. A continuación, te presento un análisis detallado:
+
+---
+
+## **Análisis de Competencia para CommsMan**
+
+### **1. Herramientas Similares a Postman**
+
+Aunque Postman es una herramienta ampliamente utilizada para probar APIs RESTful, existen otras alternativas en el mercado que ofrecen funcionalidades similares:
+
+- **SoapUI**: Enfocado en pruebas de servicios web SOAP y REST, permite pruebas funcionales, de seguridad y de carga.
+
+- **Katalon Studio**: Ofrece una solución de automatización de pruebas para aplicaciones web, móviles y APIs.
+
+- **Insomnia**: Proporciona una interfaz sencilla para pruebas de APIs REST y GraphQL.
+
+- **Thunder Client**: Integrado en Visual Studio Code, es una alternativa ligera para pruebas de APIs.
+
+Sin embargo, estas herramientas están principalmente orientadas a protocolos HTTP/REST y no ofrecen soporte nativo para protocolos industriales como MODBUS, MQTT, SPI o I2C.
+
+### **2. Herramientas para Protocolos Industriales**
+
+En el ámbito de los protocolos industriales, las opciones son más limitadas y, a menudo, especializadas en un solo protocolo:
+
+- **MODBUS Tester**: Herramienta sencilla para pruebas de comunicación MODBUS.
+
+- **MQTT.fx**: Cliente MQTT para pruebas y depuración de comunicaciones MQTT.
+
+- **Bus Pirate**: Hardware y software para interactuar con diversos protocolos como SPI, I2C y UART.
+
+Estas herramientas suelen ser específicas para un solo protocolo y carecen de una interfaz unificada o capacidades de automatización avanzadas.
+
+### **3. Oportunidad para CommsMan**
+
+La falta de una herramienta integral que combine la facilidad de uso de Postman con soporte para múltiples protocolos industriales presenta una oportunidad significativa:
+
+- **Integración de Múltiples Protocolos**: CommsMan puede destacarse al ofrecer soporte para diversos protocolos industriales en una sola plataforma.
+
+- **Automatización de Pruebas**: Implementar funcionalidades de automatización similares a las de Postman, adaptadas a protocolos industriales.
+
+- **Interfaz Intuitiva**: Desarrollar una interfaz de usuario que simplifique la configuración y ejecución de pruebas para diferentes protocolos.
+
+- **Extensibilidad**: Permitir la adición de nuevos protocolos o funcionalidades mediante plugins o módulos.
+
+### **4. Estrategia de Diferenciación**
+
+Para posicionarse efectivamente en el mercado, CommsMan debería:
+
+- **Enfocarse en la Usabilidad**: Ofrecer una experiencia de usuario intuitiva que reduzca la curva de aprendizaje.
+
+- **Soporte Técnico y Actualizaciones**: Proporcionar soporte continuo y actualizaciones para mantenerse al día con las necesidades de la industria.
+
+- **Comunidad y Colaboración**: Fomentar una comunidad de usuarios y desarrolladores que contribuyan al crecimiento y mejora de la herramienta.
+
+---
+
+En resumen, aunque existen herramientas para pruebas de APIs y protocolos industriales, ninguna ofrece una solución integral y unificada. CommsMan tiene la oportunidad de llenar este vacío al proporcionar una plataforma versátil y fácil de usar para profesionales que trabajan con múltiples protocolos industriales. 
+
+# *MVPs Plan*
+
+Para que **CommsMan** tenga un mínimo viable funcional y atractivo, debe cumplir con estos **MVP esenciales**:  
+
+---
+
+## **MVP 1: Base funcional (Estructura y UX mínima)**
+✅ **Gestión de requests**  
+- Árbol de carpetas/subcarpetas/requests con **drag & drop**.  
+- Creación, edición y eliminación de requests.  
+- Filtrado dinámico de elementos en el árbol.  
+
+✅ **Interfaz gráfica funcional (PyQt6)**  
+- Vista dividida: **árbol de requests** a la izquierda y **detalles de la request** a la derecha.  
+- Interfaz limpia e intuitiva.  
+
+✅ **Soporte para MODBUS (primer protocolo)**  
+- Envío manual de requests MODBUS con los parámetros básicos.  
+- Respuesta en un log de salida.  
+
+🎯 **Objetivo:** Que el usuario pueda gestionar y ejecutar requests MODBUS manualmente.  
+
+---
+
+## **MVP 2: Automatización y más protocolos**
+✅ **Soporte para más protocolos (MQTT, CAN Bus, SPI, I2C...)**  
+- Añadir al menos **uno o dos** protocolos más (ejemplo: **MQTT** y **I2C**).  
+
+✅ **Sistema de automatización**  
+- Permitir ejecutar **secuencias de requests** (una tras otra).  
+- Agregar validaciones simples (ejemplo: **esperar una respuesta específica**).  
+
+🎯 **Objetivo:** Que los usuarios puedan **automatizar secuencias de pruebas** en más de un protocolo.  
+
+---
+
+## **MVP 3: Integración con CI/CD y reporting**  
+✅ **Modo "headless" para pruebas automatizadas**  
+- Ejecutar requests y secuencias sin necesidad de UI.  
+- Generar logs estructurados en **JSON o XML**.  
+
+✅ **Exportación de reportes**  
+- Guardar logs y resultados en formatos como **CSV, JSON, XML o incluso gráficos en HTML**.  
+
+✅ **Plugins y extensibilidad**  
+- Soporte para **"fixtures" estilo pytest** (posibilidad de definir configuraciones reutilizables).  
+
+🎯 **Objetivo:** Empresas e ingenieros pueden **usar CommsMan en pipelines de CI/CD** y generar reportes detallados.  
+
+---
+
+## **MVP 4: Monetización y funcionalidades premium**
+✅ **Cuenta de usuario y licencias**  
+- Diferenciar una versión **gratuita** (uso básico) de una **versión premium** con más funcionalidades.  
+
+✅ **Funciones avanzadas**  
+- Soporte para **más protocolos industriales**.  
+- **Integración con bases de datos** para almacenar y recuperar requests previas.  
+- **Dashboard con métricas y gráficas** sobre la ejecución de tests.  
+
+🎯 **Objetivo:** Convertir CommsMan en **una herramienta con valor comercial**.  
+
+---
+
+## **¿Cuándo lanzar una versión de pago?**
+Puedes empezar a monetizar en **MVP 3** cuando ya soporte CI/CD y tenga valor para equipos de ingeniería.  
+
+- **Licencias individuales** (~30-50€/mes)  
+- **Planes para empresas** con soporte y automatización avanzada (~200-500€/mes).  
+
+---
+
+# *FEATURES PLAN*
 
 Here’s a list of **valuable features** and **expectations** a user might have for a system that organizes requests into folders, manages Modbus connections, and displays results. These ideas focus on **user experience**, **functionality**, and **practical use cases** without diving into code.
 
