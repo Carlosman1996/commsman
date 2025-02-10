@@ -1,12 +1,12 @@
 <!--?xml version="1.0" encoding="UTF-8"?-->
 <resources>
-    <color name="primaryColor">#182939</color>
-    <color name="primaryLightColor">#D5D7D6</color>
-    <color name="secondaryColor">#D5D7D6</color>
-    <color name="secondaryLightColor">#182939</color>
-    <color name="secondaryDarkColor">#e6e6e6</color>
-    <color name="primaryTextColor">#182939</color>
-    <color name="secondaryTextColor">#182939</color>
+    <color name="primaryColor">#4F005C</color> <!-- Deep purple -->
+    <color name="primaryLightColor">#3A0CA3</color> <!-- Lighter purple - Blue -->
+    <color name="secondaryColor">#F5F5F5</color> <!-- White-like background -->
+    <color name="secondaryLightColor">#FFFFFF</color> <!-- Full white -->
+    <color name="secondaryDarkColor">#E6E6E6</color> <!-- Slightly darker white -->
+    <color name="primaryTextColor">#4F005C</color> <!-- Purple text -->
+    <color name="secondaryTextColor">#4A0072</color> <!-- Purple text for accents -->
 </resources>
 
 <!--<palette>-->
