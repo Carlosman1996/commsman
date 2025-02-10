@@ -90,9 +90,13 @@ class CustomTable(QTableWidget):
     def __init__(self, headers):
         super().__init__()
 
-        self.setMaximumWidth(150 * len(headers))
-        self.setColumnCount(len(headers))
-        self.setHorizontalHeaderLabels(headers)
+        self.headers = headers
+        self.set_style()
+
+    def set_style(self):
+        self.setMaximumWidth(200 * len(self.headers))
+        self.setColumnCount(len(self.headers))
+        self.setHorizontalHeaderLabels(self.headers)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
         self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.setStyleSheet("""
@@ -106,6 +110,10 @@ class CustomTable(QTableWidget):
                 background-color: #D5D7D6;
             }
         """)
+
+    def clear(self):
+        super().clear()
+        self.set_style()
 
     def setItem(self, *args, **kwargs):
         super().setItem(*args, **kwargs)
@@ -132,7 +140,7 @@ class CustomTable(QTableWidget):
         self.setMaximumHeight(total_height)
 
     def set_items(self, items):
-        if isinstance(items, dict):
+        if isinstance(items, list):
             for row, item in enumerate(items):
                 self.setItem(row, 0, QTableWidgetItem(str(item)))
 

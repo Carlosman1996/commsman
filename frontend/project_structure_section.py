@@ -66,7 +66,7 @@ class CustomTreeView(QTreeView):
 
         self.setStyleSheet("""
             QTreeView::item:selected {
-                background-color: #E6E6E6;  /* Optional: Set a selection background color */
+                background-color: #C89BD2;  /* Optional: Set a selection background color */
             }
             QTreeView::branch {
                 margin-left: -5px;  /* Pull branch indicators closer to items */

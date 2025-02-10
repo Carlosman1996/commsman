@@ -4,9 +4,6 @@ idna==3.10
 Jinja2==3.1.5
 MarkupSafe==3.0.2
 pymodbus==3.8.3
-PyQt5==5.15.11
-PyQt5-Qt5==5.15.16
-PyQt5_sip==12.16.1
 PyQt6==6.8.0
 PyQt6-Charts==6.8.0
 PyQt6-Charts-Qt6==6.8.1
