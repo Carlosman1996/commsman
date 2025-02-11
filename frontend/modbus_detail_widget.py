@@ -3,9 +3,8 @@ import sys
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
-                             QLineEdit, QSpinBox, QComboBox, QPushButton,
-                             QTabWidget, QTextEdit, QGridLayout,
-                             QHBoxLayout, QTableWidget, QAbstractItemView, QHeaderView, QGroupBox,
+                             QLineEdit, QSpinBox, QPushButton,
+                             QTabWidget, QTextEdit, QHBoxLayout, QGroupBox,
                              QTableWidgetItem, QSplitter)
 
 from backend.modbus_handler import ModbusHandler, convert_value_after_sending

@@ -1,18 +1,13 @@
 import sys
 
-from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
-                             QLineEdit, QSpinBox, QComboBox, QPushButton,
-                             QTabWidget, QTextEdit, QGridLayout,
-                             QHBoxLayout, QTableWidget, QAbstractItemView, QHeaderView, QGroupBox,
-                             QTableWidgetItem, QSplitter)
+                             QLineEdit, QSpinBox, QTabWidget, QHBoxLayout, QSplitter)
 
-from backend.modbus_handler import ModbusHandler, convert_value_after_sending
 from frontend.components.components import CustomGridLayout, CustomTable, IconTextWidget, CustomComboBox
 from frontend.model import Model
 from frontend.models.collection import Collection
-from frontend.models.modbus import ModbusRequest, ModbusClient, ModbusResponse
+from frontend.models.modbus import ModbusClient
 from frontend.common import ITEMS
 
 
