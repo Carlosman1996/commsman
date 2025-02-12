@@ -199,6 +199,9 @@ class CustomModbusTcpClient(BaseClient):
         if self.client:
             self.client.close()
 
+    def is_connected(self) -> bool:
+        return self.client.is_socket_open()
+
 
 if __name__ == "__main__":
     modbus_handler = CustomModbusTcpClient(host="localhost", port=5020)

@@ -11,3 +11,8 @@ class BaseClient(ABC):
     def disconnect(self):
         """Disconnect from the client."""
         pass
+
+    @abstractmethod
+    def is_connected(self) -> bool:
+        """Check if the client is connected."""
+        pass
