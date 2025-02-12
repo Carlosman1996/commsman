@@ -3,12 +3,19 @@ from functools import partial
 
 
 @dataclass
-class ModbusClient:
+class ModbusTcpClient:
     name: str
     item_type: str = "Modbus"
     client_type: str = "TCP"
     tcp_host: str = "127.0.0.1"
     tcp_port: int = 502
+
+
+@dataclass
+class ModbusRtuClient:
+    name: str
+    item_type: str = "Modbus"
+    client_type: str = "RTU"
     serial_port: str = "COM1"
     serial_baudrate: int = 115200
 
@@ -36,7 +43,7 @@ class ModbusResponse:
 class ModbusRequest:
     name: str
     item_type: str = "Modbus"
-    client: ModbusClient = field(default_factory=partial(ModbusClient, "unknown"))
+    client: ModbusTcpClient = field(default_factory=partial(ModbusTcpClient, "unknown"))
     function: str = "Read Holding Registers"
     data_type: str = "16-bit Integer"
     slave: int = 0

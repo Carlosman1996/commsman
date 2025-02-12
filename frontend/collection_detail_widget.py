@@ -7,7 +7,6 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
 from frontend.components.components import CustomGridLayout, CustomTable, IconTextWidget, CustomComboBox
 from frontend.model import Model
 from frontend.models.collection import Collection
-from frontend.models.modbus import ModbusClient
 from frontend.common import ITEMS
 
 
