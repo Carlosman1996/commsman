@@ -83,6 +83,12 @@ class MainWindow(QMainWindow):
             self.main_window_sections_splitter.replaceWidget(1, self.detail_section)
         return self.detail_section
 
+    def closeEvent(self, *args, **kwargs):
+        """Override the close event to perform custom actions."""
+        # Close all handlers before exit:
+        self.model.protocol_client_manager.close_all_handlers()
+        super().closeEvent(*args, **kwargs)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

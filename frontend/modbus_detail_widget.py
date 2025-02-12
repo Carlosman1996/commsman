@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QTabWidget, QTextEdit, QHBoxLayout, QGroupBox,
                              QTableWidgetItem, QSplitter)
 
-from backend.modbus_handler import ModbusHandler, convert_value_after_sending
+from backend.custom_modbus_tcp_client import convert_value_after_sending
 from frontend.components.components import CustomGridLayout, CustomTable, IconTextWidget, CustomComboBox
 from frontend.model import Model
 from frontend.models.modbus import ModbusRequest, ModbusClient, ModbusResponse
@@ -54,6 +54,7 @@ class ModbusConnectionTabWidget(QWidget):
         index = self.serial_baudrate_combo.findText(str(self.item.client.serial_baudrate))
         self.serial_baudrate_combo.setCurrentIndex(index)
         self.grid_layout.add_widget(QLabel("Baudrate:"), self.serial_baudrate_combo)
+
         self.setLayout(self.grid_layout)
 
         # Set initial state and connect signals:
@@ -320,6 +321,27 @@ class ModbusResponseWidget(QWidget):
         self.elapsed_time_label.setText(str(self.item.last_response.elapsed_time) + " ms")
         self.timestamp_label.setText(str(self.item.last_response.timestamp))
 
+        if self.item.last_response.transaction_id:
+            self.transaction_id_label.setText(str(self.item.last_response.transaction_id))
+        else:
+            self.transaction_id_label.setText("-")
+        if self.item.last_response.protocol_id:
+            self.protocol_id_label.setText(str(self.item.last_response.protocol_id))
+        else:
+            self.protocol_id_label.setText("-")
+        if self.item.last_response.slave:
+            self.unit_id_label.setText(str(self.item.last_response.slave))
+        else:
+            self.unit_id_label.setText("-")
+        if self.item.last_response.function_code:
+            self.function_code_label.setText(str(self.item.last_response.function_code))
+        else:
+            self.function_code_label.setText("-")
+        if self.item.last_response.byte_count:
+            self.byte_count_label.setText(str(self.item.last_response.byte_count))
+        else:
+            self.byte_count_label.setText("-")
+
         self.raw_data_edit.setText(
             f"SEND: {self.item.last_response.raw_packet_send}\n\nRECV: {self.item.last_response.raw_packet_recv}")
 
@@ -327,7 +349,6 @@ class ModbusResponseWidget(QWidget):
             self.data_type_label.hide()
             self.data_type_combo.hide()
             self.values_table.hide()
-            self.headers_group.setVisible(False)
 
             self.status_label.setText("Fail")
             self.status_label.setStyleSheet("color: red;")
@@ -339,13 +360,6 @@ class ModbusResponseWidget(QWidget):
             self.data_type_label.show()
             self.data_type_combo.show()
             self.values_table.show()
-            self.headers_group.setVisible(True)
-
-            self.transaction_id_label.setText(str(self.item.last_response.transaction_id))
-            self.protocol_id_label.setText(str(self.item.last_response.protocol_id))
-            self.unit_id_label.setText(str(self.item.last_response.slave))
-            self.function_code_label.setText(str(self.item.last_response.function_code))
-            self.byte_count_label.setText(str(self.item.last_response.byte_count))
 
             self.status_label.setText("Pass")
             self.status_label.setStyleSheet("color: green;")
@@ -432,16 +446,18 @@ class ModbusDetail(QWidget):
         self.execute_button.clicked.connect(self.execute)
 
     def execute(self):
-        modbus_handler = ModbusHandler()
-        modbus_handler.connect(host=self.item.client.tcp_host,
-                               port=self.item.client.tcp_port)
-        request_result = modbus_handler.execute_request(data_type=self.item.data_type,
-                                                        function=self.item.function,
-                                                        address=self.item.address,
-                                                        count=self.item.count,
-                                                        slave=self.item.slave,
-                                                        values=[value for value in self.item.values])
-        modbus_handler.disconnect()
+
+        protocol_client = self.model.protocol_client_manager.get_handler(protocol="Modbus",
+                                                                         client_type=self.item.client.client_type,
+                                                                         host=self.item.client.tcp_host,
+                                                                         port=self.item.client.tcp_port)
+
+        request_result = protocol_client.execute_request(data_type=self.item.data_type,
+                                                         function=self.item.function,
+                                                         address=self.item.address,
+                                                         count=self.item.count,
+                                                         slave=self.item.slave,
+                                                         values=[value for value in self.item.values])
 
         self.results_tabs.process_response(response=request_result)
         self.results_tabs.setVisible(True)

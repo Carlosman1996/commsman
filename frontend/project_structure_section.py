@@ -21,7 +21,7 @@ from PyQt6.QtWidgets import (
 )
 
 from frontend.item_creation_dialog import ItemCreationDialog
-from frontend.model import CustomStandardItem, Item
+from frontend.model import ModelItem, Item
 from utils.common import FRONTEND_PATH, OUTPUTS_PATH
 
 
@@ -264,7 +264,7 @@ class ProjectStructureSection(QWidget):
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
             new_item_data = Item(dialog.item_name, dialog.item_type)
-            new_item = CustomStandardItem(new_item_data.dataclass)
+            new_item = ModelItem(new_item_data.dataclass)
             selected_item.appendRow(new_item)
 
             self.tree_view.expandAll()

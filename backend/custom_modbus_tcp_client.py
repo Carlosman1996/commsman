@@ -5,6 +5,7 @@ from pymodbus import ModbusException
 from pymodbus.client import ModbusTcpClient
 from pymodbus.framer import FramerSocket
 from pymodbus.pdu import DecodePDU
+from backend.base_client import BaseClient
 
 
 def convert_value_before_sending(data_type: str, values: list):
@@ -110,14 +111,13 @@ class CustomFramer(FramerSocket):
         return output
 
 
-class ModbusHandler:
-    def __init__(self):
-        self.client = None
-        self.framer = CustomFramer()
-
-    def connect(self, host: str, port: int):
+class CustomModbusTcpClient(BaseClient):
+    def __init__(self, host: str, port: int):
         self.client = ModbusTcpClient(host=host, port=port)
+        self.framer = CustomFramer()
         self.client.transaction.framer = self.framer
+
+    def connect(self):
         return self.client.connect()
 
     def execute_modbus_request(self, function: str, address: int, count: int, slave: int, values: list = None):
@@ -201,9 +201,8 @@ class ModbusHandler:
 
 
 if __name__ == "__main__":
-    modbus_handler = ModbusHandler()
-    modbus_handler.connect(host="localhost",
-                           port=5020)
+    modbus_handler = CustomModbusTcpClient(host="localhost", port=5020)
+    modbus_handler.connect()
 
     result = modbus_handler.execute_request(
         data_type="16-bit Integer",

@@ -1,10 +1,10 @@
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QIcon, QStandardItemModel
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QLineEdit, QSpinBox, QComboBox, QPushButton,
                              QTabWidget, QTextEdit, QGridLayout,
                              QHBoxLayout, QTableWidget, QAbstractItemView, QHeaderView, QGroupBox,
-                             QTableWidgetItem, QSplitter)
+                             QTableWidgetItem, QSplitter, QMessageBox)
 
 
 class IconTextWidget(QWidget):
@@ -179,3 +179,78 @@ class CustomGroupBox(QGroupBox):
         self.status_label = QLabel(information)
         status_layout.addWidget(self.status_label)
         self.setLayout(status_layout)
+
+
+class CustomStandardItemModel(QStandardItemModel):
+
+    signal_move_item = pyqtSignal(QStandardItemModel)
+
+    def move_to_destination(self, source_index, destination_index):
+        """Move an item to the exact drop location with restrictions."""
+        if not source_index.isValid():
+            return
+
+        source_item = self.itemFromIndex(source_index)
+        source_parent = source_item.parent() or self.invisibleRootItem()
+        source_row = source_item.row()
+
+        if destination_index.isValid():
+            destination_item = self.itemFromIndex(destination_index)
+            destination_parent = destination_item.parent() or self.invisibleRootItem()
+            destination_row = destination_index.row()
+        else:
+            # Dropping to the root
+            destination_item = self.invisibleRootItem()
+            destination_parent = self.invisibleRootItem()
+            destination_row = self.rowCount()
+
+        # Restriction 1: No collection items cannot be moved to the root
+        if source_item.data(Qt.ItemDataRole.UserRole).item_type != "Collection" and destination_item == self.invisibleRootItem():
+            QMessageBox.warning(
+                None, "Invalid Move", "Items cannot be moved to the root level."
+            )
+            return
+
+        # Restriction 2: Avoid moving the item to the same row
+        if source_parent == destination_parent and source_row == destination_row:
+            return
+        # Ensure that the destination row is valid
+        if destination_row < 0 or destination_row > destination_parent.rowCount():
+            # If the row is out of range, we avoid the operation.
+            return
+
+        # Restriction 3: Avoid moving an item to itself or to one of its descendants
+        if destination_item == source_item:
+            # Moving an item to itself
+            return
+        if destination_item.child(0) == source_item:
+            # Moving an item to itself
+            return
+
+        self.layoutAboutToBeChanged.emit()
+
+        # Remove the item from the source location
+        source_row_data = source_parent.takeRow(source_row)
+
+        if not source_row_data:
+            # If the row is already empty, skip further processing
+            self.layoutChanged.emit()
+            return
+
+        if destination_item and (destination_item.data(Qt.ItemDataRole.UserRole).item_type == "Collection"):
+            if destination_row > destination_item.rowCount():
+                destination_item.insertRow(destination_item.rowCount(), source_row_data)
+            else:
+                destination_item.insertRow(destination_row, source_row_data)
+        elif destination_item == self.invisibleRootItem() and (source_item.data(Qt.ItemDataRole.UserRole).item_type == "Collection"):
+            self.invisibleRootItem().appendRow(source_item)
+        else:
+            destination_parent.insertRow(destination_row, source_row_data)
+
+        self.layoutChanged.emit()
+
+        if destination_item != self.invisibleRootItem():
+            self.signal_move_item.emit(destination_item)
+        else:
+            self.signal_move_item.emit(source_item)
+
