@@ -1,8 +1,16 @@
 # *TODOs KANBAN*
 
-TODO: transaction id on errors and ensure whole response tab is updated
+TODO: Add Modbus RTU
 
-TODO: received and sent detail cleaned on error
+TODO: Childs connection can inherit parents
+
+TODO: Same layout for folders and modbus: now, the elements are not at same positions and are "dancing" when the user changes between them
+
+TODO: Study how to show Modbus results at request header, not only in general information to improve/ensure/show the user the request has been done
+
+TODO: Folders with execute button and results tab. Multiple requests are run at the same time
+
+
 
 TODO: process raw data to extract registers from write multiple registers
 

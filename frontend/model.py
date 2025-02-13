@@ -58,7 +58,7 @@ class ProtocolClientManager:
         handler_id = self._generate_handler_id(protocol, **kwargs)
         if handler_id not in self.handlers:
             if protocol == "Modbus":
-                if kwargs["client_type"] == "TCP":
+                if kwargs["client_type"] == "Modbus TCP":
                     self.handlers[handler_id] = CustomModbusTcpClient(kwargs["host"], kwargs["port"])
                 else:
                     raise ValueError(f"Unsupported Modbus client type: {kwargs['client_type']}")

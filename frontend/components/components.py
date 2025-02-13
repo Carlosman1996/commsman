@@ -32,6 +32,9 @@ class IconTextWidget(QWidget):
 
 
 class CustomGridLayout(QGridLayout):
+
+    signal_update_item = pyqtSignal()
+
     def __init__(self, height=30, label_width=150, field_width=200):
         # TODO: all layouts must have this format for reusability and consistency
         super().__init__()
@@ -41,7 +44,7 @@ class CustomGridLayout(QGridLayout):
         self.table = []  # Store references to rows for visibility control
         self.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
-    def add_widget(self, label, field, column=0, index=None):
+    def add_widget(self, label, field, column=0, index=None, connect_signal=True):
         label.setMaximumWidth(self.label_width)
         label.setMinimumWidth(self.label_width)
         label.setMaximumHeight(self.height)
@@ -65,6 +68,9 @@ class CustomGridLayout(QGridLayout):
             index = len(self.table[column])
             self.table[column].append((label, field))
 
+        if connect_signal:
+            self.set_widget_signal(field)
+
         # Add the row to the layout
         if alignment:
             super().addWidget(label, index, column * 2, alignment)
@@ -72,6 +78,27 @@ class CustomGridLayout(QGridLayout):
         else:
             super().addWidget(label, index, column * 2)
             super().addWidget(field, index, (column * 2) + 1)
+
+    def set_widget_signal(self, widget):
+        if isinstance(widget, CustomTable):
+            widget.itemChanged.connect(self.signal_update_item)
+        elif isinstance(widget, CustomComboBox):
+            widget.currentTextChanged.connect(self.signal_update_item)
+        elif isinstance(widget, QSpinBox):
+            widget.valueChanged.connect(self.signal_update_item)
+        elif isinstance(widget, QPushButton):
+            widget.clicked.connect(self.signal_update_item)
+        elif isinstance(widget, QTextEdit) or isinstance(widget, QLineEdit):
+            widget.textChanged.connect(self.signal_update_item)
+        elif isinstance(widget, QLabel):
+            pass
+        else:
+            raise Exception(f"Widget instance {type(widget)} - {widget} not defined")
+
+    def get_field(self, column, index):
+        """Get a specific label by index."""
+        _, field = self.table[column][index]
+        return field
 
     def show_row(self, column, index):
         """Show a specific row by index."""
@@ -84,6 +111,22 @@ class CustomGridLayout(QGridLayout):
         label, field = self.table[column][index]
         label.hide()
         field.hide()
+
+    def clear_layout(self, from_item_row: int):
+        """Remove and delete all widgets from a layout."""
+        new_table = []
+        for index_column, rows in enumerate(self.table):
+            for index_row, widgets in enumerate(rows):
+                if index_row >= from_item_row:
+                    for widget in widgets:
+                        widget.deleteLater()
+                else:
+                    if len(new_table) == index_column:
+                        new_table.append([])
+                    if len(new_table[index_column]) == index_row:
+                        new_table[index_column].append([])
+                    new_table[index_column][index_row] = widgets
+        self.table = new_table
 
 
 class CustomTable(QTableWidget):

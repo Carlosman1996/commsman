@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy
 )
 
+from frontend.collection_detail_widget import CollectionDetail
 from frontend.model import Model
 from frontend.project_structure_section import ProjectStructureSection
 from qt_material import apply_stylesheet
@@ -71,9 +72,11 @@ class MainWindow(QMainWindow):
         item = self.project_structure_section.get_selected_item()
         self.model.set_selected_item(item)
 
-        if item is not None and item.parent() is not None:  # Check if it is not the root
+        if item is not None:
             if item.item_type == "Modbus":
                 self.detail_section = ModbusDetail(self.model)
+            elif item.item_type == "Collection":
+                self.detail_section = CollectionDetail(self.model)
             else:
                 self.detail_section = QLabel("Not implemented yet")
         else:

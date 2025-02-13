@@ -21,7 +21,7 @@ from PyQt6.QtWidgets import (
 )
 
 from frontend.item_creation_dialog import ItemCreationDialog
-from frontend.model import ModelItem, Item
+from frontend.model import ModelItem, Item, Model
 from utils.common import FRONTEND_PATH, OUTPUTS_PATH
 
 
@@ -344,7 +344,7 @@ class ProjectStructureSection(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    window = ProjectStructureSection()
+    window = ProjectStructureSection(Model())
     window.show()
 
     app.exec()

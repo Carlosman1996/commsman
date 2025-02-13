@@ -5,4 +5,5 @@ from dataclasses import dataclass
 class Collection:
     name: str
     item_type: str = "Collection"
-    connection_client: dataclass = None
+    client_type: str = "No connection"
+    client: dataclass = None
