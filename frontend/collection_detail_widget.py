@@ -4,6 +4,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QLineEdit, QSpinBox, QTabWidget, QHBoxLayout, QSplitter)
 
+from frontend.base_detail_widget import BaseDetail
 from frontend.components.components import CustomGridLayout, CustomTable, IconTextWidget, CustomComboBox
 from frontend.connection_tab_widget import ConnectionTabWidget
 from frontend.model import Model
@@ -28,43 +29,15 @@ class CollectionRequestWidget(QWidget):
         main_layout.addWidget(detail_tabs)
 
 
-class CollectionDetail(QWidget):
+class CollectionDetail(BaseDetail):
     def __init__(self, model):
-        super().__init__()
-
-        self.setMinimumSize(800, 600)
-
-        self.setWindowTitle("Collection Details")
-
-        self.model = model
-        self.item = self.model.get_selected_item()
-
-        main_layout = QVBoxLayout()
-
-        # Header
-        header = QWidget()
-        header_layout = QHBoxLayout()
-        header.setLayout(header_layout)
-
-        # Title:
-        self.title_label = IconTextWidget(self.item.name, QIcon(ITEMS[self.item.item_type]["icon"]))
-        header_layout.addWidget(self.title_label)
-
-        # Añadir la cabecera al layout principal
-        main_layout.addWidget(header)
-
-        splitter = QSplitter()
+        super().__init__(model)
 
         # Detail
         self.detail_tabs = CollectionRequestWidget(model)
 
         # Fill splitter:
-        splitter.addWidget(self.detail_tabs)
-
-        main_layout.addWidget(splitter)
-        main_layout.addStretch()
-
-        self.setLayout(main_layout)
+        self.splitter.addWidget(self.detail_tabs)
 
 
 if __name__ == "__main__":

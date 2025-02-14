@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QSize
 from PyQt6.QtGui import QIcon, QStandardItemModel
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QLineEdit, QSpinBox, QComboBox, QPushButton,
@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
 
 
 class IconTextWidget(QWidget):
-    def __init__(self, text, icon_path, parent=None):
+    def __init__(self, text, icon_path, icon_size, parent=None):
         super().__init__(parent)
 
         layout = QHBoxLayout()
@@ -19,6 +19,7 @@ class IconTextWidget(QWidget):
         pixmap = icon.pixmap(75, 75)
         icon_label.setPixmap(pixmap)
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        icon_label.setFixedSize(icon_size)
 
         text_label = QLabel(text)
         text_label.setFixedHeight(50)

@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QTableWidgetItem, QSplitter)
 
 from backend.custom_modbus_client import convert_value_after_sending
+from frontend.base_detail_widget import BaseDetail
 from frontend.components.components import CustomGridLayout, CustomTable, IconTextWidget, CustomComboBox
 from frontend.connection_tab_widget import ConnectionTabWidget
 from frontend.model import Model
@@ -314,46 +315,9 @@ class ModbusResponseWidget(QWidget):
             row += 1
 
 
-class ModbusDetail(QWidget):
+class ModbusDetail(BaseDetail):
     def __init__(self, model):
-        super().__init__()
-
-        self.setMinimumSize(800, 600)
-
-        self.setWindowTitle("Modbus Request Details")
-
-        self.model = model
-        self.item = self.model.get_selected_item()
-
-        main_layout = QVBoxLayout()
-
-        # Header
-        header = QWidget()
-        header_layout = QHBoxLayout()
-        header.setLayout(header_layout)
-
-        # Title:
-        self.title_label = IconTextWidget(self.item.name, QIcon(ITEMS[self.item.item_type]["icon"]))
-        header_layout.addWidget(self.title_label)
-
-        # Execute request:
-        self.execute_button = QPushButton("Execute")
-        header_layout.addWidget(self.execute_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.execute_button.setStyleSheet("""
-            QPushButton {
-                color: green;
-                border: 2px solid green;  /* Green border */
-            }
-            QPushButton:hover {
-                background-color: green;
-                color: white;
-            }
-        """)
-
-        # Añadir la cabecera al layout principal
-        main_layout.addWidget(header)
-
-        splitter = QSplitter()
+        super().__init__(model)
 
         # Detail
         self.detail_tabs = ModbusRequestWidget(model)
@@ -364,13 +328,8 @@ class ModbusDetail(QWidget):
             self.results_tabs.setVisible(False)
 
         # Fill splitter:
-        splitter.addWidget(self.detail_tabs)
-        splitter.addWidget(self.results_tabs)
-
-        main_layout.addWidget(splitter)
-        main_layout.addStretch()
-
-        self.setLayout(main_layout)
+        self.splitter.addWidget(self.detail_tabs)
+        self.splitter.addWidget(self.results_tabs)
 
         # Connect signals and slots
         self.execute_button.clicked.connect(self.execute)

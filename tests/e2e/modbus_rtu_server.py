@@ -28,3 +28,7 @@ StartSerialServer(
     stopbits=1,
     bytesize=8
 )
+
+"""
+>> socat -d -d pty,raw,echo=0 pty,raw,echo=0 | tee serial_log.txt
+"""
