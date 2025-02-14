@@ -5,7 +5,7 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QStandardItem, QIcon
 
 from backend.base_client import BaseClient
-from backend.custom_modbus_tcp_client import CustomModbusTcpClient
+from backend.custom_modbus_client import CustomModbusTcpClient, CustomModbusRtuClient
 from frontend.common import ITEMS
 from frontend.components.components import CustomStandardItemModel
 from frontend.models.collection import Collection
@@ -53,15 +53,17 @@ class ProtocolClientManager:
     def __init__(self):
         self.handlers: dict[str, BaseClient] = {}  # Key: handler ID, Value: handler
 
-    def get_handler(self, protocol: str, **kwargs) -> BaseClient:
+    def get_handler(self, protocol: str, client_type: str, **kwargs) -> BaseClient:
         """Get or create a handler for the specified protocol."""
         handler_id = self._generate_handler_id(protocol, **kwargs)
         if handler_id not in self.handlers:
             if protocol == "Modbus":
-                if kwargs["client_type"] == "Modbus TCP":
-                    self.handlers[handler_id] = CustomModbusTcpClient(kwargs["host"], kwargs["port"])
+                if client_type == "Modbus TCP":
+                    self.handlers[handler_id] = CustomModbusTcpClient(**kwargs)
+                elif client_type == "Modbus RTU":
+                    self.handlers[handler_id] = CustomModbusRtuClient(**kwargs)
                 else:
-                    raise ValueError(f"Unsupported Modbus client type: {kwargs['client_type']}")
+                    raise ValueError(f"Unsupported Modbus client type: {client_type}")
             else:
                 raise ValueError(f"Unsupported protocol: {protocol}")
         return self.handlers[handler_id]

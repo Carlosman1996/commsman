@@ -6,20 +6,27 @@ from functools import partial
 class ModbusTcpClient:
     name: str
     item_type: str = "Modbus"
-    tcp_host: str = "127.0.0.1"
-    tcp_port: int = 502
+    host: str = "127.0.0.1"
+    port: int = 502
+    timeout: int = 3
+    retries: int = 3
 
 
 @dataclass
 class ModbusRtuClient:
     name: str
     item_type: str = "Modbus"
-    serial_port: str = "COM1"
-    serial_baudrate: int = 115200
+    port: str = "COM1"
+    baudrate: int = 115200
+    parity: str = "None"
+    stopbits: int = 1
+    bytesize: int = 8
+    timeout: int = 3
+    retries: int = 3
 
 
 @dataclass
-class ModbusResponse:
+class ModbusTcpResponse:
     name: str
     item_type: str = "Modbus"
     slave: int = None
@@ -38,15 +45,33 @@ class ModbusResponse:
 
 
 @dataclass
+class ModbusRtuResponse:
+    name: str
+    item_type: str = "Modbus"
+    slave: int = None
+    function_code: int = None
+    address: int = None
+    registers: list[int] = None
+    crc: int = None
+    raw_packet_recv: str = ""
+    raw_packet_send: str = ""
+    elapsed_time: float = None
+    timestamp: str = None
+    data_type: str = "16-bit Integer"
+    byte_count: int = None
+    error_message: str = ""
+
+
+@dataclass
 class ModbusRequest:
     name: str
     item_type: str = "Modbus"
     client_type: str = "Modbus TCP"
-    client: ModbusTcpClient = field(default_factory=partial(ModbusTcpClient, "unknown"))
+    client: ModbusTcpClient | ModbusRtuClient = field(default_factory=partial(ModbusTcpClient, "unknown"))
     function: str = "Read Holding Registers"
     data_type: str = "16-bit Integer"
     slave: int = 0
     address: int = 0
     count: int = 1
     values: list = None
-    last_response: ModbusResponse = None
+    last_response: ModbusTcpResponse | ModbusRtuResponse = None

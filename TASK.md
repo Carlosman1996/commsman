@@ -10,6 +10,9 @@ TODO: Study how to show Modbus results at request header, not only in general in
 
 TODO: Folders with execute button and results tab. Multiple requests are run at the same time
 
+TODO: Regression bug - When an item is added to a folder, all folders at same level in tree view are opened
+
+
 
 
 TODO: process raw data to extract registers from write multiple registers
@@ -37,3 +40,7 @@ TODO: allow to reuse "previous" connections
 TODO: allow to export results
 
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
+
+TODO: MQTT
+
+TODO: Modbus TLS/Socket/ASCII

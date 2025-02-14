@@ -48,27 +48,63 @@ class ConnectionTabWidget(QWidget):
                     name=self.item.name
                 )
 
-            host_line_edit = QLineEdit(client.tcp_host)
-            self.grid_layout.add_widget(QLabel("Host/Port:"), host_line_edit)
+            host_line_edit = QLineEdit(client.host)
+            self.grid_layout.add_widget(QLabel("Host:"), host_line_edit)
 
             port_spinbox = QSpinBox()
             port_spinbox.setRange(1, 65535)
-            port_spinbox.setValue(client.tcp_port)
+            port_spinbox.setValue(client.port)
             self.grid_layout.add_widget(QLabel("Port:"), port_spinbox)
+
+            timeout_spinbox = QSpinBox()
+            timeout_spinbox.setRange(1, 65535)
+            timeout_spinbox.setValue(client.timeout)
+            self.grid_layout.add_widget(QLabel("Timeout:"), timeout_spinbox)
+
+            retries_spinbox = QSpinBox()
+            retries_spinbox.setRange(1, 65535)
+            retries_spinbox.setValue(client.retries)
+            self.grid_layout.add_widget(QLabel("Timeout:"), retries_spinbox)
         elif client_type == "Modbus RTU":
             if not client:
                 client = ModbusRtuClient(
                     name=self.item.name
                 )
 
-            serial_port_line_edit = QLineEdit(client.serial_port)
-            self.grid_layout.add_widget(QLabel("Serial Port:"), serial_port_line_edit)
+            port_line_edit = QLineEdit(client.port)
+            self.grid_layout.add_widget(QLabel("Port:"), port_line_edit)
 
-            serial_baudrate_combo = CustomComboBox()
-            serial_baudrate_combo.addItems(["9600", "19200", "38400", "57600", "115200"])
-            index = serial_baudrate_combo.findText(str(client.serial_baudrate))
-            serial_baudrate_combo.setCurrentIndex(index)
-            self.grid_layout.add_widget(QLabel("Baudrate:"), serial_baudrate_combo)
+            baudrate_combo = CustomComboBox()
+            baudrate_combo.addItems(["9600", "19200", "38400", "57600", "115200"])
+            index = baudrate_combo.findText(str(client.baudrate))
+            baudrate_combo.setCurrentIndex(index)
+            self.grid_layout.add_widget(QLabel("Baudrate:"), baudrate_combo)
+
+            parity_combo = CustomComboBox()
+            parity_combo.addItems(["None", "Even", "Odd"])
+            index = parity_combo.findText(str(client.parity))
+            parity_combo.setCurrentIndex(index)
+            self.grid_layout.add_widget(QLabel("Parity:"), parity_combo)
+
+            stopbits_spinbox = QSpinBox()
+            stopbits_spinbox.setRange(0, 2)
+            stopbits_spinbox.setValue(client.stopbits)
+            self.grid_layout.add_widget(QLabel("Stopbits:"), stopbits_spinbox)
+
+            bytesize_spinbox = QSpinBox()
+            bytesize_spinbox.setRange(7, 8)
+            bytesize_spinbox.setValue(client.bytesize)
+            self.grid_layout.add_widget(QLabel("Bytesize:"), bytesize_spinbox)
+
+            timeout_spinbox = QSpinBox()
+            timeout_spinbox.setRange(1, 65535)
+            timeout_spinbox.setValue(client.timeout)
+            self.grid_layout.add_widget(QLabel("Timeout:"), timeout_spinbox)
+
+            retries_spinbox = QSpinBox()
+            retries_spinbox.setRange(1, 65535)
+            retries_spinbox.setValue(client.retries)
+            self.grid_layout.add_widget(QLabel("Retries:"), retries_spinbox)
         else:
             raise Exception(f"Connection type {client_type} not allowed")
 
@@ -81,14 +117,21 @@ class ConnectionTabWidget(QWidget):
         elif client_type == "Modbus TCP":
             client = ModbusTcpClient(
                 name=self.item.name,
-                tcp_host=self.grid_layout.get_field(0, 1).text(),
-                tcp_port=int(self.grid_layout.get_field(0, 2).text()),
+                host=self.grid_layout.get_field(0, 1).text(),
+                port=int(self.grid_layout.get_field(0, 2).text()),
+                timeout=int(self.grid_layout.get_field(0, 3).text()),
+                retries=int(self.grid_layout.get_field(0, 4).text())
             )
         elif client_type == "Modbus RTU":
             client = ModbusRtuClient(
                 name=self.item.name,
-                serial_port=self.grid_layout.get_field(0, 1).text(),
-                serial_baudrate=int(self.grid_layout.get_field(0, 2).currentText()),
+                port=self.grid_layout.get_field(0, 1).text(),
+                baudrate=int(self.grid_layout.get_field(0, 2).currentText()),
+                parity=self.grid_layout.get_field(0, 3).currentText(),
+                stopbits=int(self.grid_layout.get_field(0, 4).text()),
+                bytesize=int(self.grid_layout.get_field(0, 5).text()),
+                timeout=int(self.grid_layout.get_field(0, 6).text()),
+                retries=int(self.grid_layout.get_field(0, 7).text())
             )
         else:
             raise Exception(f"Connection type {client_type} not allowed")

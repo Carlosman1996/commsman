@@ -1,4 +1,5 @@
 import sys
+from dataclasses import asdict
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
@@ -7,11 +8,11 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QTabWidget, QTextEdit, QHBoxLayout, QGroupBox,
                              QTableWidgetItem, QSplitter)
 
-from backend.custom_modbus_tcp_client import convert_value_after_sending
+from backend.custom_modbus_client import convert_value_after_sending
 from frontend.components.components import CustomGridLayout, CustomTable, IconTextWidget, CustomComboBox
 from frontend.connection_tab_widget import ConnectionTabWidget
 from frontend.model import Model
-from frontend.models.modbus import ModbusRequest, ModbusResponse
+from frontend.models.modbus import ModbusRequest, ModbusTcpResponse, ModbusRtuResponse
 from frontend.common import ITEMS
 
 
@@ -205,18 +206,20 @@ class ModbusResponseWidget(QWidget):
 
         # Headers and Data
         self.headers_group = QGroupBox("Headers and Data")
-        headers_layout = CustomGridLayout()
+        self.headers_layout = CustomGridLayout()
         self.transaction_id_label = QLabel("N/A")
         self.protocol_id_label = QLabel("N/A")
         self.unit_id_label = QLabel("N/A")
         self.function_code_label = QLabel("N/A")
         self.byte_count_label = QLabel("N/A")
-        headers_layout.add_widget(QLabel("Transaction ID:"), self.transaction_id_label)
-        headers_layout.add_widget(QLabel("Protocol ID:"), self.protocol_id_label)
-        headers_layout.add_widget(QLabel("Unit ID:"), self.unit_id_label)
-        headers_layout.add_widget(QLabel("Function Code:"), self.function_code_label)
-        headers_layout.add_widget(QLabel("Byte Count:"), self.byte_count_label)
-        self.headers_group.setLayout(headers_layout)
+        self.crc_label = QLabel("N/A")
+        self.headers_layout.add_widget(QLabel("Transaction ID:"), self.transaction_id_label)
+        self.headers_layout.add_widget(QLabel("Protocol ID:"), self.protocol_id_label)
+        self.headers_layout.add_widget(QLabel("Unit ID:"), self.unit_id_label)
+        self.headers_layout.add_widget(QLabel("Function Code:"), self.function_code_label)
+        self.headers_layout.add_widget(QLabel("Byte Count:"), self.byte_count_label)
+        self.headers_layout.add_widget(QLabel("CRC:"), self.crc_label)
+        self.headers_group.setLayout(self.headers_layout)
         metadata_layout.addWidget(self.headers_group)
 
         self.tabs.addTab(metadata_tab, "Metadata")
@@ -240,7 +243,12 @@ class ModbusResponseWidget(QWidget):
 
     def process_response(self, response=None, load_data=False):
         if not load_data:
-            response_dataclass = ModbusResponse(name=self.item.name, **response)
+            if self.item.client_type == "Modbus TCP":
+                response_dataclass = ModbusTcpResponse(name=self.item.name, **response)
+            elif self.item.client_type == "Modbus RTU":
+                response_dataclass = ModbusRtuResponse(name=self.item.name, **response)
+            else:
+                raise NotImplementedError(f"Client type {self.item.client_type} is not implemented yet")
             self.model.update_item(last_response=response_dataclass)
         else:
             if self.item.last_response is None:
@@ -249,26 +257,20 @@ class ModbusResponseWidget(QWidget):
         self.elapsed_time_label.setText(str(self.item.last_response.elapsed_time) + " ms")
         self.timestamp_label.setText(str(self.item.last_response.timestamp))
 
-        if self.item.last_response.transaction_id:
-            self.transaction_id_label.setText(str(self.item.last_response.transaction_id))
-        else:
-            self.transaction_id_label.setText("-")
-        if self.item.last_response.protocol_id:
-            self.protocol_id_label.setText(str(self.item.last_response.protocol_id))
-        else:
-            self.protocol_id_label.setText("-")
-        if self.item.last_response.slave:
-            self.unit_id_label.setText(str(self.item.last_response.slave))
-        else:
-            self.unit_id_label.setText("-")
-        if self.item.last_response.function_code:
-            self.function_code_label.setText(str(self.item.last_response.function_code))
-        else:
-            self.function_code_label.setText("-")
-        if self.item.last_response.byte_count:
-            self.byte_count_label.setText(str(self.item.last_response.byte_count))
-        else:
-            self.byte_count_label.setText("-")
+        def update_item(index: int, key: str):
+            if hasattr(self.item.last_response, key):
+                self.headers_layout.show_row(0, index)
+                field = self.headers_layout.get_field(0, index)
+                field.setText(str(getattr(self.item.last_response, key, '-')))
+            else:
+                self.headers_layout.hide_row(0, index)
+
+        update_item(0, "transaction_id")
+        update_item(1, "protocol_id")
+        update_item(2, "slave")
+        update_item(3, "function_code")
+        update_item(4, "byte_count")
+        update_item(5, "crc")
 
         self.raw_data_edit.setText(
             f"SEND: {self.item.last_response.raw_packet_send}\n\nRECV: {self.item.last_response.raw_packet_recv}")
@@ -358,7 +360,7 @@ class ModbusDetail(QWidget):
 
         # Results
         self.results_tabs = ModbusResponseWidget(model)
-        if not isinstance(self.item.last_response, ModbusResponse):
+        if self.item.last_response is None:
             self.results_tabs.setVisible(False)
 
         # Fill splitter:
@@ -374,11 +376,9 @@ class ModbusDetail(QWidget):
         self.execute_button.clicked.connect(self.execute)
 
     def execute(self):
-
         protocol_client = self.model.protocol_client_manager.get_handler(protocol="Modbus",
                                                                          client_type=self.item.client_type,
-                                                                         host=self.item.client.tcp_host,
-                                                                         port=self.item.client.tcp_port)    # TODO: add RTU
+                                                                         **asdict(self.item.client))    # TODO: add RTU
 
         request_result = protocol_client.execute_request(data_type=self.item.data_type,
                                                          function=self.item.function,
