@@ -249,6 +249,16 @@ class ProjectStructureSection(QWidget):
         self.proxy_model.setFilterRegularExpression(text)
         self.tree_view.expandAll()
 
+    def expand_tree_view_item(self, item):
+        def expand_all_parents(index):
+            while index.isValid():
+                self.tree_view.expand(index)
+                index = index.parent()
+
+        item_index = self.model.indexFromItem(item)
+        item_proxy_model_index = self.proxy_model.mapFromSource(item_index)
+        expand_all_parents(item_proxy_model_index)
+
     def get_selected_item(self):
         selected_indexes = self.tree_view.selectedIndexes()
         if selected_indexes:
@@ -267,7 +277,8 @@ class ProjectStructureSection(QWidget):
             new_item = ModelItem(new_item_data.dataclass)
             selected_item.appendRow(new_item)
 
-            self.tree_view.expandAll()
+            self.expand_tree_view_item(selected_item)
+
             self.model.autosave_tree_data()
 
     def set_add_button_visibility(self):
@@ -290,9 +301,7 @@ class ProjectStructureSection(QWidget):
         self.proxy_model.setSourceModel(None)
         self.proxy_model.setSourceModel(self.model)
 
-        item_index = self.model.indexFromItem(item)
-        item_proxy_model_index = self.proxy_model.mapFromSource(item_index)
-        expand_all_parents(item_proxy_model_index)
+        self.expand_tree_view_item(item)
 
         self.model.autosave_tree_data()
 

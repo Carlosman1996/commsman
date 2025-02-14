@@ -1,7 +1,5 @@
 # *TODOs KANBAN*
 
-TODO: Add Modbus RTU
-
 TODO: Childs connection can inherit parents
 
 TODO: Same layout for folders and modbus: now, the elements are not at same positions and are "dancing" when the user changes between them
@@ -9,8 +7,6 @@ TODO: Same layout for folders and modbus: now, the elements are not at same posi
 TODO: Study how to show Modbus results at request header, not only in general information to improve/ensure/show the user the request has been done
 
 TODO: Folders with execute button and results tab. Multiple requests are run at the same time
-
-TODO: Regression bug - When an item is added to a folder, all folders at same level in tree view are opened
 
 
 
