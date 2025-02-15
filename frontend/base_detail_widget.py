@@ -1,9 +1,47 @@
+from dataclasses import asdict
+
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter
 
+from frontend.backend_manager import BackendManager
 from frontend.common import ITEMS
 from frontend.components.components import IconTextWidget
+
+
+class ExecuteButton(QPushButton):
+    def __init__(self):
+        super().__init__("Run")
+        self.set_run()
+
+    def set_running(self):
+        self.setEnabled(False)
+        self.setText("Running")
+        self.setStyleSheet("""
+            QPushButton {
+                color: red;
+                border: 2px solid red;
+            }
+            QPushButton:hover {
+                background-color: red;
+                color: white;
+            }
+        """)
+
+    def set_run(self):
+        # Re-enable the "Execute" button
+        self.setEnabled(True)
+        self.setText("Run")
+        self.setStyleSheet("""
+            QPushButton {
+                color: green;
+                border: 2px solid green;  /* Green border */
+            }
+            QPushButton:hover {
+                background-color: green;
+                color: white;
+            }
+        """)
 
 
 class BaseDetail(QWidget):
@@ -29,18 +67,8 @@ class BaseDetail(QWidget):
         header_layout.addWidget(self.title_label)
 
         # Execute request:
-        self.execute_button = QPushButton("Execute")
+        self.execute_button = ExecuteButton()
         header_layout.addWidget(self.execute_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.execute_button.setStyleSheet("""
-            QPushButton {
-                color: green;
-                border: 2px solid green;  /* Green border */
-            }
-            QPushButton:hover {
-                background-color: green;
-                color: white;
-            }
-        """)
 
         # Añadir la cabecera al layout principal
         main_layout.addWidget(header)
@@ -51,3 +79,21 @@ class BaseDetail(QWidget):
         main_layout.addStretch()
 
         self.setLayout(main_layout)
+        self.backend_manager = BackendManager(self.model)
+
+        self.execute_button.clicked.connect(self.execute)
+
+    def execute(self):
+        self.execute_button.set_running()
+
+        # Create and start the backend_manager thread
+        self.backend_manager.signal_request_progress.connect(self.update_progress)
+        self.backend_manager.signal_requests_finished.connect(self.on_finished)
+        self.backend_manager.start()
+
+    def update_progress(self, response):
+        # Update the progress label
+        print(asdict(response))
+
+    def on_finished(self):
+        self.execute_button.set_run()

@@ -59,18 +59,18 @@ class ModbusRequestTabWidget(QWidget):
         self.grid_layout.add_widget(QLabel("Data Type:"), self.data_type_combo)
 
         self.values_table = CustomTable(["Value"])
-        self.update_table_rows()
+        self.update_table_rows_view()
         self.values_table.set_items(self.item.values)
         self.grid_layout.add_widget(QLabel("Values to Write:"), self.values_table)
 
         self.setLayout(self.grid_layout)
 
         # Set initial state and connect signals:
-        self.update_item()
+        self.update_view()
 
-        self.grid_layout.signal_update_item.connect(self.update_item)
+        self.grid_layout.signal_update_item.connect(self.update_view)
 
-    def update_input_visibility(self):
+    def update_view(self):
         selected_function = self.function_combo.currentText()
 
         if selected_function in FUNCTIONS_DICT["write"]:
@@ -84,7 +84,10 @@ class ModbusRequestTabWidget(QWidget):
             self.values_table.clear()
             self.quantity_spinbox.setRange(1, 247)
 
-    def update_table_rows(self):
+        self.update_table_rows_view()
+        self.update_item()
+
+    def update_table_rows_view(self):
         value = self.quantity_spinbox.value()
         current_rows = self.values_table.rowCount()
         if value > current_rows:
@@ -95,9 +98,6 @@ class ModbusRequestTabWidget(QWidget):
                 self.values_table.removeRow(current_rows - index - 1)
 
     def update_item(self):
-        self.update_input_visibility()
-        self.update_table_rows()
-
         update_data = {
             "function": self.function_combo.currentText(),
             "address": int(self.address_spinbox.text()),
@@ -239,18 +239,14 @@ class ModbusResponseWidget(QWidget):
 
         # Set initial state and connect signals:
 
-        self.process_response(load_data=True)
+        self.update_view()
 
         self.data_type_combo.currentTextChanged.connect(self.update_table)
 
-    def process_response(self, response: ModbusTcpResponse | ModbusRtuResponse = None, load_data: bool = False):
-        if load_data:
-            if self.item.last_response is None:
-                return
-        else:
-            self.model.update_item(last_response=response)
-            if response is None:
-                return
+    def update_view(self):
+        response = self.item.last_response
+        if response is None:
+            return
 
         self.protocol_label.setText(self.item.last_response.client_type)
         self.elapsed_time_label.setText(str(self.item.last_response.elapsed_time) + " ms")
@@ -261,10 +257,10 @@ class ModbusResponseWidget(QWidget):
                 self.headers_layout.show_row(0, index)
                 field = self.headers_layout.get_field(0, index)
                 value = getattr(self.item.last_response, key)
-                if value:
-                    field.setText(str(value))
-                else:
+                if value is None:
                     field.setText("-")
+                else:
+                    field.setText(str(value))
             else:
                 self.headers_layout.hide_row(0, index)
 
@@ -334,31 +330,13 @@ class ModbusDetail(BaseDetail):
         self.splitter.addWidget(self.results_tabs)
 
         # Connect signals and slots
-        self.execute_button.clicked.connect(self.execute)
+        self.backend_manager.signal_requests_finished.connect(self.set_results)
 
-    def execute(self):
-        try:
-            protocol_client = self.model.protocol_client_manager.get_handler(protocol="Modbus",
-                                                                             item=self.item)
-            self.request_tabs.connection_widget.signal_error_message.emit("")
-        except Exception as e:
-            protocol_client = None
-            self.request_tabs.connection_widget.signal_error_message.emit(f"Error while getting client: {e}")
-
-        if protocol_client:
-            protocol_client.connect()
-            request_result = protocol_client.execute_request(request_name=self.item.name,
-                                                             data_type=self.item.data_type,
-                                                             function=self.item.function,
-                                                             address=self.item.address,
-                                                             count=self.item.count,
-                                                             slave=self.item.slave,
-                                                             values=[value for value in self.item.values])
-            protocol_client.disconnect()
-            self.results_tabs.process_response(response=request_result)
+    def set_results(self):
+        if self.item.last_response:
+            self.results_tabs.update_view()
             self.results_tabs.setVisible(True)
         else:
-            self.results_tabs.process_response(response=None)
             self.results_tabs.setVisible(False)
 
 

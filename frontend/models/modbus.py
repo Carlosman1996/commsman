@@ -9,6 +9,7 @@ class ModbusTcpClient:
     port: int = 502
     timeout: int = 3
     retries: int = 3
+    message: str = ""
 
 
 @dataclass
@@ -22,6 +23,7 @@ class ModbusRtuClient:
     bytesize: int = 8
     timeout: int = 3
     retries: int = 3
+    message: str = ""
 
 
 @dataclass

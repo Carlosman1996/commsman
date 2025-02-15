@@ -4,6 +4,8 @@ TODO: Study how to show Modbus results at request header, not only in general in
 
 TODO: Folders with execute button and results tab. Multiple requests are run at the same time
 
+TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
+
 
 
 
@@ -30,8 +32,6 @@ TODO: add connection name for reusability
 TODO: allow to reuse "previous" connections
 
 TODO: allow to export results
-
-TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
 
 TODO: MQTT
 

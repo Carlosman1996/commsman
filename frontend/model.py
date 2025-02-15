@@ -49,35 +49,38 @@ class ModelItem(QStandardItem):
         else:
             raise AttributeError(f"'ModelItem' object has no attribute '{name}'")
 
+    def get_dataclass(self):
+        return self.data(Qt.ItemDataRole.UserRole)
+
 
 class ProtocolClientManager:
     def __init__(self):
         self.handlers: dict[str, BaseClient] = {}  # Key: handler ID, Value: handler
 
-    def get_handler(self, protocol: str, item: ModelItem) -> BaseClient:
+    def get_handler(self, item: ModelItem) -> BaseClient:
         """Get or create a handler for the specified protocol."""
 
-        def find_item_client(protocol: str, item: ModelItem) -> ModelItem:
+        def find_item_client(item: ModelItem) -> ModelItem:
             if item.client_type == "No connection":
                 raise Exception(f"Current request does not have client")
             elif item.client_type == "Inherit from parent":
                 parent = item.parent()
-                return find_item_client(protocol, parent)
+                return find_item_client(parent)
             elif item.client:
-                if item.client.item_type == protocol:
+                if item.client.item_type == item.item_type:
                     return item
                 else:
-                    raise Exception(f"Current request client protocol is not correct: expected {protocol} - found {item.client.item_type}")
+                    raise Exception(f"Current request client protocol is not correct: expected {item.item_type} - found {item.client.item_type}")
             else:
-                raise Exception(f"FATAL ERROR - Could not resolve item client: {protocol} - {item}")
+                raise Exception(f"FATAL ERROR - Could not resolve item client: {item.item_type} - {item}")
 
-        item_with_client = find_item_client(protocol=protocol, item=item)
+        item_with_client = find_item_client(item=item)
 
         client_type = item_with_client.client_type
         client_data = asdict(item_with_client.client)
         del client_data["name"]
 
-        handler_id = self._generate_handler_id(protocol, **client_data)
+        handler_id = self._generate_handler_id(**client_data)
         if handler_id not in self.handlers:
             if client_type == "Modbus TCP":
                 self.handlers[handler_id] = CustomModbusTcpClient(**client_data)
@@ -99,27 +102,27 @@ class ProtocolClientManager:
         for handler_client in self.handlers.values():
             handler_client.disconnect()
 
-    def _generate_handler_id(self, protocol: str, **kwargs) -> str:
+    def _generate_handler_id(self, **kwargs) -> str:
         """Generate a unique handler ID based on protocol and connection parameters."""
-        handler_id = f"{protocol}"
+        handler_id = ""
         for key, value in kwargs.items():
-            handler_id += f"_{key}_{value}"
-        return handler_id
+            handler_id += f"{key}_{value}_"
+        return handler_id[:-1]
 
-    def validate_handler(self, protocol: str, **kwargs) -> bool:
+    def validate_handler(self,  **kwargs) -> bool:
         """Check if a handler is valid (connected)."""
-        handler_id = self._generate_handler_id(protocol, **kwargs)
+        handler_id = self._generate_handler_id(**kwargs)
         if handler_id in self.handlers:
             return self.handlers[handler_id].is_connected()
         return False
 
-    def reconnect_handler(self, protocol: str, **kwargs):
+    def reconnect_handler(self, **kwargs):
         """Reset a handler if it’s invalid."""
-        handler_id = self._generate_handler_id(protocol, **kwargs)
+        handler_id = self._generate_handler_id(**kwargs)
         if handler_id in self.handlers:
             self.handlers[handler_id].disconnect()
             del self.handlers[handler_id]
-        return self.get_handler(protocol, **kwargs)
+        return self.get_handler(**kwargs)
 
 
 class Model(CustomStandardItemModel):
@@ -138,16 +141,20 @@ class Model(CustomStandardItemModel):
     def get_selected_item(self):
         return self.selected_item
 
-    def update_item(self, **kwargs):
+    def update_specific_item(self, item, **kwargs):
         """Update the currently selected item with the provided fields."""
-        if self.selected_item:
+        if item:
             for key, value in kwargs.items():
-                if hasattr(self.selected_item, key):
-                    setattr(self.selected_item, key, value)
+                if hasattr(item, key):
+                    setattr(item, key, value)
                 else:
-                    raise ValueError(f"Item {self.selected_item} has not attribute {key}. Could not save value {value}")
+                    raise ValueError(f"Item {item.text()} has not attribute {key}. Could not save value {value}")
         self.autosave_tree_data()
         self.signal_update_item.emit()
+
+    def update_item(self, **kwargs):
+        """Update the currently selected item with the provided fields."""
+        self.update_specific_item(self.selected_item, **kwargs)
 
     def autosave_tree_data(self):
         data = self.serialize_tree()

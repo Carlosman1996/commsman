@@ -125,11 +125,11 @@ class CustomModbusHandler(BaseClient):
             case _:
                 raise Exception(f"Function '{function}' not supported")
 
-    def execute_request(self, request_name: str, data_type: str, function: str, address: int, count: int, slave: int, values: list = None):
+    def execute_request(self, name: str, data_type: str, function: str, address: int, count: int, slave: int, values: list = None, **kwargs):
         start_time = time.time()
 
         self.framer.reset_packets()
-        self.initialize_response_dataclass(request_name)
+        self.initialize_response_dataclass(name)
 
         try:
             if "Write" in function:
@@ -169,7 +169,7 @@ class CustomModbusHandler(BaseClient):
         return self.response
 
     @abstractmethod
-    def initialize_response_dataclass(self, request_name: str):
+    def initialize_response_dataclass(self, name: str):
         pass
 
     @abstractmethod
@@ -216,8 +216,8 @@ class CustomModbusTcpClient(CustomModbusHandler):
         self.framer = CustomSocketFramer()
         self.client.transaction.framer = self.framer
 
-    def initialize_response_dataclass(self, request_name: str):
-        self.response = ModbusTcpResponse(name=request_name)
+    def initialize_response_dataclass(self, name: str):
+        self.response = ModbusTcpResponse(name=name)
 
     def process_response_data(self, modbus_response, address: int, values: list[int]):
         self.response.slave = self.framer.last_packet_recv[6]
@@ -269,8 +269,8 @@ class CustomModbusRtuClient(CustomModbusHandler):
         self.framer = CustomRtuFramer()
         self.client.transaction.framer = self.framer
 
-    def initialize_response_dataclass(self, request_name: str):
-        self.response = ModbusRtuResponse(name=request_name)
+    def initialize_response_dataclass(self, name: str):
+        self.response = ModbusRtuResponse(name=name)
 
     def process_response_data(self, modbus_response, address: int, values: list[int]):
 
@@ -296,7 +296,7 @@ if __name__ == "__main__":
     modbus_handler.connect()
 
     result = modbus_handler.execute_request(
-        request_name="DEMO",
+        name="DEMO",
         data_type="16-bit Integer",
         function="Read Holding Registers",
         slave=2,
