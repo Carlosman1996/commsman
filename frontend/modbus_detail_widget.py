@@ -2,19 +2,17 @@ import sys
 from dataclasses import asdict
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
-                             QSpinBox, QPushButton,
+                             QSpinBox,
                              QTabWidget, QTextEdit, QHBoxLayout, QGroupBox,
-                             QTableWidgetItem, QSplitter)
+                             QTableWidgetItem)
 
 from backend.custom_modbus_client import convert_value_after_sending
 from frontend.base_detail_widget import BaseDetail
-from frontend.components.components import CustomGridLayout, CustomTable, IconTextWidget, CustomComboBox
+from frontend.components.components import CustomGridLayout, CustomTable, CustomComboBox
 from frontend.connection_tab_widget import ConnectionTabWidget
 from frontend.model import Model
 from frontend.models.modbus import ModbusRequest, ModbusTcpResponse, ModbusRtuResponse
-from frontend.common import ITEMS
 
 
 FUNCTIONS_DICT = {
@@ -113,6 +111,7 @@ class ModbusRequestTabWidget(QWidget):
 
 
 class ModbusRequestWidget(QWidget):
+
     def __init__(self, model):
         super().__init__()
 
@@ -123,11 +122,11 @@ class ModbusRequestWidget(QWidget):
         # Set tabs:
         detail_tabs = QTabWidget()
 
-        connection_widget = ConnectionTabWidget(model, ["Modbus TCP", "Modbus RTU"])
-        detail_tabs.addTab(connection_widget, "Connection")
+        self.connection_widget = ConnectionTabWidget(model, ["Inherit from parent", "Modbus TCP", "Modbus RTU"])
+        detail_tabs.addTab(self.connection_widget, "Connection")
 
-        connection_widget = ModbusRequestTabWidget(model)
-        detail_tabs.addTab(connection_widget, "Request")
+        self.request_widget = ModbusRequestTabWidget(model)
+        detail_tabs.addTab(self.request_widget, "Request")
 
         main_layout.addWidget(detail_tabs)
 
@@ -197,9 +196,11 @@ class ModbusResponseWidget(QWidget):
         general_info_group = QGroupBox("General Information")
         general_info_layout = CustomGridLayout()
         self.status_label = QLabel("N/A")
+        self.protocol_label = QLabel("N/A")
         self.elapsed_time_label = QLabel("N/A")
         self.timestamp_label = QLabel("N/A")
         general_info_layout.add_widget(QLabel("Status:"), self.status_label)
+        general_info_layout.add_widget(QLabel("Protocol:"), self.protocol_label)
         general_info_layout.add_widget(QLabel("Elapsed Time:"), self.elapsed_time_label)
         general_info_layout.add_widget(QLabel("Timestamp:"), self.timestamp_label)
         general_info_group.setLayout(general_info_layout)
@@ -242,19 +243,16 @@ class ModbusResponseWidget(QWidget):
 
         self.data_type_combo.currentTextChanged.connect(self.update_table)
 
-    def process_response(self, response=None, load_data=False):
-        if not load_data:
-            if self.item.client_type == "Modbus TCP":
-                response_dataclass = ModbusTcpResponse(name=self.item.name, **response)
-            elif self.item.client_type == "Modbus RTU":
-                response_dataclass = ModbusRtuResponse(name=self.item.name, **response)
-            else:
-                raise NotImplementedError(f"Client type {self.item.client_type} is not implemented yet")
-            self.model.update_item(last_response=response_dataclass)
-        else:
+    def process_response(self, response: ModbusTcpResponse | ModbusRtuResponse = None, load_data: bool = False):
+        if load_data:
             if self.item.last_response is None:
                 return
+        else:
+            self.model.update_item(last_response=response)
+            if response is None:
+                return
 
+        self.protocol_label.setText(self.item.last_response.client_type)
         self.elapsed_time_label.setText(str(self.item.last_response.elapsed_time) + " ms")
         self.timestamp_label.setText(str(self.item.last_response.timestamp))
 
@@ -262,7 +260,11 @@ class ModbusResponseWidget(QWidget):
             if hasattr(self.item.last_response, key):
                 self.headers_layout.show_row(0, index)
                 field = self.headers_layout.get_field(0, index)
-                field.setText(str(getattr(self.item.last_response, key, '-')))
+                value = getattr(self.item.last_response, key)
+                if value:
+                    field.setText(str(value))
+                else:
+                    field.setText("-")
             else:
                 self.headers_layout.hide_row(0, index)
 
@@ -320,7 +322,7 @@ class ModbusDetail(BaseDetail):
         super().__init__(model)
 
         # Detail
-        self.detail_tabs = ModbusRequestWidget(model)
+        self.request_tabs = ModbusRequestWidget(model)
 
         # Results
         self.results_tabs = ModbusResponseWidget(model)
@@ -328,26 +330,36 @@ class ModbusDetail(BaseDetail):
             self.results_tabs.setVisible(False)
 
         # Fill splitter:
-        self.splitter.addWidget(self.detail_tabs)
+        self.splitter.addWidget(self.request_tabs)
         self.splitter.addWidget(self.results_tabs)
 
         # Connect signals and slots
         self.execute_button.clicked.connect(self.execute)
 
     def execute(self):
-        protocol_client = self.model.protocol_client_manager.get_handler(protocol="Modbus",
-                                                                         client_type=self.item.client_type,
-                                                                         **asdict(self.item.client))    # TODO: add RTU
+        try:
+            protocol_client = self.model.protocol_client_manager.get_handler(protocol="Modbus",
+                                                                             item=self.item)
+            self.request_tabs.connection_widget.signal_error_message.emit("")
+        except Exception as e:
+            protocol_client = None
+            self.request_tabs.connection_widget.signal_error_message.emit(f"Error while getting client: {e}")
 
-        request_result = protocol_client.execute_request(data_type=self.item.data_type,
-                                                         function=self.item.function,
-                                                         address=self.item.address,
-                                                         count=self.item.count,
-                                                         slave=self.item.slave,
-                                                         values=[value for value in self.item.values])
-
-        self.results_tabs.process_response(response=request_result)
-        self.results_tabs.setVisible(True)
+        if protocol_client:
+            protocol_client.connect()
+            request_result = protocol_client.execute_request(request_name=self.item.name,
+                                                             data_type=self.item.data_type,
+                                                             function=self.item.function,
+                                                             address=self.item.address,
+                                                             count=self.item.count,
+                                                             slave=self.item.slave,
+                                                             values=[value for value in self.item.values])
+            protocol_client.disconnect()
+            self.results_tabs.process_response(response=request_result)
+            self.results_tabs.setVisible(True)
+        else:
+            self.results_tabs.process_response(response=None)
+            self.results_tabs.setVisible(False)
 
 
 if __name__ == "__main__":

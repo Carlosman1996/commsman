@@ -1,5 +1,6 @@
 import os
 import pickle
+from dataclasses import asdict
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QStandardItem, QIcon
@@ -53,19 +54,37 @@ class ProtocolClientManager:
     def __init__(self):
         self.handlers: dict[str, BaseClient] = {}  # Key: handler ID, Value: handler
 
-    def get_handler(self, protocol: str, client_type: str, **kwargs) -> BaseClient:
+    def get_handler(self, protocol: str, item: ModelItem) -> BaseClient:
         """Get or create a handler for the specified protocol."""
-        handler_id = self._generate_handler_id(protocol, **kwargs)
-        if handler_id not in self.handlers:
-            if protocol == "Modbus":
-                if client_type == "Modbus TCP":
-                    self.handlers[handler_id] = CustomModbusTcpClient(**kwargs)
-                elif client_type == "Modbus RTU":
-                    self.handlers[handler_id] = CustomModbusRtuClient(**kwargs)
+
+        def find_item_client(protocol: str, item: ModelItem) -> ModelItem:
+            if item.client_type == "No connection":
+                raise Exception(f"Current request does not have client")
+            elif item.client_type == "Inherit from parent":
+                parent = item.parent()
+                return find_item_client(protocol, parent)
+            elif item.client:
+                if item.client.item_type == protocol:
+                    return item
                 else:
-                    raise ValueError(f"Unsupported Modbus client type: {client_type}")
+                    raise Exception(f"Current request client protocol is not correct: expected {protocol} - found {item.client.item_type}")
             else:
-                raise ValueError(f"Unsupported protocol: {protocol}")
+                raise Exception(f"FATAL ERROR - Could not resolve item client: {protocol} - {item}")
+
+        item_with_client = find_item_client(protocol=protocol, item=item)
+
+        client_type = item_with_client.client_type
+        client_data = asdict(item_with_client.client)
+        del client_data["name"]
+
+        handler_id = self._generate_handler_id(protocol, **client_data)
+        if handler_id not in self.handlers:
+            if client_type == "Modbus TCP":
+                self.handlers[handler_id] = CustomModbusTcpClient(**client_data)
+            elif client_type == "Modbus RTU":
+                self.handlers[handler_id] = CustomModbusRtuClient(**client_data)
+            else:
+                raise ValueError(f"Unsupported Modbus client type: {client_type}")
         return self.handlers[handler_id]
 
     def close_handler(self, protocol: str, **kwargs):

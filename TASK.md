@@ -1,6 +1,8 @@
 # *TODOs KANBAN*
 
-TODO: Childs connection can inherit parents
+TODO: Childs connection can inherit parents.
+- Folders can have no connection or inherit from parent
+- The client manager must search for parents (save at item the state - None (NO), Inherit (?), Client (Dataclass))
 
 TODO: Study how to show Modbus results at request header, not only in general information to improve/ensure/show the user the request has been done
 

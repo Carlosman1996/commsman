@@ -1,120 +1,136 @@
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QLabel,
-                             QLineEdit, QSpinBox)
+from functools import partial
+
+from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtWidgets import (QWidget, QLabel,
+                             QLineEdit, QSpinBox, QVBoxLayout)
 
 from frontend.components.components import CustomGridLayout, CustomComboBox
 from frontend.models.modbus import ModbusRtuClient, ModbusTcpClient
 
 
 class ConnectionTabWidget(QWidget):
+
+    signal_error_message = pyqtSignal(str)
+
     def __init__(self, model, connection_types):
         super().__init__()
 
         self.model = model
         self.item = self.model.get_selected_item()
 
+        main_layout = QVBoxLayout()
+
         self.grid_layout = CustomGridLayout()
 
         self.connection_type_combo = CustomComboBox()
         self.connection_type_combo.addItems(connection_types)
-        self.grid_layout.add_widget(QLabel("Connection Type:"), self.connection_type_combo, connect_signal=False)
+        self.grid_layout.add_widget(QLabel("Connection Type:"), self.connection_type_combo)
 
-        self.setLayout(self.grid_layout)
+        # Add the grid layout to the main layout
+        main_layout.addLayout(self.grid_layout)
+
+        # Create an error message
+        self.error_label = QLabel("")
+        self.error_label.setStyleSheet("color: red; font-weight: bold;")
+
+        # Add the error label to the main layout
+        main_layout.addWidget(self.error_label, alignment=Qt.AlignmentFlag.AlignTop)    # TODO: create custom QVBoxLayout
+
+        self.setLayout(main_layout)
 
         # Set initial state and connect signals:
-        try:
-            self.update_connection_type(client_type=self.item.client_type, client=self.item.client)
-        except Exception as e:
-            # TODO: add logger
-            print(f"Exception at Connection: {e}")
-            self.update_connection_type()
+        self.update_connection_type(load_data=True)
 
-        self.connection_type_combo.currentTextChanged.connect(self.update_connection_type)
-        self.grid_layout.signal_update_item.connect(self.update_item)
+        self.grid_layout.signal_update_item.connect(partial(self.update_connection_type, load_data=False))
+        self.signal_error_message.connect(self.set_error_message)
 
-    def update_connection_type(self, client_type: str = None, client: ModbusRtuClient | ModbusTcpClient = None):
-        if client_type is None:
-            client_type = self.connection_type_combo.currentText()
+    def update_connection_type(self, load_data: bool = False):
+        item_client_type = self.item.client_type
 
-        index = self.connection_type_combo.findText(client_type)
-        self.connection_type_combo.setCurrentIndex(index)
+        if item_client_type != self.connection_type_combo.currentText():
+            if load_data:
+                item_client = self.item.client
+                index = self.connection_type_combo.findText(item_client_type)
+                self.connection_type_combo.setCurrentIndex(index)
+            else:
+                item_client = None
+                item_client_type = self.connection_type_combo.currentText()
 
-        self.grid_layout.clear_layout(from_item_row=1)
+            self.grid_layout.clear_layout(from_item_row=1)
 
-        if client_type == "No connection":
-            pass
-        elif client_type == "Modbus TCP":
-            if not client:
-                client = ModbusTcpClient(
-                    name=self.item.name
-                )
+            if item_client_type == "Modbus TCP":
+                if not item_client:
+                    item_client = ModbusTcpClient(
+                        name=self.item.name
+                    )
 
-            host_line_edit = QLineEdit(client.host)
-            self.grid_layout.add_widget(QLabel("Host:"), host_line_edit)
+                host_line_edit = QLineEdit(item_client.host)
+                self.grid_layout.add_widget(QLabel("Host:"), host_line_edit)
 
-            port_spinbox = QSpinBox()
-            port_spinbox.setRange(1, 65535)
-            port_spinbox.setValue(client.port)
-            self.grid_layout.add_widget(QLabel("Port:"), port_spinbox)
+                port_spinbox = QSpinBox()
+                port_spinbox.setRange(1, 65535)
+                port_spinbox.setValue(item_client.port)
+                self.grid_layout.add_widget(QLabel("Port:"), port_spinbox)
 
-            timeout_spinbox = QSpinBox()
-            timeout_spinbox.setRange(1, 65535)
-            timeout_spinbox.setValue(client.timeout)
-            self.grid_layout.add_widget(QLabel("Timeout:"), timeout_spinbox)
+                timeout_spinbox = QSpinBox()
+                timeout_spinbox.setRange(1, 65535)
+                timeout_spinbox.setValue(item_client.timeout)
+                self.grid_layout.add_widget(QLabel("Timeout:"), timeout_spinbox)
 
-            retries_spinbox = QSpinBox()
-            retries_spinbox.setRange(1, 65535)
-            retries_spinbox.setValue(client.retries)
-            self.grid_layout.add_widget(QLabel("Timeout:"), retries_spinbox)
-        elif client_type == "Modbus RTU":
-            if not client:
-                client = ModbusRtuClient(
-                    name=self.item.name
-                )
+                retries_spinbox = QSpinBox()
+                retries_spinbox.setRange(1, 65535)
+                retries_spinbox.setValue(item_client.retries)
+                self.grid_layout.add_widget(QLabel("Timeout:"), retries_spinbox)
+            elif item_client_type == "Modbus RTU":
+                if not item_client:
+                    item_client = ModbusRtuClient(
+                        name=self.item.name
+                    )
 
-            port_line_edit = QLineEdit(client.port)
-            self.grid_layout.add_widget(QLabel("Port:"), port_line_edit)
+                port_line_edit = QLineEdit(item_client.port)
+                self.grid_layout.add_widget(QLabel("Port:"), port_line_edit)
 
-            baudrate_combo = CustomComboBox()
-            baudrate_combo.addItems(["9600", "19200", "38400", "57600", "115200"])
-            index = baudrate_combo.findText(str(client.baudrate))
-            baudrate_combo.setCurrentIndex(index)
-            self.grid_layout.add_widget(QLabel("Baudrate:"), baudrate_combo)
+                baudrate_combo = CustomComboBox()
+                baudrate_combo.addItems(["9600", "19200", "38400", "57600", "115200"])
+                index = baudrate_combo.findText(str(item_client.baudrate))
+                baudrate_combo.setCurrentIndex(index)
+                self.grid_layout.add_widget(QLabel("Baudrate:"), baudrate_combo)
 
-            parity_combo = CustomComboBox()
-            parity_combo.addItems(["None", "Even", "Odd"])
-            index = parity_combo.findText(str(client.parity))
-            parity_combo.setCurrentIndex(index)
-            self.grid_layout.add_widget(QLabel("Parity:"), parity_combo)
+                parity_combo = CustomComboBox()
+                parity_combo.addItems(["None", "Even", "Odd"])
+                index = parity_combo.findText(str(item_client.parity))
+                parity_combo.setCurrentIndex(index)
+                self.grid_layout.add_widget(QLabel("Parity:"), parity_combo)
 
-            stopbits_spinbox = QSpinBox()
-            stopbits_spinbox.setRange(0, 2)
-            stopbits_spinbox.setValue(client.stopbits)
-            self.grid_layout.add_widget(QLabel("Stopbits:"), stopbits_spinbox)
+                stopbits_spinbox = QSpinBox()
+                stopbits_spinbox.setRange(0, 2)
+                stopbits_spinbox.setValue(item_client.stopbits)
+                self.grid_layout.add_widget(QLabel("Stopbits:"), stopbits_spinbox)
 
-            bytesize_spinbox = QSpinBox()
-            bytesize_spinbox.setRange(7, 8)
-            bytesize_spinbox.setValue(client.bytesize)
-            self.grid_layout.add_widget(QLabel("Bytesize:"), bytesize_spinbox)
+                bytesize_spinbox = QSpinBox()
+                bytesize_spinbox.setRange(7, 8)
+                bytesize_spinbox.setValue(item_client.bytesize)
+                self.grid_layout.add_widget(QLabel("Bytesize:"), bytesize_spinbox)
 
-            timeout_spinbox = QSpinBox()
-            timeout_spinbox.setRange(1, 65535)
-            timeout_spinbox.setValue(client.timeout)
-            self.grid_layout.add_widget(QLabel("Timeout:"), timeout_spinbox)
+                timeout_spinbox = QSpinBox()
+                timeout_spinbox.setRange(1, 65535)
+                timeout_spinbox.setValue(item_client.timeout)
+                self.grid_layout.add_widget(QLabel("Timeout:"), timeout_spinbox)
 
-            retries_spinbox = QSpinBox()
-            retries_spinbox.setRange(1, 65535)
-            retries_spinbox.setValue(client.retries)
-            self.grid_layout.add_widget(QLabel("Retries:"), retries_spinbox)
-        else:
-            raise Exception(f"Connection type {client_type} not allowed")
+                retries_spinbox = QSpinBox()
+                retries_spinbox.setRange(1, 65535)
+                retries_spinbox.setValue(item_client.retries)
+                self.grid_layout.add_widget(QLabel("Retries:"), retries_spinbox)
 
         self.update_item()
 
     def update_item(self):
+
+        # Reset message error on any client change:
+        self.set_error_message("")
+
         client_type = self.connection_type_combo.currentText()
-        if client_type == "No connection":
-            client = None
-        elif client_type == "Modbus TCP":
+        if client_type == "Modbus TCP":
             client = ModbusTcpClient(
                 name=self.item.name,
                 host=self.grid_layout.get_field(0, 1).text(),
@@ -134,6 +150,10 @@ class ConnectionTabWidget(QWidget):
                 retries=int(self.grid_layout.get_field(0, 7).text())
             )
         else:
-            raise Exception(f"Connection type {client_type} not allowed")
+            client = None
 
         self.model.update_item(client_type=client_type, client=client)
+
+    def set_error_message(self, message: str):
+        self.error_label.setText(message)
+        self.error_label.show()

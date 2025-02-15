@@ -96,6 +96,11 @@ class CustomGridLayout(QGridLayout):
         else:
             raise Exception(f"Widget instance {type(widget)} - {widget} not defined")
 
+    def get_label(self, column, index):
+        """Get a specific label by index."""
+        label, _ = self.table[column][index]
+        return label
+
     def get_field(self, column, index):
         """Get a specific label by index."""
         _, field = self.table[column][index]
@@ -281,7 +286,7 @@ class CustomStandardItemModel(QStandardItemModel):
             self.layoutChanged.emit()
             return
 
-        if destination_item and (destination_item.data(Qt.ItemDataRole.UserRole).item_type == "Collection"):
+        if destination_item != self.invisibleRootItem() and (destination_item.data(Qt.ItemDataRole.UserRole).item_type == "Collection"):
             if destination_row > destination_item.rowCount():
                 destination_item.insertRow(destination_item.rowCount(), source_row_data)
             else:

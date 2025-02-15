@@ -22,7 +22,7 @@ context = ModbusServerContext(slaves=store, single=True)
 print("Starting Modbus RTU Server...")
 StartSerialServer(
     context,
-    port='/dev/pts/2',  # Ensure this matches the virtual port
+    port='/dev/pts/1',  # Ensure this matches the virtual port
     baudrate=9600,
     parity='N',
     stopbits=1,

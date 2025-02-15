@@ -1,5 +1,4 @@
-from dataclasses import dataclass, field
-from functools import partial
+from dataclasses import dataclass
 
 
 @dataclass
@@ -17,7 +16,7 @@ class ModbusRtuClient:
     name: str
     item_type: str = "Modbus"
     port: str = "COM1"
-    baudrate: int = 115200
+    baudrate: int = 9600
     parity: str = "None"
     stopbits: int = 1
     bytesize: int = 8
@@ -29,6 +28,7 @@ class ModbusRtuClient:
 class ModbusTcpResponse:
     name: str
     item_type: str = "Modbus"
+    client_type: str = "Modbus TCP"
     slave: int = None
     transaction_id: int = None
     protocol_id: int = None
@@ -48,6 +48,7 @@ class ModbusTcpResponse:
 class ModbusRtuResponse:
     name: str
     item_type: str = "Modbus"
+    client_type: str = "Modbus RTU"
     slave: int = None
     function_code: int = None
     address: int = None
@@ -66,8 +67,8 @@ class ModbusRtuResponse:
 class ModbusRequest:
     name: str
     item_type: str = "Modbus"
-    client_type: str = "Modbus TCP"
-    client: ModbusTcpClient | ModbusRtuClient = field(default_factory=partial(ModbusTcpClient, "unknown"))
+    client_type: str = "No connection"
+    client: ModbusTcpClient | ModbusRtuClient = None
     function: str = "Read Holding Registers"
     data_type: str = "16-bit Integer"
     slave: int = 0
