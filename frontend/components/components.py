@@ -101,6 +101,7 @@ class CustomGridLayout(QGridLayout):
         label, _ = self.table[column][index]
         return label
 
+    # TODO: get field by key, better than index
     def get_field(self, column, index):
         """Get a specific label by index."""
         _, field = self.table[column][index]

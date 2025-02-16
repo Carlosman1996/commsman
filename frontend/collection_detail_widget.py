@@ -1,6 +1,5 @@
 import sys
 
-from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QLineEdit, QSpinBox, QTabWidget, QHBoxLayout, QSplitter)
 
@@ -8,6 +7,7 @@ from frontend.base_detail_widget import BaseDetail
 from frontend.connection_tab_widget import ConnectionTabWidget
 from frontend.model import Model
 from frontend.models.collection import Collection
+from frontend.run_options_tab_widget import RunOptionsTabWidget
 
 
 class CollectionRequestWidget(QWidget):
@@ -29,7 +29,9 @@ class CollectionRequestWidget(QWidget):
             self.connection_widget = ConnectionTabWidget(model, controller, ["Inherit from parent"] + self.CLIENT_TYPES)
         else:
             self.connection_widget = ConnectionTabWidget(model, controller, self.CLIENT_TYPES)
+
         detail_tabs.addTab(self.connection_widget, "Connection")
+        detail_tabs.addTab(RunOptionsTabWidget(model), "Run options")
 
         main_layout.addWidget(detail_tabs)
 

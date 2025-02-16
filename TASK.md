@@ -1,13 +1,14 @@
 # *TODOs KANBAN*
 
-TODO: Study how to show Modbus results at request header, not only in general information to improve/ensure/show the user the request has been done
+TODO: Collections must show results
 
-TODO: Folders with execute button and results tab. Multiple requests are run at the same time
+TODO: Study how to show Modbus results at request header, not only in general information to improve/ensure/show the user the request has been done
 
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
 
 
 
+TODO: QGridLayout custom component must read table items by key str, not list. It must be a dictionary for better identification
 
 TODO: process raw data to extract registers from write multiple registers
 

@@ -13,7 +13,7 @@ from frontend.components.components import CustomGridLayout, CustomTable, Custom
 from frontend.connection_tab_widget import ConnectionTabWidget
 from frontend.model import Model
 from frontend.models.modbus import ModbusRequest, ModbusTcpResponse, ModbusRtuResponse
-
+from frontend.run_options_tab_widget import RunOptionsTabWidget
 
 FUNCTIONS_DICT = {
     "read": ["Read Holding Registers", "Read Input Registers", "Read Coils", "Read Discrete Inputs"],
@@ -128,6 +128,8 @@ class ModbusRequestWidget(QWidget):
         self.request_widget = ModbusRequestTabWidget(model)
         detail_tabs.addTab(self.request_widget, "Request")
 
+        detail_tabs.addTab(RunOptionsTabWidget(model), "Run options")
+
         main_layout.addWidget(detail_tabs)
 
 
@@ -241,7 +243,7 @@ class ModbusResponseWidget(QWidget):
 
         self.update_view()
 
-        controller.signal_requests_finished.connect(self.update_view)
+        controller.signal_request_finished.connect(self.update_view)
         self.data_type_combo.currentTextChanged.connect(self.update_view)
 
     def update_view(self):
@@ -331,7 +333,7 @@ class ModbusDetail(BaseDetail):
         self.splitter.addWidget(self.results_tabs)
 
         # Connect signals and slots
-        controller.signal_requests_finished.connect(self.set_results)
+        controller.signal_request_finished.connect(self.set_results)
 
     def set_results(self):
         if self.item.last_response:

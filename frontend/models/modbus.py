@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from frontend.models.run_options import RunOptions
+
 
 @dataclass
 class ModbusTcpClient:
@@ -78,3 +80,4 @@ class ModbusRequest:
     count: int = 1
     values: list = None
     last_response: ModbusTcpResponse | ModbusRtuResponse = None
+    run_options: RunOptions = None

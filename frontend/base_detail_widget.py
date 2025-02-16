@@ -8,17 +8,21 @@ from frontend.components.components import IconTextWidget
 
 
 class ExecuteButton(QPushButton):
-    def __init__(self):
+    def __init__(self, backend_running: bool):
         super().__init__("Run")
-        self.set_run()
+        self.run = True
+        if backend_running:
+            self.set_stop()
+        else:
+            self.set_run()
 
-    def set_running(self):
-        self.setEnabled(False)
-        self.setText("Running")
+    def set_stop(self):
+        self.run = False
+        self.setText("Stop")
         self.setStyleSheet("""
             QPushButton {
-                color: red;
-                border: 2px solid red;
+                background-color: red;
+                color: white;
             }
             QPushButton:hover {
                 background-color: red;
@@ -27,8 +31,7 @@ class ExecuteButton(QPushButton):
         """)
 
     def set_run(self):
-        # Re-enable the "Execute" button
-        self.setEnabled(True)
+        self.run = True
         self.setText("Run")
         self.setStyleSheet("""
             QPushButton {
@@ -67,7 +70,7 @@ class BaseDetail(QWidget):
         header_layout.addWidget(self.title_label)
 
         # Execute request:
-        self.execute_button = ExecuteButton()
+        self.execute_button = ExecuteButton(self.controller.running)
         header_layout.addWidget(self.execute_button, alignment=Qt.AlignmentFlag.AlignLeft)
 
         # Añadir la cabecera al layout principal
@@ -83,16 +86,15 @@ class BaseDetail(QWidget):
         self.execute_button.clicked.connect(self.execute)
 
     def execute(self):
-        self.execute_button.set_running()
+        if self.execute_button.run:
+            self.execute_button.set_stop()
 
-        # Create and start the backend_manager thread
-        self.controller.signal_request_progress.connect(self.update_progress)
-        self.controller.signal_requests_finished.connect(self.on_finished)
-        self.controller.start()
-
-    def update_progress(self, response):
-        # Update the progress label
-        print(response)
+            # Create and start the backend_manager thread
+            self.controller.signal_finish.connect(self.on_finished)
+            self.controller.start()
+        else:
+            self.controller.signal_finish.emit()
+            self.execute_button.set_run()
 
     def on_finished(self):
         self.execute_button.set_run()

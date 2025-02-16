@@ -127,8 +127,8 @@ class ConnectionTabWidget(QWidget):
         self.update_item()
 
     def set_error_message(self, message: str):
-        self.update_item()
         self.error_label.setText(message)
+        self.update_item()
 
     def update_item(self):
         client_type = self.connection_type_combo.currentText()
