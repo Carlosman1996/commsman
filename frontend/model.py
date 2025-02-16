@@ -60,21 +60,21 @@ class ProtocolClientManager:
     def get_handler(self, item: ModelItem) -> BaseClient:
         """Get or create a handler for the specified protocol."""
 
-        def find_item_client(item: ModelItem) -> ModelItem:
+        def find_item_client(item: ModelItem, base_item: ModelItem) -> ModelItem:
             if item.client_type == "No connection":
                 raise Exception(f"Current request does not have client")
             elif item.client_type == "Inherit from parent":
                 parent = item.parent()
-                return find_item_client(parent)
+                return find_item_client(parent, base_item)
             elif item.client:
-                if item.client.item_type == item.item_type:
+                if item.client.item_type == base_item.item_type:
                     return item
                 else:
                     raise Exception(f"Current request client protocol is not correct: expected {item.item_type} - found {item.client.item_type}")
             else:
                 raise Exception(f"FATAL ERROR - Could not resolve item client: {item.item_type} - {item}")
 
-        item_with_client = find_item_client(item=item)
+        item_with_client = find_item_client(item=item, base_item=item)
 
         client_type = item_with_client.client_type
         client_data = asdict(item_with_client.client)

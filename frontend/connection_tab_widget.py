@@ -10,9 +10,7 @@ from frontend.models.modbus import ModbusRtuClient, ModbusTcpClient
 
 class ConnectionTabWidget(QWidget):
 
-    signal_error_message = pyqtSignal(str)
-
-    def __init__(self, model, connection_types):
+    def __init__(self, model, controller, connection_types):
         super().__init__()
 
         self.model = model
@@ -42,7 +40,7 @@ class ConnectionTabWidget(QWidget):
         self.update_view(load_data=True)
 
         self.grid_layout.signal_update_item.connect(partial(self.update_view, load_data=False))
-        self.signal_error_message.connect(self.set_error_message)
+        controller.signal_client_error.connect(self.set_error_message)
 
     def update_view(self, load_data: bool = False):
         item_client_type = self.item.client_type
@@ -129,8 +127,8 @@ class ConnectionTabWidget(QWidget):
         self.update_item()
 
     def set_error_message(self, message: str):
-        self.error_label.setText(message)
         self.update_item()
+        self.error_label.setText(message)
 
     def update_item(self):
         client_type = self.connection_type_combo.currentText()

@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy
 )
 
+from backend.backend_manager import BackendManager
 from frontend.collection_detail_widget import CollectionDetail
 from frontend.model import Model
 from frontend.project_structure_section import ProjectStructureSection
@@ -40,6 +41,9 @@ class MainWindow(QMainWindow):
 
         # Define general model:
         self.model = Model()
+
+        # Define general controller:
+        self.controller = BackendManager(self.model)
 
         # Divide window in two sections:
         self.main_window_sections_splitter = QSplitter()
@@ -74,9 +78,9 @@ class MainWindow(QMainWindow):
 
         if item is not None:
             if item.item_type == "Modbus":
-                self.detail_section = ModbusDetail(self.model)
+                self.detail_section = ModbusDetail(self.model, self.controller)
             elif item.item_type == "Collection":
-                self.detail_section = CollectionDetail(self.model)
+                self.detail_section = CollectionDetail(self.model, self.controller)
             else:
                 self.detail_section = QLabel("Not implemented yet")
         else:

@@ -1,10 +1,8 @@
-from dataclasses import asdict
-
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter
 
-from frontend.backend_manager import BackendManager
+from backend.backend_manager import BackendManager
 from frontend.common import ITEMS
 from frontend.components.components import IconTextWidget
 
@@ -45,7 +43,7 @@ class ExecuteButton(QPushButton):
 
 
 class BaseDetail(QWidget):
-    def __init__(self, model):
+    def __init__(self, model, controller):
         super().__init__()
 
         self.setMinimumSize(800, 600)
@@ -54,6 +52,8 @@ class BaseDetail(QWidget):
 
         self.model = model
         self.item = self.model.get_selected_item()
+
+        self.controller = controller
 
         main_layout = QVBoxLayout()
 
@@ -79,7 +79,6 @@ class BaseDetail(QWidget):
         main_layout.addStretch()
 
         self.setLayout(main_layout)
-        self.backend_manager = BackendManager(self.model)
 
         self.execute_button.clicked.connect(self.execute)
 
@@ -87,13 +86,13 @@ class BaseDetail(QWidget):
         self.execute_button.set_running()
 
         # Create and start the backend_manager thread
-        self.backend_manager.signal_request_progress.connect(self.update_progress)
-        self.backend_manager.signal_requests_finished.connect(self.on_finished)
-        self.backend_manager.start()
+        self.controller.signal_request_progress.connect(self.update_progress)
+        self.controller.signal_requests_finished.connect(self.on_finished)
+        self.controller.start()
 
     def update_progress(self, response):
         # Update the progress label
-        print(asdict(response))
+        print(response)
 
     def on_finished(self):
         self.execute_button.set_run()

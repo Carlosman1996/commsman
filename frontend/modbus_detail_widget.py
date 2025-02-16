@@ -112,7 +112,7 @@ class ModbusRequestTabWidget(QWidget):
 
 class ModbusRequestWidget(QWidget):
 
-    def __init__(self, model):
+    def __init__(self, model, controller):
         super().__init__()
 
         # Main layout
@@ -122,7 +122,7 @@ class ModbusRequestWidget(QWidget):
         # Set tabs:
         detail_tabs = QTabWidget()
 
-        self.connection_widget = ConnectionTabWidget(model, ["Inherit from parent", "Modbus TCP", "Modbus RTU"])
+        self.connection_widget = ConnectionTabWidget(model, controller, ["Inherit from parent", "Modbus TCP", "Modbus RTU"])
         detail_tabs.addTab(self.connection_widget, "Connection")
 
         self.request_widget = ModbusRequestTabWidget(model)
@@ -133,7 +133,7 @@ class ModbusRequestWidget(QWidget):
 
 class ModbusResponseWidget(QWidget):
 
-    def __init__(self, model):
+    def __init__(self, model, controller):
         super().__init__()
 
         self.model = model
@@ -241,7 +241,8 @@ class ModbusResponseWidget(QWidget):
 
         self.update_view()
 
-        self.data_type_combo.currentTextChanged.connect(self.update_table)
+        controller.signal_requests_finished.connect(self.update_view)
+        self.data_type_combo.currentTextChanged.connect(self.update_view)
 
     def update_view(self):
         response = self.item.last_response
@@ -314,14 +315,14 @@ class ModbusResponseWidget(QWidget):
 
 
 class ModbusDetail(BaseDetail):
-    def __init__(self, model):
-        super().__init__(model)
+    def __init__(self, model, controller):
+        super().__init__(model, controller)
 
         # Detail
-        self.request_tabs = ModbusRequestWidget(model)
+        self.request_tabs = ModbusRequestWidget(model, controller)
 
         # Results
-        self.results_tabs = ModbusResponseWidget(model)
+        self.results_tabs = ModbusResponseWidget(model, controller)
         if self.item.last_response is None:
             self.results_tabs.setVisible(False)
 
@@ -330,11 +331,10 @@ class ModbusDetail(BaseDetail):
         self.splitter.addWidget(self.results_tabs)
 
         # Connect signals and slots
-        self.backend_manager.signal_requests_finished.connect(self.set_results)
+        controller.signal_requests_finished.connect(self.set_results)
 
     def set_results(self):
         if self.item.last_response:
-            self.results_tabs.update_view()
             self.results_tabs.setVisible(True)
         else:
             self.results_tabs.setVisible(False)

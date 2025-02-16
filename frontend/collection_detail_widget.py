@@ -14,7 +14,7 @@ class CollectionRequestWidget(QWidget):
 
     CLIENT_TYPES = ["No connection", "Modbus TCP", "Modbus RTU"]
 
-    def __init__(self, model):
+    def __init__(self, model, controller):
         super().__init__()
 
         # Main layout
@@ -26,20 +26,26 @@ class CollectionRequestWidget(QWidget):
 
         item = model.get_selected_item()
         if hasattr(item, "parent") and (item.parent()):
-            connection_widget = ConnectionTabWidget(model, ["Inherit from parent"] + self.CLIENT_TYPES)
+            self.connection_widget = ConnectionTabWidget(model, controller, ["Inherit from parent"] + self.CLIENT_TYPES)
         else:
-            connection_widget = ConnectionTabWidget(model, self.CLIENT_TYPES)
-        detail_tabs.addTab(connection_widget, "Connection")
+            self.connection_widget = ConnectionTabWidget(model, controller, self.CLIENT_TYPES)
+        detail_tabs.addTab(self.connection_widget, "Connection")
 
         main_layout.addWidget(detail_tabs)
 
+        # Set initial state:
+        self.update_view()
+
+    def update_view(self):
+        self.connection_widget.error_label.setVisible(False)
+
 
 class CollectionDetail(BaseDetail):
-    def __init__(self, model):
-        super().__init__(model)
+    def __init__(self, model, controller):
+        super().__init__(model, controller)
 
         # Detail
-        self.detail_tabs = CollectionRequestWidget(model)
+        self.detail_tabs = CollectionRequestWidget(model, controller)
 
         # Fill splitter:
         self.splitter.addWidget(self.detail_tabs)
