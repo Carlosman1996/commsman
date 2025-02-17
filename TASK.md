@@ -6,7 +6,15 @@ TODO: Study how to show Modbus results at request header, not only in general in
 
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
 
+TODO: Test without automatically reconnecting client
 
+TODO: Data types convert with LSB or MSB - compare with modscan
+
+TODO: documentation
+
+
+
+TODO: Pre-request conditions as time sleep
 
 TODO: QGridLayout custom component must read table items by key str, not list. It must be a dictionary for better identification
 
