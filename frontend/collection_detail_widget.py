@@ -1,7 +1,10 @@
 import sys
 
+from PyQt6.QtCore import QModelIndex, QAbstractItemModel, Qt
+from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
-                             QLineEdit, QSpinBox, QTabWidget, QHBoxLayout, QSplitter, QTextEdit, QTableWidgetItem)
+                             QLineEdit, QSpinBox, QTabWidget, QHBoxLayout, QSplitter, QTextEdit, QTableWidgetItem,
+                             QTreeView, QSizePolicy)
 
 from backend.backend_manager import BackendManager
 from frontend.base_detail_widget import BaseDetail
@@ -38,6 +41,65 @@ class CollectionRequestWidget(QWidget):
         main_layout.addWidget(detail_tabs)
 
 
+class CollectionResultTreeView(QTreeView):
+    def __init__(self, collection_results):
+        super().__init__()
+
+        self.setStyleSheet("""
+            QTreeView::item:selected {
+                background-color: #C89BD2;  /* Optional: Set a selection background color */
+            }
+            QTreeView::branch {
+                margin-left: -5px;  /* Pull branch indicators closer to items */
+                border-image: none;
+            }
+        """)
+
+        # Create a QTreeView and a QStandardItemModel
+        self.tree_view = QTreeView(self)
+        self.model = QStandardItemModel()
+        self.model.setHorizontalHeaderLabels(['Name', 'Status'])
+
+        # Populate the model with data
+        self.populate_model(self.model, collection_results)
+
+        # Set the model to the tree view
+        self.tree_view.setModel(self.model)
+
+    def populate_model(self, model, collection_result, parent=None):
+        # Create a folder item for the collection
+        folder_item = QStandardItem(f"{collection_result.name}")
+        status_item = QStandardItem(self.get_collection_status(collection_result))
+
+        if parent is None:
+            model.appendRow([folder_item, status_item])
+        else:
+            parent.appendRow([folder_item, status_item])
+
+        # Add sub-collections
+        for sub_collection in collection_result.collections:
+            self.populate_model(model, sub_collection, folder_item)
+
+        # Add requests
+        for request in collection_result.requests:
+            request_item = QStandardItem(request.name)
+            status_item = QStandardItem(self.get_request_status(request))
+            folder_item.appendRow([request_item, status_item])
+
+    def get_collection_status(self, collection_result):
+        total_requests = collection_result.total_ok + collection_result.total_failed + collection_result.total_pending
+        if collection_result.total_failed > 0:
+            return f"Failed ({total_requests} requests: {collection_result.total_ok} OK, {collection_result.total_failed} Failed)"
+        else:
+            return f"Success ({total_requests} requests: {collection_result.total_ok} OK)"
+
+    def get_request_status(self, request):
+        if request.result == "Passed":
+            return "OK  ✅"
+        else:
+            return f"❌ ({request.error_message})"
+
+
 class CollectionResultWidget(QWidget):
 
     def __init__(self, model, controller):
@@ -55,25 +117,18 @@ class CollectionResultWidget(QWidget):
         main_layout.addWidget(self.tabs)
 
         # Response Tab
-        self.results_tab = QWidget()
-        self.results_layout = QVBoxLayout()
-        self.results_tab.setLayout(self.results_layout)
-
-        # Response values table (initially hidden)
-        self.values_table = CustomTable(["Parent", "Type", "Name", "Result", "Timestamp"])
-        self.results_layout.addWidget(self.values_table)
-
-        self.results_layout.addStretch()
-
-        self.tabs.addTab(self.results_tab, "Results")
+        self.results_tab = None
 
         # Set initial state and connect signals:
-
         self.update_view()
 
         controller.signal_request_finished.connect(self.update_view)
 
     def update_view(self):
+        self.results_tab = CollectionResultTreeView(self.item.last_response)
+        self.tabs.addTab(self.results_tab, "Results")
+
+    def update_view_table(self):
         response = self.item.last_response
         if response is None:
             return

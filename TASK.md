@@ -2,13 +2,19 @@
 
 ## Priority
 
-TODO: Collections must show results
+TODO: Collections must show results:
+    - Tree view must be expanded in window and data
+    - Update tree view in real time
+    - Show timestamp
+    - Show elapsed time
 
 TODO: Study how to show Modbus results at request header, not only in general information to improve/ensure/show the user the request has been done
 
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
 
 ## Future
+
+TODO: collections tree view must preload all requests and show in real time: "waiting", "in progress", "done"
 
 TODO: change self.item.last_response by self.item.last_result for better legibility
 
