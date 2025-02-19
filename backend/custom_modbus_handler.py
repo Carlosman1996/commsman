@@ -6,7 +6,7 @@ from pymodbus import ModbusException
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.framer import FramerSocket, FramerRTU
 from pymodbus.pdu import DecodePDU
-from backend.base_client import BaseClient
+from backend.base_handler import BaseHandler
 from frontend.models.modbus import ModbusTcpResponse, ModbusRtuResponse
 
 
@@ -91,7 +91,7 @@ def convert_value_after_sending(data_type: str, address: int, values: list):
     return address_values
 
 
-class CustomModbusHandler(BaseClient):
+class CustomModbusHandler(BaseHandler):
     def __init__(self):
         self.client = None
         self.framer = None
@@ -126,10 +126,13 @@ class CustomModbusHandler(BaseClient):
                 raise Exception(f"Function '{function}' not supported")
 
     def execute_request(self, name: str, data_type: str, function: str, address: int, count: int, slave: int, values: list = None, **kwargs):
-        start_time = time.time()
-
         self.framer.reset_packets()
         self.initialize_response_dataclass(name)
+
+        start_time = time.time()
+        request_timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
+        self.response.timestamp = request_timestamp
+        self.response.result = "Failed"
 
         try:
             if "Write" in function:
@@ -153,6 +156,8 @@ class CustomModbusHandler(BaseClient):
 
             if modbus_response.isError():
                 raise ModbusException("Modbus returns error function code")
+            else:
+                self.response.result = "Passed"
         except ModbusException as e:
             self.response.error_message = f"Modbus Client returns exception:\n\n{e}"
         except Exception as e:
@@ -160,11 +165,9 @@ class CustomModbusHandler(BaseClient):
 
         end_time = time.time()
         elapsed_time = end_time - start_time
-        request_timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
 
         self.response.data_type = data_type
         self.response.elapsed_time = round(elapsed_time * 1000, 3)
-        self.response.timestamp = request_timestamp
 
         return self.response
 

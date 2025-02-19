@@ -1,12 +1,18 @@
 # *TODOs KANBAN*
 
+## Priority
+
 TODO: Collections must show results
 
 TODO: Study how to show Modbus results at request header, not only in general information to improve/ensure/show the user the request has been done
 
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
 
+## Future
 
+TODL: change self.item.last_response by self.item.last_result for better legibility
+
+TODO: model and components must be in backend layer (decouple frontend and backend). Frontend calls backend manager which returns JSON with data or saves/updates.
 
 TODO: QGridLayout custom component must read table items by key str, not list. It must be a dictionary for better identification
 

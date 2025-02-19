@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from frontend.models.base import BaseResult
 from frontend.models.run_options import RunOptions
 
 
@@ -11,7 +12,6 @@ class ModbusTcpClient:
     port: int = 502
     timeout: int = 3
     retries: int = 3
-    message: str = ""
 
 
 @dataclass
@@ -25,13 +25,17 @@ class ModbusRtuClient:
     bytesize: int = 8
     timeout: int = 3
     retries: int = 3
-    message: str = ""
 
 
 @dataclass
-class ModbusTcpResponse:
+class ModbusTcpResponse(BaseResult):
     name: str
     item_type: str = "Modbus"
+    parent: object = None
+    result: str = None
+    elapsed_time: float = None
+    timestamp: str = None
+    error_message: str = ""
     client_type: str = "Modbus TCP"
     slave: int = None
     transaction_id: int = None
@@ -41,17 +45,19 @@ class ModbusTcpResponse:
     registers: list[int] = None
     raw_packet_recv: str = ""
     raw_packet_send: str = ""
-    elapsed_time: float = None
-    timestamp: str = None
     data_type: str = "16-bit Integer"
     byte_count: int = None
-    error_message: str = ""
 
 
 @dataclass
-class ModbusRtuResponse:
+class ModbusRtuResponse(BaseResult):
     name: str
     item_type: str = "Modbus"
+    parent: object = None
+    result: str = None
+    elapsed_time: float = None
+    timestamp: str = None
+    error_message: str = ""
     client_type: str = "Modbus RTU"
     slave: int = None
     function_code: int = None
@@ -60,11 +66,8 @@ class ModbusRtuResponse:
     crc: int = None
     raw_packet_recv: str = ""
     raw_packet_send: str = ""
-    elapsed_time: float = None
-    timestamp: str = None
     data_type: str = "16-bit Integer"
     byte_count: int = None
-    error_message: str = ""
 
 
 @dataclass

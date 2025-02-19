@@ -27,20 +27,12 @@ class ConnectionTabWidget(QWidget):
         # Add the grid layout to the main layout
         main_layout.addLayout(self.grid_layout)
 
-        # Create an error message
-        self.error_label = QLabel("")
-        self.error_label.setStyleSheet("color: red; font-weight: bold;")
-
-        # Add the error label to the main layout
-        main_layout.addWidget(self.error_label, alignment=Qt.AlignmentFlag.AlignTop)    # TODO: create custom QVBoxLayout
-
         self.setLayout(main_layout)
 
         # Set initial state and connect signals:
         self.update_view(load_data=True)
 
         self.grid_layout.signal_update_item.connect(partial(self.update_view, load_data=False))
-        controller.signal_client_error.connect(self.set_error_message)
 
     def update_view(self, load_data: bool = False):
         item_client_type = self.item.client_type
@@ -121,13 +113,6 @@ class ConnectionTabWidget(QWidget):
                 retries_spinbox.setValue(item_client.retries)
                 self.grid_layout.add_widget(QLabel("Retries:"), retries_spinbox)
 
-        if item_client:
-            self.set_error_message(item_client.message)
-
-        self.update_item()
-
-    def set_error_message(self, message: str):
-        self.error_label.setText(message)
         self.update_item()
 
     def update_item(self):
@@ -139,7 +124,6 @@ class ConnectionTabWidget(QWidget):
                 port=int(self.grid_layout.get_field(0, 2).text()),
                 timeout=int(self.grid_layout.get_field(0, 3).text()),
                 retries=int(self.grid_layout.get_field(0, 4).text()),
-                message=self.error_label.text()
             )
         elif client_type == "Modbus RTU":
             client = ModbusRtuClient(
@@ -151,7 +135,6 @@ class ConnectionTabWidget(QWidget):
                 bytesize=int(self.grid_layout.get_field(0, 5).text()),
                 timeout=int(self.grid_layout.get_field(0, 6).text()),
                 retries=int(self.grid_layout.get_field(0, 7).text()),
-                message=self.error_label.text()
             )
         else:
             client = None

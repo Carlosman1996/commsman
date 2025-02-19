@@ -5,8 +5,8 @@ from dataclasses import asdict
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QStandardItem, QIcon
 
-from backend.base_client import BaseClient
-from backend.custom_modbus_client import CustomModbusTcpClient, CustomModbusRtuClient
+from backend.base_handler import BaseHandler
+from backend.custom_modbus_handler import CustomModbusTcpClient, CustomModbusRtuClient
 from frontend.common import ITEMS
 from frontend.components.components import CustomStandardItemModel
 from frontend.models.collection import Collection
@@ -55,9 +55,9 @@ class ModelItem(QStandardItem):
 
 class ProtocolClientManager:
     def __init__(self):
-        self.handlers: dict[str, BaseClient] = {}  # Key: handler ID, Value: handler
+        self.handlers: dict[str, BaseHandler] = {}  # Key: handler ID, Value: handler
 
-    def get_handler(self, item: ModelItem) -> BaseClient:
+    def get_handler(self, item: ModelItem) -> BaseHandler:
         """Get or create a handler for the specified protocol."""
 
         def find_item_client(item: ModelItem, base_item: ModelItem) -> ModelItem:

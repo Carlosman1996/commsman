@@ -1,5 +1,4 @@
 import sys
-from dataclasses import asdict
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
@@ -7,7 +6,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QTabWidget, QTextEdit, QHBoxLayout, QGroupBox,
                              QTableWidgetItem)
 
-from backend.custom_modbus_client import convert_value_after_sending
+from backend.custom_modbus_handler import convert_value_after_sending
 from frontend.base_detail_widget import BaseDetail
 from frontend.components.components import CustomGridLayout, CustomTable, CustomComboBox
 from frontend.connection_tab_widget import ConnectionTabWidget
@@ -164,8 +163,7 @@ class ModbusResponseWidget(QWidget):
 
         self.data_type_combo = CustomComboBox()
         self.data_type_combo.addItems(["16-bit Integer", "16-bit Unsigned Integer", "32-bit Integer", "32-bit Unsigned Integer", "Hexadecimal", "Float", "Double", "String"])
-        if self.item.last_response:
-            self.data_type_combo.set_item(self.item.last_response.data_type)
+        self.data_type_combo.set_item(getattr(self.item.last_response, "data_type", "16-bit Integer"))
         self.data_type_combo.setMaximumWidth(200)
         self.data_type_combo.setMinimumWidth(200)
         self.data_type_label = QLabel("Show data type:")
@@ -251,7 +249,7 @@ class ModbusResponseWidget(QWidget):
         if response is None:
             return
 
-        self.protocol_label.setText(self.item.last_response.client_type)
+        self.protocol_label.setText(getattr(self.item.last_response, "client_type", "-"))
         self.elapsed_time_label.setText(str(self.item.last_response.elapsed_time) + " ms")
         self.timestamp_label.setText(str(self.item.last_response.timestamp))
 
@@ -275,14 +273,14 @@ class ModbusResponseWidget(QWidget):
         update_item(5, "crc")
 
         self.raw_data_edit.setText(
-            f"SEND: {self.item.last_response.raw_packet_send}\n\nRECV: {self.item.last_response.raw_packet_recv}")
+            f"SEND: {getattr(self.item.last_response, "raw_packet_send", "")}\n\nRECV: {getattr(self.item.last_response, "raw_packet_recv", "")}")
 
-        if self.item.last_response.error_message:
+        if self.item.last_response.result == "Failed":
             self.data_type_label.hide()
             self.data_type_combo.hide()
             self.values_table.hide()
 
-            self.status_label.setText("Fail")
+            self.status_label.setText(self.item.last_response.result)
             self.status_label.setStyleSheet("color: red;")
             self.error_data_edit.setText(
                 f"Status: {self.status_label.text()}\n\nError: {self.item.last_response.error_message}")
@@ -293,9 +291,9 @@ class ModbusResponseWidget(QWidget):
             self.data_type_combo.show()
             self.values_table.show()
 
-            self.status_label.setText("Pass")
+            self.status_label.setText(self.item.last_response.result)
             self.status_label.setStyleSheet("color: green;")
-            self.data_type_combo.set_item(self.item.last_response.data_type)
+            self.data_type_combo.set_item(getattr(self.item.last_response, "data_type", "-"))
             self.update_table()
 
     def update_table(self):
@@ -333,6 +331,7 @@ class ModbusDetail(BaseDetail):
         self.splitter.addWidget(self.results_tabs)
 
         # Connect signals and slots
+        self.set_results()
         controller.signal_request_finished.connect(self.set_results)
 
     def set_results(self):

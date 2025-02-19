@@ -1,69 +1,99 @@
+import copy
 import time
 from dataclasses import asdict
 
 from PyQt6.QtCore import QThread, pyqtSignal
 
+from backend.collection_handler import CollectionHandler
+from frontend.models.base import BaseResult
+from frontend.models.collection import CollectionResult
+
 
 class BackendManager(QThread):
 
-    signal_client_error = pyqtSignal(object)
-    signal_request_finished = pyqtSignal(object)
+    signal_request_finished = pyqtSignal()
     signal_finish = pyqtSignal()
 
     def __init__(self, model):
         super().__init__()
         self.model = model
         self.running = False
+        self.collection_handler = None
 
         self.signal_finish.connect(self.stop)
 
-    def run(self):
-        self.running = True
-        items = []
-        request_item = self.model.get_selected_item()
+    def get_run_items(self, item) -> list:
+        collection = []
 
-        def get_items(inspect_item):
-            if inspect_item.hasChildren():
-                for row in range(inspect_item.rowCount()):
-                    child = inspect_item.child(row, 0)  # (row, column)
-                    get_items(child)
-            else:
-                items.append(inspect_item)
-        get_items(request_item)
+        if item.hasChildren():
+            children = []
+            for row in range(item.rowCount()):
+                child = item.child(row, 0)  # (row, column)
+                children.extend(self.get_run_items(child))
+            collection.append({
+                "item": item,
+                "children": children
+            })
+        else:
+            collection.append({
+                "item": item
+            })
+        return collection
 
-        # Delayed start:
-        time.sleep(request_item.run_options.delayed_start)
-
-        for item in items:
-
+    def run_requests(self, selected_item, run_items_tree, parent=None):
+        for item_dict in run_items_tree:
             # Stop signal:
             if not self.running:
                 break
 
-            try:
-                protocol_client = self.model.protocol_client_manager.get_handler(item=item)
-                self.signal_client_error.emit("")
-            except Exception as e:
-                protocol_client = None
+            item = item_dict["item"]
+            children = item_dict.get("children")
 
-                # Update only item displayed:
-                if item == self.model.get_selected_item():
-                    self.signal_client_error.emit(f"Error while getting client: {e}")
+            start_time = time.time()
+            request_timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
 
-            if protocol_client:
-                protocol_client.connect()
-                request_result = protocol_client.execute_request(**asdict(item.get_dataclass()))
+            if children:
+                collection_result = CollectionResult(name=item.name,
+                                                     timestamp=request_timestamp)
+                if parent:
+                    self.collection_handler.add_collection(parent, collection_result)
+
+                self.model.update_specific_item(item=item, last_response=collection_result)
+
+                self.run_requests(selected_item, children, collection_result)
+
             else:
-                request_result = None
+                try:
+                    protocol_client = self.model.protocol_client_manager.get_handler(item=item)
+                    protocol_client.connect()
+                    request_result = protocol_client.execute_request(**asdict(item.get_dataclass()))
+                except Exception as e:
+                    request_result = BaseResult(name=item.name, item_type=item.item_type, result="Failed", elapsed_time=0, timestamp=request_timestamp, error_message=f"Error while getting client: {e}")
 
-            self.model.update_specific_item(item=item, last_response=request_result)
+                if parent:
+                    self.collection_handler.add_request(parent, request_result)
+
+                self.model.update_specific_item(item=item, last_response=request_result)
+
+                # Polling interval:
+                time.sleep(selected_item.run_options.polling_interval)
 
             # Update only item displayed:
-            if item == self.model.get_selected_item():
-                self.signal_request_finished.emit(request_result)
+            self.signal_request_finished.emit()
 
-            # Polling interval:
-            time.sleep(request_item.run_options.polling_interval)
+    def run(self):
+        self.running = True
+        self.collection_handler = CollectionHandler(self.model)
+
+        # TODO: include in backend refactor
+        # selected_item = copy.deepcopy(self.model.get_selected_item())
+        selected_item = self.model.get_selected_item()
+        run_items_tree = self.get_run_items(selected_item)
+
+        # Delayed start:
+        time.sleep(selected_item.run_options.delayed_start)
+
+        self.run_requests(selected_item, run_items_tree)
 
         self.model.protocol_client_manager.close_all_handlers()
         self.signal_finish.emit()

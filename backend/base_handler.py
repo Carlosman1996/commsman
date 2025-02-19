@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class BaseClient(ABC):
+class BaseHandler(ABC):
     @abstractmethod
     def connect(self):
         """Connect to the client."""
