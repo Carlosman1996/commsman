@@ -10,9 +10,17 @@ TODO: STUDY - continuous requests in a request type, like a background process o
 
 ## Future
 
-TODL: change self.item.last_response by self.item.last_result for better legibility
+TODO: change self.item.last_response by self.item.last_result for better legibility
 
 TODO: model and components must be in backend layer (decouple frontend and backend). Frontend calls backend manager which returns JSON with data or saves/updates.
+
+TODO: Test without automatically reconnecting client
+
+TODO: Data types convert with LSB or MSB - compare with modscan
+
+TODO: documentation
+
+TODO: Pre-request conditions as time sleep
 
 TODO: QGridLayout custom component must read table items by key str, not list. It must be a dictionary for better identification
 
