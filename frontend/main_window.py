@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Commsman")
         # self.showMaximized()
-        self.resize(1100, 600)
+        self.resize(1280, 720)
 
         # Define general model:
         self.model = Model()
@@ -59,6 +59,10 @@ class MainWindow(QMainWindow):
         # Add sections to splitter
         self.main_window_sections_splitter.addWidget(self.project_structure_section)
         self.main_window_sections_splitter.addWidget(self.detail_section)
+
+        # Set stretch factors
+        self.main_window_sections_splitter.setStretchFactor(0, 0)  # Index 0 (will not expand)
+        self.main_window_sections_splitter.setStretchFactor(1, 1)  # Index 1 (will expand)
 
         # Main layout:
         self.main_window_layout = QVBoxLayout()
@@ -88,6 +92,7 @@ class MainWindow(QMainWindow):
 
         if self.main_window_sections_splitter.count() > 1:
             self.main_window_sections_splitter.replaceWidget(1, self.detail_section)
+            self.main_window_sections_splitter.setStretchFactor(1, 1)  # Index 1 (will expand)
         return self.detail_section
 
     def closeEvent(self, *args, **kwargs):

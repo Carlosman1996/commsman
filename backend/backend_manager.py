@@ -1,4 +1,3 @@
-import copy
 import time
 from dataclasses import asdict
 
@@ -41,18 +40,22 @@ class BackendManager(QThread):
         return collection
 
     def run_requests(self, selected_item, run_items_tree, parent=None):
+        if run_items_tree is None:
+            return
+
         for item_dict in run_items_tree:
             # Stop signal:
             if not self.running:
                 break
 
             item = item_dict["item"]
-            children = item_dict.get("children")
 
             start_time = time.time()
             request_timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
 
-            if children:
+            if item.item_type == "Collection":
+                children = item_dict.get("children")
+
                 collection_result = CollectionResult(name=item.name,
                                                      timestamp=request_timestamp)
                 if parent:

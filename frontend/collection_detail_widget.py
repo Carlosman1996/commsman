@@ -1,14 +1,13 @@
 import sys
 
-from PyQt6.QtCore import QModelIndex, QAbstractItemModel, Qt
-from PyQt6.QtGui import QStandardItemModel, QStandardItem
+from PyQt6.QtCore import QModelIndex, QAbstractItemModel, Qt, QTimer
+from PyQt6.QtGui import QStandardItemModel, QStandardItem, QColor, QIcon
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QLineEdit, QSpinBox, QTabWidget, QHBoxLayout, QSplitter, QTextEdit, QTableWidgetItem,
                              QTreeView, QSizePolicy)
 
 from backend.backend_manager import BackendManager
 from frontend.base_detail_widget import BaseDetail
-from frontend.components.components import CustomTable
 from frontend.connection_tab_widget import ConnectionTabWidget
 from frontend.model import Model
 from frontend.models.collection import Collection
@@ -42,7 +41,7 @@ class CollectionRequestWidget(QWidget):
 
 
 class CollectionResultTreeView(QTreeView):
-    def __init__(self, collection_results):
+    def __init__(self):
         super().__init__()
 
         self.setStyleSheet("""
@@ -56,34 +55,64 @@ class CollectionResultTreeView(QTreeView):
         """)
 
         # Create a QTreeView and a QStandardItemModel
-        self.tree_view = QTreeView(self)
         self.model = QStandardItemModel()
-        self.model.setHorizontalHeaderLabels(['Name', 'Status'])
+        self.model.setHorizontalHeaderLabels(["Name", "Status"])
 
-        # Populate the model with data
-        self.populate_model(self.model, collection_results)
+        # self.setup_timer()
 
         # Set the model to the tree view
-        self.tree_view.setModel(self.model)
+        self.setModel(self.model)
 
-    def populate_model(self, model, collection_result, parent=None):
+    def setup_timer(self):
+        # Create a QTimer to update the model every 500ms (0.5 seconds)
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_model)
+        self.timer.start(500)  # Update every 500ms
+
+    def update_model(self, collection_results, collapse_view=False):
+        # Clear the model and repopulate it with updated data
+        self.model.clear()
+        self.model.setHorizontalHeaderLabels(["Name", "Status"])
+
+        self.setColumnWidth(0, 200)  # Minimum width for column 0
+        self.setColumnWidth(1, 200)  # Minimum width for column 1
+        self.populate_model(collection_results)
+
+        if not collapse_view:
+            # Expand all items in the tree view
+            self.expandAll()
+
+            # Scroll to the last item
+            last_index = self.model.index(self.model.rowCount() - 1, 0)
+            self.scrollTo(last_index)
+        else:
+            first_index = self.model.index(0, 0)
+            self.expand(first_index)
+
+    def populate_model(self, collection_result, parent=None):
+
         # Create a folder item for the collection
         folder_item = QStandardItem(f"{collection_result.name}")
         status_item = QStandardItem(self.get_collection_status(collection_result))
 
         if parent is None:
-            model.appendRow([folder_item, status_item])
+            self.model.appendRow([folder_item, status_item])
         else:
             parent.appendRow([folder_item, status_item])
 
         # Add sub-collections
         for sub_collection in collection_result.collections:
-            self.populate_model(model, sub_collection, folder_item)
+            self.populate_model(sub_collection, folder_item)
 
         # Add requests
         for request in collection_result.requests:
             request_item = QStandardItem(request.name)
-            status_item = QStandardItem(self.get_request_status(request))
+            text, status = self.get_request_status(request)
+            status_item = QStandardItem(text)
+            if status:
+                status_item.setIcon(QIcon.fromTheme('dialog-ok'))
+            else:
+                status_item.setIcon(QIcon.fromTheme('dialog-error'))
             folder_item.appendRow([request_item, status_item])
 
     def get_collection_status(self, collection_result):
@@ -95,9 +124,9 @@ class CollectionResultTreeView(QTreeView):
 
     def get_request_status(self, request):
         if request.result == "Passed":
-            return "OK  ✅"
+            return f"OK  [ {request.elapsed_time} ms ]", True
         else:
-            return f"❌ ({request.error_message})"
+            return f"Failed  [ {request.elapsed_time} ms ]", False
 
 
 class CollectionResultWidget(QWidget):
@@ -116,17 +145,28 @@ class CollectionResultWidget(QWidget):
         self.tabs = QTabWidget()
         main_layout.addWidget(self.tabs)
 
-        # Response Tab
-        self.results_tab = None
+        # Results Tab
+        self.results_tab = QWidget()
+        self.results_layout = QVBoxLayout()
+        self.results_tab.setLayout(self.results_layout)
+
+        # Tree view in results tab
+        self.results_tree = CollectionResultTreeView()
+        self.results_layout.addWidget(self.results_tree)
+
+        self.tabs.addTab(self.results_tab, "Results")
 
         # Set initial state and connect signals:
-        self.update_view()
+        self.update_view(load_data=True)
 
         controller.signal_request_finished.connect(self.update_view)
 
-    def update_view(self):
-        self.results_tab = CollectionResultTreeView(self.item.last_response)
-        self.tabs.addTab(self.results_tab, "Results")
+    def update_view(self, load_data=False):
+        response = self.item.last_response
+        if response is None:
+            return
+
+        self.results_tree.update_model(response, load_data)
 
     def update_view_table(self):
         response = self.item.last_response
@@ -176,6 +216,10 @@ class CollectionDetail(BaseDetail):
         # Fill splitter:
         self.splitter.addWidget(self.request_tabs)
         self.splitter.addWidget(self.results_tabs)
+
+        # Set stretch factors
+        self.splitter.setStretchFactor(0, 0)  # Index 0 (will not expand)
+        self.splitter.setStretchFactor(1, 1)  # Index 1 (will expand)
 
         # Connect signals and slots
         self.set_results()

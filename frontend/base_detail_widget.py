@@ -1,6 +1,6 @@
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy
 
 from frontend.common import ITEMS
 from frontend.components.components import IconTextWidget
@@ -76,9 +76,9 @@ class BaseDetail(QWidget):
         main_layout.addWidget(header)
 
         self.splitter = QSplitter()
+        self.splitter.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         main_layout.addWidget(self.splitter)
-        main_layout.addStretch()
 
         self.setLayout(main_layout)
 

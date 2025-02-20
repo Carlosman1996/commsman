@@ -330,6 +330,10 @@ class ModbusDetail(BaseDetail):
         self.splitter.addWidget(self.request_tabs)
         self.splitter.addWidget(self.results_tabs)
 
+        # Set stretch factors
+        self.splitter.setStretchFactor(0, 0)  # Index 0 (will not expand)
+        self.splitter.setStretchFactor(1, 1)  # Index 1 (will expand)
+
         # Connect signals and slots
         self.set_results()
         controller.signal_request_finished.connect(self.set_results)

@@ -3,10 +3,9 @@
 ## Priority
 
 TODO: Collections must show results:
-    - Tree view must be expanded in window and data
-    - Update tree view in real time
+    - Orders!
     - Show timestamp
-    - Show elapsed time
+    - Scroll to last item is not working
 
 TODO: Study how to show Modbus results at request header, not only in general information to improve/ensure/show the user the request has been done
 
@@ -27,6 +26,8 @@ TODO: Data types convert with LSB or MSB - compare with modscan
 TODO: documentation
 
 TODO: Pre-request conditions as time sleep
+
+TODO: Splitter must be a component with stretch factor: not expand on first element and expand on second, always.
 
 TODO: QGridLayout custom component must read table items by key str, not list. It must be a dictionary for better identification
 
