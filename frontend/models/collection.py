@@ -13,7 +13,7 @@ class CollectionResult(BaseResult):
     elapsed_time: float = None
     timestamp: str = None
     error_message: str = ""
-    collections: list = field(default_factory=list)
+    children: list = field(default_factory=list)
     total_ok: int = 0
     total_failed: int = 0
     total_pending: int = 0

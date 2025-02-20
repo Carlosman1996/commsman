@@ -3,7 +3,6 @@
 ## Priority
 
 TODO: Collections must show results:
-    - Orders!
     - Show timestamp
     - Scroll to last item is not working
 

@@ -12,26 +12,36 @@ class CollectionHandler:
 
     def add_request(self, collection: CollectionResult, request: BaseResult):
         """Add a request to a collection and update its status."""
-        collection.requests.append(request)
+        collection.children.append(request)  # Add to the children list
         self.update_status(collection)
 
     def add_collection(self, parent: CollectionResult, collection: CollectionResult):
         """Add a collection and update its status."""
         collection.parent = parent
-        parent.collections.append(collection)
+        parent.children.append(collection)  # Add to the children list
         self.update_status(parent)
 
     def count_results(self, collection: CollectionResult):
         """Count OK, Failed, and Pending requests in a collection and its collections."""
-        total_ok = sum(1 for r in collection.requests if r.result == "Passed")
-        total_failed = sum(1 for r in collection.requests if r.result == "Failed")
-        total_pending = sum(1 for r in collection.requests if r.result == "Pending")
+        total_ok = 0
+        total_failed = 0
+        total_pending = 0
 
-        for sub in collection.collections:
-            ok, failed, pending = self.count_results(sub)
-            total_ok += ok
-            total_failed += failed
-            total_pending += pending
+        for child in collection.children:
+            if child.item_type == "Collection":
+                # Recursively count results for sub-collections
+                ok, failed, pending = self.count_results(child)
+                total_ok += ok
+                total_failed += failed
+                total_pending += pending
+            else:
+                # Count results for requests
+                if child.result == "Passed":
+                    total_ok += 1
+                elif child.result == "Failed":
+                    total_failed += 1
+                elif child.result == "Pending":
+                    total_pending += 1
 
         return total_ok, total_failed, total_pending
 
@@ -46,7 +56,9 @@ class CollectionHandler:
         else:
             collection.result = "Passed"
 
+        # Calculate elapsed time
         collection.elapsed_time = time.time() - datetime.strptime(collection.timestamp, "%Y-%m-%d %H:%M:%S").timestamp()
 
+        # Propagate status update to parent
         if collection.parent:
             self.update_status(collection.parent)

@@ -58,16 +58,8 @@ class CollectionResultTreeView(QTreeView):
         self.model = QStandardItemModel()
         self.model.setHorizontalHeaderLabels(["Name", "Status"])
 
-        # self.setup_timer()
-
         # Set the model to the tree view
         self.setModel(self.model)
-
-    def setup_timer(self):
-        # Create a QTimer to update the model every 500ms (0.5 seconds)
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_model)
-        self.timer.start(500)  # Update every 500ms
 
     def update_model(self, collection_results, collapse_view=False):
         # Clear the model and repopulate it with updated data
@@ -76,6 +68,7 @@ class CollectionResultTreeView(QTreeView):
 
         self.setColumnWidth(0, 200)  # Minimum width for column 0
         self.setColumnWidth(1, 200)  # Minimum width for column 1
+
         self.populate_model(collection_results)
 
         if not collapse_view:
@@ -83,14 +76,32 @@ class CollectionResultTreeView(QTreeView):
             self.expandAll()
 
             # Scroll to the last item
-            last_index = self.model.index(self.model.rowCount() - 1, 0)
+            last_index = self.model.index(self.calculate_total_expanded_rows() - 1, 0)
+            print(last_index)
             self.scrollTo(last_index)
         else:
             first_index = self.model.index(0, 0)
             self.expand(first_index)
 
-    def populate_model(self, collection_result, parent=None):
+    def calculate_total_expanded_rows(self):
+        """Calculate the total number of expanded rows in the tree view."""
+        total_rows = self.get_expanded_row_count(self.model.invisibleRootItem())
+        print(f"Total Expanded Rows: {total_rows}")
+        return total_rows
 
+    def get_expanded_row_count(self, item):
+        """Recursively calculate the total number of expanded rows under an item."""
+        count = 0
+        for i in range(item.rowCount()):
+            child = item.child(i)
+            if child:
+                count += 1  # Count the current row
+                if self.isExpanded(self.model.indexFromItem(child)):
+                    count += self.get_expanded_row_count(child)  # Recursively count child rows
+        return count
+
+    def populate_model(self, collection_result, parent=None):
+        """Populate the QStandardItemModel with collections and requests."""
         # Create a folder item for the collection
         folder_item = QStandardItem(f"{collection_result.name}")
         status_item = QStandardItem(self.get_collection_status(collection_result))
@@ -100,20 +111,21 @@ class CollectionResultTreeView(QTreeView):
         else:
             parent.appendRow([folder_item, status_item])
 
-        # Add sub-collections
-        for sub_collection in collection_result.collections:
-            self.populate_model(sub_collection, folder_item)
-
-        # Add requests
-        for request in collection_result.requests:
-            request_item = QStandardItem(request.name)
-            text, status = self.get_request_status(request)
-            status_item = QStandardItem(text)
-            if status:
-                status_item.setIcon(QIcon.fromTheme('dialog-ok'))
+        # Iterate through children (both collections and requests)
+        for child in collection_result.children:
+            if child.item_type == "Collection":
+                # Handle sub-collection
+                self.populate_model(child, folder_item)
             else:
-                status_item.setIcon(QIcon.fromTheme('dialog-error'))
-            folder_item.appendRow([request_item, status_item])
+                # Handle request
+                request_item = QStandardItem(child.name)
+                text, status = self.get_request_status(child)
+                status_item = QStandardItem(text)
+                if status:
+                    status_item.setIcon(QIcon.fromTheme('dialog-ok'))  # Green check icon
+                else:
+                    status_item.setIcon(QIcon.fromTheme('dialog-error'))  # Red X icon
+                folder_item.appendRow([request_item, status_item])
 
     def get_collection_status(self, collection_result):
         total_requests = collection_result.total_ok + collection_result.total_failed + collection_result.total_pending

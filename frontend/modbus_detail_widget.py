@@ -242,7 +242,7 @@ class ModbusResponseWidget(QWidget):
         self.update_view()
 
         controller.signal_request_finished.connect(self.update_view)
-        self.data_type_combo.currentTextChanged.connect(self.update_view)
+        self.data_type_combo.currentTextChanged.connect(self.update_table)
 
     def update_view(self):
         response = self.item.last_response
