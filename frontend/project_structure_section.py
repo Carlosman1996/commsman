@@ -4,7 +4,7 @@ import os
 import sys
 
 from PyQt6.QtCore import QEvent, Qt, QSortFilterProxyModel, QRect, pyqtSignal, QModelIndex
-from PyQt6.QtGui import QStandardItemModel, QIcon, QDrag
+from PyQt6.QtGui import QStandardItemModel, QIcon, QDrag, QMouseEvent
 from PyQt6.QtWidgets import (
     QApplication,
     QVBoxLayout,
@@ -73,7 +73,6 @@ class CustomTreeView(QTreeView):
                 border-image: none;
             }
         """)
-        # self.setIndentation(40)
 
     def startDrag(self, supportedActions):
         """Start drag operation."""
@@ -121,6 +120,16 @@ class CustomTreeView(QTreeView):
         event.accept()
 
         self.viewport().update()  # Redraw the view
+
+    def mousePressEvent(self, event: QMouseEvent):
+        # Call the base class implementation
+        super().mousePressEvent(event)
+
+        # Check if the clicked position corresponds to a valid item
+        index = self.indexAt(event.pos())
+        if not index.isValid():
+            # Clear the selection if the click is outside any item
+            self.clearSelection()
 
 
 class CustomItemDelegate(QStyledItemDelegate):

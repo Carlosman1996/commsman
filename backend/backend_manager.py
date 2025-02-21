@@ -66,6 +66,21 @@ class BackendManager(QThread):
                 self.run_requests(selected_item, children, collection_result)
 
             else:
+                # Set Running status:
+                request_result = BaseResult(name=item.name, item_type=item.item_type, result="Next", elapsed_time=0, timestamp=request_timestamp)
+                self.model.update_specific_item(item=item,
+                                                last_response=request_result)
+
+                # Update collection:
+                if parent:
+                    self.collection_handler.add_request(parent, request_result)
+
+                self.signal_request_finished.emit()
+
+                # Polling interval:
+                time.sleep(selected_item.run_options.polling_interval)
+
+                # Do request:
                 try:
                     protocol_client = self.model.protocol_client_manager.get_handler(item=item)
                     protocol_client.connect()
@@ -73,15 +88,14 @@ class BackendManager(QThread):
                 except Exception as e:
                     request_result = BaseResult(name=item.name, item_type=item.item_type, result="Failed", elapsed_time=0, timestamp=request_timestamp, error_message=f"Error while getting client: {e}")
 
-                if parent:
-                    self.collection_handler.add_request(parent, request_result)
-
+                # Update item on model:
                 self.model.update_specific_item(item=item, last_response=request_result)
 
-                # Polling interval:
-                time.sleep(selected_item.run_options.polling_interval)
+                # Update collection:
+                if parent:
+                    self.collection_handler.update_request(parent, request_result)
 
-            # Update only item displayed:
+            # Update view:
             self.signal_request_finished.emit()
 
     def run(self):
@@ -93,8 +107,15 @@ class BackendManager(QThread):
         selected_item = self.model.get_selected_item()
         run_items_tree = self.get_run_items(selected_item)
 
+        # Initialize Collection:
+        if selected_item.item_type == "Collection":
+            self.model.update_specific_item(item=selected_item,
+                                            last_response=CollectionResult(name=selected_item.name, result="Running"))
+            self.signal_request_finished.emit()
+
         # Delayed start:
-        time.sleep(selected_item.run_options.delayed_start)
+        delayed_start = selected_item.run_options.delayed_start - selected_item.run_options.polling_interval
+        time.sleep(delayed_start if delayed_start > 0 else 0)
 
         self.run_requests(selected_item, run_items_tree)
 

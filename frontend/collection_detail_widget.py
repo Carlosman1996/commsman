@@ -77,7 +77,6 @@ class CollectionResultTreeView(QTreeView):
 
             # Scroll to the last item
             last_index = self.model.index(self.calculate_total_expanded_rows() - 1, 0)
-            print(last_index)
             self.scrollTo(last_index)
         else:
             first_index = self.model.index(0, 0)
@@ -119,12 +118,14 @@ class CollectionResultTreeView(QTreeView):
             else:
                 # Handle request
                 request_item = QStandardItem(child.name)
-                text, status = self.get_request_status(child)
+                text = self.get_request_status(child)
                 status_item = QStandardItem(text)
-                if status:
-                    status_item.setIcon(QIcon.fromTheme('dialog-ok'))  # Green check icon
+                if child.result == "Next":
+                    status_item.setIcon(QIcon.fromTheme("go-next"))  # Green check icon
+                elif child.result == "Passed":
+                    status_item.setIcon(QIcon.fromTheme("dialog-ok"))  # Green check icon
                 else:
-                    status_item.setIcon(QIcon.fromTheme('dialog-error'))  # Red X icon
+                    status_item.setIcon(QIcon.fromTheme("dialog-error"))  # Red X icon
                 folder_item.appendRow([request_item, status_item])
 
     def get_collection_status(self, collection_result):
@@ -135,10 +136,12 @@ class CollectionResultTreeView(QTreeView):
             return f"Success ({total_requests} requests: {collection_result.total_ok} OK)"
 
     def get_request_status(self, request):
-        if request.result == "Passed":
-            return f"OK  [ {request.elapsed_time} ms ]", True
+        if request.result == "Next":
+            return f"Next"
+        elif request.result == "Passed":
+            return f"OK  [ {request.elapsed_time} ms ]"
         else:
-            return f"Failed  [ {request.elapsed_time} ms ]", False
+            return f"Failed  [ {request.elapsed_time} ms ]"
 
 
 class CollectionResultWidget(QWidget):

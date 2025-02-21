@@ -15,6 +15,11 @@ class CollectionHandler:
         collection.children.append(request)  # Add to the children list
         self.update_status(collection)
 
+    def update_request(self, collection: CollectionResult, request: BaseResult):
+        """Add a request to a collection and update its status."""
+        collection.children[-1] = request  # Add to the children list
+        self.update_status(collection)
+
     def add_collection(self, parent: CollectionResult, collection: CollectionResult):
         """Add a collection and update its status."""
         collection.parent = parent
