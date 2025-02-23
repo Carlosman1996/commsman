@@ -1,9 +1,10 @@
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy, QFrame, QGridLayout, \
+    QLabel
 
 from frontend.common import ITEMS
-from frontend.components.components import IconTextWidget
+from frontend.components.components import IconTextWidget, CustomGridLayout
 
 
 class ExecuteButton(QPushButton):
@@ -72,6 +73,10 @@ class BaseDetail(QWidget):
         self.execute_button = ExecuteButton(self.controller.running)
         header_layout.addWidget(self.execute_button, alignment=Qt.AlignmentFlag.AlignLeft)
 
+        # # Last results frame:
+        # self.frame = self.create_summary_block()
+        # header_layout.addWidget(self.frame, alignment=Qt.AlignmentFlag.AlignLeft)
+
         # Añadir la cabecera al layout principal
         main_layout.addWidget(header)
 
@@ -97,3 +102,22 @@ class BaseDetail(QWidget):
 
     def on_finished(self):
         self.execute_button.set_run()
+
+    def create_summary_block(self):
+        """Crea un bloque visual con el resumen general"""
+        self.frame = QFrame()
+        self.frame.setFrameShape(QFrame.Shape.Box)
+        # self.frame.setStyleSheet("padding: 10px; border: 2px solid gray; border-radius: 5px;")
+
+        grid = CustomGridLayout()
+
+        result_label = QLabel(f"Resultado:")
+        result_label.setIcon(QIcon.fromTheme("dialog-ok"))  # Green check icon
+        status_item.setIcon(QIcon.fromTheme("dialog-ok"))  # Green check icon
+        status_item.setIcon(QIcon.fromTheme("dialog-ok"))  # Green check icon
+        grid.add_widget(QLabel(f"✅ Resultado:"), QLabel(str(self.item.last_response.result)))
+        grid.add_widget(QLabel(f"⏳ Tiempo Total:"), QLabel(str(self.item.last_response.elapsed_time)))
+        grid.add_widget(QLabel(f"🕒 Inicio:"), QLabel(str(self.item.last_response.timestamp)))
+
+        self.frame.setLayout(grid)
+        return self.frame

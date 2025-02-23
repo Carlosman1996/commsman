@@ -68,8 +68,6 @@ class BackendManager(QThread):
             else:
                 # Set Running status:
                 request_result = BaseResult(name=item.name, item_type=item.item_type, result="Next", elapsed_time=0, timestamp=request_timestamp)
-                self.model.update_specific_item(item=item,
-                                                last_response=request_result)
 
                 # Update collection:
                 if parent:

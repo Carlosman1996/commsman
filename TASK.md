@@ -2,8 +2,6 @@
 
 ## Priority
 
-TODO: Hotfix - backend manager must save only the final result on request, not "in progress" status . The collection parent must save the "in progress" status. Also, modbus detail and collection detail must read "last_response" attribute and generate a dictionary with values: if a key does not exist (not filled or BaseResult model), it must be changed by "-". This dictionary will later be used by qwidgets to fill its values.
-
 TODO: Collections must show results:
     - Scroll to last item is not working
 
@@ -24,6 +22,8 @@ TODO: show history in requests
 TODO: collections must have table view option and show history
 
 TODO: Protect SQLite by encrypting 
+
+TODO: Understand read discrete input modbus response
 
 ## Future LOW PRIORITY
 
@@ -68,3 +68,5 @@ TODO: allow to export results
 TODO: MQTT
 
 TODO: Modbus TLS/Socket/ASCII
+
+TODO: add_widget method of custmo qgridlayout must save by key, so accessing its elements can be easier and more clear than an index.

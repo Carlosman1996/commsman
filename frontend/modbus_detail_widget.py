@@ -238,52 +238,87 @@ class ModbusResponseWidget(QWidget):
         self.tabs.addTab(raw_data_tab, "Raw Data")
 
         # Set initial state and connect signals:
-
         self.update_view()
 
         controller.signal_request_finished.connect(self.update_view)
         self.data_type_combo.currentTextChanged.connect(self.update_table)
+
+    def get_response_data(self):
+        def get_value(key, replace_if_none: str = "-"):
+            if hasattr(self.item.last_response, key):
+                value = getattr(self.item.last_response, key)
+            else:
+                value = "Unknown"
+
+            if value is None:
+                return replace_if_none
+            elif type(value) == list:
+                return value
+            else:
+                return str(value)
+
+        return {
+            "name": get_value("name"),
+            "item_type": get_value("item_type"),
+            "parent": get_value("parent"),
+            "result": get_value("result"),
+            "elapsed_time": f"{get_value("elapsed_time")} ms",
+            "timestamp": get_value("timestamp"),
+            "error_message": get_value("error_message", ""),
+            "client_type": get_value("client_type"),
+            "slave": get_value("slave"),
+            "transaction_id": get_value("transaction_id"),
+            "crc": get_value("crc"),
+            "protocol_id": get_value("protocol_id"),
+            "function_code": get_value("function_code"),
+            "address": get_value("address"),
+            "registers": get_value("registers"),
+            "raw_packet_recv": get_value("raw_packet_recv", ""),
+            "raw_packet_send": get_value("raw_packet_send", ""),
+            "data_type": get_value("data_type", "16-bit Integer"),
+            "byte_count": get_value("byte_count"),
+        }
 
     def update_view(self):
         response = self.item.last_response
         if response is None:
             return
 
-        self.protocol_label.setText(getattr(self.item.last_response, "client_type", "-"))
-        self.elapsed_time_label.setText(str(self.item.last_response.elapsed_time) + " ms")
-        self.timestamp_label.setText(str(self.item.last_response.timestamp))
+        response = self.get_response_data()
 
-        def update_item(index: int, key: str):
-            if hasattr(self.item.last_response, key):
-                self.headers_layout.show_row(0, index)
-                field = self.headers_layout.get_field(0, index)
-                value = getattr(self.item.last_response, key)
-                if value is None:
-                    field.setText("-")
-                else:
-                    field.setText(str(value))
-            else:
-                self.headers_layout.hide_row(0, index)
+        self.protocol_label.setText(response["client_type"])
+        self.elapsed_time_label.setText(response["elapsed_time"])
+        self.timestamp_label.setText(response["timestamp"])
 
-        update_item(0, "transaction_id")
-        update_item(1, "protocol_id")
-        update_item(2, "slave")
-        update_item(3, "function_code")
-        update_item(4, "byte_count")
-        update_item(5, "crc")
+        if response["client_type"] == "Modbus TCP":
+            self.headers_layout.show_row(0, 0)
+            self.headers_layout.show_row(0, 1)
+            self.transaction_id_label.setText(response["transaction_id"])
+            self.protocol_id_label.setText(response["protocol_id"])
+        else:
+            self.headers_layout.hide_row(0, 0)
+            self.headers_layout.hide_row(0, 1)
 
-        self.raw_data_edit.setText(
-            f"SEND: {getattr(self.item.last_response, "raw_packet_send", "")}\n\nRECV: {getattr(self.item.last_response, "raw_packet_recv", "")}")
+        self.unit_id_label.setText(response["slave"])
+        self.function_code_label.setText(response["function_code"])
+        self.byte_count_label.setText(response["byte_count"])
+        if response["client_type"] == "Modbus RTU":
+            self.headers_layout.show_row(0, 5)
+            self.crc_label.setText(response["crc"])
+        else:
+            self.headers_layout.hide_row(0, 5)
 
-        if self.item.last_response.result == "Failed":
+        self.raw_data_edit.setText(f"SEND: {response["raw_packet_send"]}\n\nRECV: {response["raw_packet_recv"]}")
+
+        if response["result"] == "Failed":
             self.data_type_label.hide()
             self.data_type_combo.hide()
             self.values_table.hide()
 
-            self.status_label.setText(self.item.last_response.result)
+            self.status_label.setText(response["result"])
             self.status_label.setStyleSheet("color: red;")
             self.error_data_edit.setText(
-                f"Status: {self.status_label.text()}\n\nError: {self.item.last_response.error_message}")
+                f"Status: {self.status_label.text()}\n\nError: {response["error_message"]}")
             self.error_data_edit.show()  # Show error group
         else:
             self.error_data_edit.hide()
@@ -291,19 +326,24 @@ class ModbusResponseWidget(QWidget):
             self.data_type_combo.show()
             self.values_table.show()
 
-            self.status_label.setText(self.item.last_response.result)
+            self.status_label.setText(response["result"])
             self.status_label.setStyleSheet("color: green;")
-            self.data_type_combo.set_item(getattr(self.item.last_response, "data_type", "-"))
+            self.data_type_combo.set_item(response["data_type"])
             self.update_table()
 
     def update_table(self):
+        response = self.item.last_response
+        if response is None:
+            return
+
         self.item.last_response.data_type = self.data_type_combo.currentText()
         self.model.update_item(last_response=self.item.last_response)
+        response = self.get_response_data()
 
         data_type = self.data_type_combo.currentText()
         self.values_table.clear()
 
-        address_values = convert_value_after_sending(data_type, self.item.last_response.address, self.item.last_response.registers)
+        address_values = convert_value_after_sending(data_type, int(response["address"]), response["registers"])
         self.values_table.setRowCount(len(list(address_values.keys())))
         row = 0
         for address, value in address_values.items():

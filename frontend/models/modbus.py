@@ -74,7 +74,7 @@ class ModbusRtuResponse(BaseResult):
 class ModbusRequest:
     name: str
     item_type: str = "Modbus"
-    client_type: str = "No connection"
+    client_type: str = "Inherit from parent"
     client: ModbusTcpClient | ModbusRtuClient = None
     function: str = "Read Holding Registers"
     data_type: str = "16-bit Integer"
