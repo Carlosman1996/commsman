@@ -1,10 +1,10 @@
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy, QFrame, QGridLayout, \
-    QLabel
+    QLabel, QGroupBox
 
-from frontend.common import ITEMS
-from frontend.components.components import IconTextWidget, CustomGridLayout
+from frontend.common import ITEMS, get_model_value, convert_time
+from frontend.components.components import IconTextWidget, CustomGridLayout, InfoBox
 
 
 class ExecuteButton(QPushButton):
@@ -35,6 +35,7 @@ class ExecuteButton(QPushButton):
         self.setText("Run")
         self.setStyleSheet("""
             QPushButton {
+                background-color: #F8F8FF;
                 color: green;
                 border: 2px solid green;  /* Green border */
             }
@@ -49,45 +50,74 @@ class BaseDetail(QWidget):
     def __init__(self, model, controller):
         super().__init__()
 
-        self.setMinimumSize(800, 600)
+        self.setMinimumSize(500, 600)
 
         self.setWindowTitle("Detail View")
 
         self.model = model
         self.item = self.model.get_selected_item()
-
         self.controller = controller
+        self.header_height = 100
 
         main_layout = QVBoxLayout()
 
-        # Header
-        header = QWidget()
-        header_layout = QHBoxLayout()
-        header.setLayout(header_layout)
+        # Set base splitter:
+        splitter = QSplitter()
+        splitter.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
+        # Request side layout:
+        self.request_splitter_section = QWidget()
+        splitter.addWidget(self.request_splitter_section)
+        self.request_layout = QVBoxLayout()
+        self.request_splitter_section.setLayout(self.request_layout)
+        # Header
+        header_widget = QWidget()
+        header_widget.setFixedHeight(self.header_height)
+        header_layout = QHBoxLayout()
+        header_widget.setLayout(header_layout)
+        self.request_layout.addWidget(header_widget)
         # Title:
         self.title_label = IconTextWidget(self.item.name, QIcon(ITEMS[self.item.item_type]["icon"]), QSize(75, 50))
         header_layout.addWidget(self.title_label)
-
         # Execute request:
         self.execute_button = ExecuteButton(self.controller.running)
-        header_layout.addWidget(self.execute_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        header_layout.addWidget(self.execute_button)
+        # All items at left side:
+        header_layout.addStretch(1)
 
-        # # Last results frame:
-        # self.frame = self.create_summary_block()
-        # header_layout.addWidget(self.frame, alignment=Qt.AlignmentFlag.AlignLeft)
+        # Request side layout:
+        self.response_splitter_section = QWidget()
+        splitter.addWidget(self.response_splitter_section)
+        self.response_layout = QVBoxLayout()
+        self.response_splitter_section.setLayout(self.response_layout)
+        # Header
+        header_widget = QWidget()
+        header_widget.setFixedHeight(self.header_height)
+        header_layout = QHBoxLayout()
+        header_widget.setLayout(header_layout)
+        self.response_layout.addWidget(header_widget)
+        # Last results:
+        self.frame_result = InfoBox("")
+        header_layout.addWidget(self.frame_result)
+        self.frame_elapsed_time = InfoBox("")
+        header_layout.addWidget(self.frame_elapsed_time)
+        self.frame_timestamp = InfoBox("")
+        header_layout.addWidget(self.frame_timestamp)
+        # All items at left side:
+        header_layout.addStretch(1)
 
-        # Añadir la cabecera al layout principal
-        main_layout.addWidget(header)
+        # Set stretch factors
+        splitter.setStretchFactor(0, 0)  # Index 0 (will not expand)
+        splitter.setStretchFactor(1, 1)  # Index 1 (will expand)
 
-        self.splitter = QSplitter()
-        self.splitter.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-
-        main_layout.addWidget(self.splitter)
-
+        main_layout.addWidget(splitter)
         self.setLayout(main_layout)
 
+        # Set initial state and connect signals:
+        self.update_view()
+
         self.execute_button.clicked.connect(self.execute)
+        controller.signal_request_finished.connect(self.update_view)
 
     def execute(self):
         if self.execute_button.run:
@@ -103,21 +133,14 @@ class BaseDetail(QWidget):
     def on_finished(self):
         self.execute_button.set_run()
 
-    def create_summary_block(self):
-        """Crea un bloque visual con el resumen general"""
-        self.frame = QFrame()
-        self.frame.setFrameShape(QFrame.Shape.Box)
-        # self.frame.setStyleSheet("padding: 10px; border: 2px solid gray; border-radius: 5px;")
+    def update_view(self):
+        response = self.item.last_response
+        if response is None:
+            self.response_splitter_section.setVisible(False)
+            return
+        else:
+            self.response_splitter_section.setVisible(True)
 
-        grid = CustomGridLayout()
-
-        result_label = QLabel(f"Resultado:")
-        result_label.setIcon(QIcon.fromTheme("dialog-ok"))  # Green check icon
-        status_item.setIcon(QIcon.fromTheme("dialog-ok"))  # Green check icon
-        status_item.setIcon(QIcon.fromTheme("dialog-ok"))  # Green check icon
-        grid.add_widget(QLabel(f"✅ Resultado:"), QLabel(str(self.item.last_response.result)))
-        grid.add_widget(QLabel(f"⏳ Tiempo Total:"), QLabel(str(self.item.last_response.elapsed_time)))
-        grid.add_widget(QLabel(f"🕒 Inicio:"), QLabel(str(self.item.last_response.timestamp)))
-
-        self.frame.setLayout(grid)
-        return self.frame
+        self.frame_result.setText(get_model_value(self.item.last_response, "result"))
+        self.frame_elapsed_time.setText(convert_time(get_model_value(self.item.last_response, "elapsed_time", 0)))
+        self.frame_timestamp.setText(get_model_value(self.item.last_response, "timestamp"))

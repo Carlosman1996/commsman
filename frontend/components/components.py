@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QLineEdit, QSpinBox, QComboBox, QPushButton,
                              QTabWidget, QTextEdit, QGridLayout,
                              QHBoxLayout, QTableWidget, QAbstractItemView, QHeaderView, QGroupBox,
-                             QTableWidgetItem, QSplitter, QMessageBox)
+                             QTableWidgetItem, QSplitter, QMessageBox, QFrame, QSizePolicy)
 
 
 class IconTextWidget(QWidget):
@@ -23,6 +23,7 @@ class IconTextWidget(QWidget):
 
         text_label = QLabel(text)
         text_label.setFixedHeight(50)
+        text_label.setMinimumWidth(200)
 
         layout.addWidget(icon_label)
         layout.addWidget(text_label)
@@ -152,12 +153,16 @@ class CustomTable(QTableWidget):
         self.setStyleSheet("""
             QTableWidget {
                 border: none; /* Remove any outer border */
+                gridline-color: #E5E5E5;  /* Set the color of table borders */
+            }
+            QTableWidget::item {
+                background-color: #F8F8FF;
             }
             QTableWidget::item:selected {
-                background-color: #D5D7D6;
+                background-color: #EFEFEF;
             }
             QToolTip {
-                background-color: #D5D7D6;
+                background-color: #EFEFEF;
             }
         """)
 
@@ -304,3 +309,20 @@ class CustomStandardItemModel(QStandardItemModel):
         else:
             self.signal_move_item.emit(source_item)
 
+
+class InfoBox(QLabel):
+    def __init__(self, text):
+        super().__init__(text)
+        self.setStyleSheet("""
+            QLabel {
+                background-color: #F8F8FF;
+                border: 2px solid #4F005C;
+                border-radius: 5px;
+                padding: 5px;
+                font-size: 14px;
+                font-weight: bold;
+                max-height: 25px;
+                text-align: center;
+            }
+        """)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)

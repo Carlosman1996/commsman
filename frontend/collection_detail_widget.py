@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
 
 from backend.backend_manager import BackendManager
 from frontend.base_detail_widget import BaseDetail
+from frontend.common import convert_time
 from frontend.connection_tab_widget import ConnectionTabWidget
 from frontend.model import Model
 from frontend.models.collection import Collection
@@ -139,9 +140,9 @@ class CollectionResultTreeView(QTreeView):
         if request.result == "Next":
             return f"Next"
         elif request.result == "Passed":
-            return f"OK  [ {request.elapsed_time} ms ]"
+            return f"OK  [ {convert_time(request.elapsed_time)} ]"
         else:
-            return f"Failed  [ {request.elapsed_time} ms ]"
+            return f"Failed  [ {convert_time(request.elapsed_time)} ]"
 
 
 class CollectionResultWidget(QWidget):
@@ -229,22 +230,8 @@ class CollectionDetail(BaseDetail):
         self.results_tabs = CollectionResultWidget(model, controller)
 
         # Fill splitter:
-        self.splitter.addWidget(self.request_tabs)
-        self.splitter.addWidget(self.results_tabs)
-
-        # Set stretch factors
-        self.splitter.setStretchFactor(0, 0)  # Index 0 (will not expand)
-        self.splitter.setStretchFactor(1, 1)  # Index 1 (will expand)
-
-        # Connect signals and slots
-        self.set_results()
-        controller.signal_request_finished.connect(self.set_results)
-
-    def set_results(self):
-        if self.item.last_response:
-            self.results_tabs.setVisible(True)
-        else:
-            self.results_tabs.setVisible(False)
+        self.request_layout.addWidget(self.request_tabs)
+        self.response_layout.addWidget(self.results_tabs)
 
 
 if __name__ == "__main__":

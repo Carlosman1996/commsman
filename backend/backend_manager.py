@@ -43,6 +43,7 @@ class BackendManager(QThread):
         if run_items_tree is None:
             return
 
+        number_requests = 0
         for item_dict in run_items_tree:
             # Stop signal:
             if not self.running:
@@ -57,6 +58,8 @@ class BackendManager(QThread):
                 children = item_dict.get("children")
 
                 collection_result = CollectionResult(name=item.name,
+                                                     result="Passed",
+                                                     elapsed_time=0,
                                                      timestamp=request_timestamp)
                 if parent:
                     self.collection_handler.add_collection(parent, collection_result)
@@ -76,7 +79,9 @@ class BackendManager(QThread):
                 self.signal_request_finished.emit()
 
                 # Polling interval:
-                time.sleep(selected_item.run_options.polling_interval)
+                if number_requests > 0:
+                    time.sleep(selected_item.run_options.polling_interval)
+                number_requests += 1
 
                 # Do request:
                 try:
@@ -112,8 +117,7 @@ class BackendManager(QThread):
             self.signal_request_finished.emit()
 
         # Delayed start:
-        delayed_start = selected_item.run_options.delayed_start - selected_item.run_options.polling_interval
-        time.sleep(delayed_start if delayed_start > 0 else 0)
+        time.sleep(selected_item.run_options.delayed_start)
 
         self.run_requests(selected_item, run_items_tree)
 

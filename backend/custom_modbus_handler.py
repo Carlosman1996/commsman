@@ -163,11 +163,9 @@ class CustomModbusHandler(BaseHandler):
         except Exception as e:
             self.response.error_message = f"Exception received: {e}"
 
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-
         self.response.data_type = data_type
-        self.response.elapsed_time = round(elapsed_time * 1000, 3)
+        end_time = time.time()
+        self.response.elapsed_time = end_time - start_time
 
         return self.response
 

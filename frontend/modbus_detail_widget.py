@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
 
 from backend.custom_modbus_handler import convert_value_after_sending
 from frontend.base_detail_widget import BaseDetail
+from frontend.common import get_model_value, convert_time
 from frontend.components.components import CustomGridLayout, CustomTable, CustomComboBox
 from frontend.connection_tab_widget import ConnectionTabWidget
 from frontend.model import Model
@@ -245,24 +246,14 @@ class ModbusResponseWidget(QWidget):
 
     def get_response_data(self):
         def get_value(key, replace_if_none: str = "-"):
-            if hasattr(self.item.last_response, key):
-                value = getattr(self.item.last_response, key)
-            else:
-                value = "Unknown"
-
-            if value is None:
-                return replace_if_none
-            elif type(value) == list:
-                return value
-            else:
-                return str(value)
+            return get_model_value(self.item.last_response, key, replace_if_none)
 
         return {
             "name": get_value("name"),
             "item_type": get_value("item_type"),
             "parent": get_value("parent"),
             "result": get_value("result"),
-            "elapsed_time": f"{get_value("elapsed_time")} ms",
+            "elapsed_time": convert_time(get_value("elapsed_time", 0)),
             "timestamp": get_value("timestamp"),
             "error_message": get_value("error_message", ""),
             "client_type": get_value("client_type"),
@@ -363,26 +354,10 @@ class ModbusDetail(BaseDetail):
 
         # Results
         self.results_tabs = ModbusResponseWidget(model, controller)
-        if self.item.last_response is None:
-            self.results_tabs.setVisible(False)
 
         # Fill splitter:
-        self.splitter.addWidget(self.request_tabs)
-        self.splitter.addWidget(self.results_tabs)
-
-        # Set stretch factors
-        self.splitter.setStretchFactor(0, 0)  # Index 0 (will not expand)
-        self.splitter.setStretchFactor(1, 1)  # Index 1 (will expand)
-
-        # Connect signals and slots
-        self.set_results()
-        controller.signal_request_finished.connect(self.set_results)
-
-    def set_results(self):
-        if self.item.last_response:
-            self.results_tabs.setVisible(True)
-        else:
-            self.results_tabs.setVisible(False)
+        self.request_layout.addWidget(self.request_tabs)
+        self.response_layout.addWidget(self.results_tabs)
 
 
 if __name__ == "__main__":

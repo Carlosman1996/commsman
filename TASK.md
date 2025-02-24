@@ -5,12 +5,6 @@
 TODO: Collections must show results:
     - Scroll to last item is not working
 
-TODO: Study how to show Modbus results at request header, not only in general information to improve/ensure/show the user the request has been done. Insert qframe with summary data. Remove "general information" qbox on modbus results tab.
-
-TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
-
-## Future HIGH PRIORITY
-
 TODO: change self.item.last_response by self.item.last_result for better legibility
 
 TODO: model and components must be in backend layer (decouple frontend and backend). Frontend calls backend manager which returns JSON with data or saves/updates.
@@ -21,11 +15,15 @@ TODO: show history in requests
 
 TODO: collections must have table view option and show history
 
-TODO: Protect SQLite by encrypting 
+TODO: Protect SQLite by encrypting
 
 TODO: Understand read discrete input modbus response
 
+TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
+
 ## Future LOW PRIORITY
+
+TODO: long texts show ellipsis + tooltip to avoid overflow
 
 TODO: BATCH execution 
 

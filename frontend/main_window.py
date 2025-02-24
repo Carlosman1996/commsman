@@ -54,7 +54,6 @@ class MainWindow(QMainWindow):
 
         # Right section:
         self.detail_section = self.set_detail_section()
-        self.detail_section.setMinimumSize(500, 600)
 
         # Add sections to splitter
         self.main_window_sections_splitter.addWidget(self.project_structure_section)
