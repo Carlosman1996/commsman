@@ -17,8 +17,6 @@ TODO: collections must have table view option and show history
 
 TODO: Protect SQLite by encrypting
 
-TODO: Understand read discrete input modbus response
-
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
 
 ## Future LOW PRIORITY
@@ -65,6 +63,13 @@ TODO: allow to export results
 
 TODO: MQTT
 
+TODO: add_widget method of custmo qgridlayout must save by key, so accessing its elements can be easier and more clear than an index.
+
+## Future pymodbus
+
+TODO: Custom exceptions - Mask pymodbus internals: https://www.simplymodbus.ca/exceptions.htm
+
 TODO: Modbus TLS/Socket/ASCII
 
-TODO: add_widget method of custmo qgridlayout must save by key, so accessing its elements can be easier and more clear than an index.
+TODO: Understand read discrete input modbus response
+

@@ -75,30 +75,9 @@ class CollectionResultTreeView(QTreeView):
         if not collapse_view:
             # Expand all items in the tree view
             self.expandAll()
-
-            # Scroll to the last item
-            last_index = self.model.index(self.calculate_total_expanded_rows() - 1, 0)
-            self.scrollTo(last_index)
         else:
             first_index = self.model.index(0, 0)
             self.expand(first_index)
-
-    def calculate_total_expanded_rows(self):
-        """Calculate the total number of expanded rows in the tree view."""
-        total_rows = self.get_expanded_row_count(self.model.invisibleRootItem())
-        print(f"Total Expanded Rows: {total_rows}")
-        return total_rows
-
-    def get_expanded_row_count(self, item):
-        """Recursively calculate the total number of expanded rows under an item."""
-        count = 0
-        for i in range(item.rowCount()):
-            child = item.child(i)
-            if child:
-                count += 1  # Count the current row
-                if self.isExpanded(self.model.indexFromItem(child)):
-                    count += self.get_expanded_row_count(child)  # Recursively count child rows
-        return count
 
     def populate_model(self, collection_result, parent=None):
         """Populate the QStandardItemModel with collections and requests."""
@@ -123,7 +102,7 @@ class CollectionResultTreeView(QTreeView):
                 status_item = QStandardItem(text)
                 if child.result == "Next":
                     status_item.setIcon(QIcon.fromTheme("go-next"))  # Green check icon
-                elif child.result == "Passed":
+                elif child.result == "OK":
                     status_item.setIcon(QIcon.fromTheme("dialog-ok"))  # Green check icon
                 else:
                     status_item.setIcon(QIcon.fromTheme("dialog-error"))  # Red X icon
@@ -139,7 +118,7 @@ class CollectionResultTreeView(QTreeView):
     def get_request_status(self, request):
         if request.result == "Next":
             return f"Next"
-        elif request.result == "Passed":
+        elif request.result == "OK":
             return f"OK  [ {convert_time(request.elapsed_time)} ]"
         else:
             return f"Failed  [ {convert_time(request.elapsed_time)} ]"

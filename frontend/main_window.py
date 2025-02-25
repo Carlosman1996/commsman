@@ -1,4 +1,5 @@
 import sys
+import time
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -98,6 +99,12 @@ class MainWindow(QMainWindow):
         """Override the close event to perform custom actions."""
         # Close all handlers before exit:
         self.model.protocol_client_manager.close_all_handlers()
+
+        # Wait until backend stops:
+        self.controller.signal_finish.emit()
+        while self.controller.running:
+            time.sleep(0.5)
+
         super().closeEvent(*args, **kwargs)
 
 

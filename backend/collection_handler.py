@@ -41,7 +41,7 @@ class CollectionHandler:
                 total_pending += pending
             else:
                 # Count results for requests
-                if child.result == "Passed":
+                if child.result == "OK":
                     total_ok += 1
                 elif child.result == "Failed":
                     total_failed += 1
@@ -59,7 +59,7 @@ class CollectionHandler:
         elif collection.total_failed > 0:
             collection.result = "Failed"
         else:
-            collection.result = "Passed"
+            collection.result = "OK"
 
         # Calculate elapsed time
         collection.elapsed_time = time.time() - datetime.strptime(collection.timestamp, "%Y-%m-%d %H:%M:%S").timestamp()

@@ -157,7 +157,7 @@ class CustomModbusHandler(BaseHandler):
             if modbus_response.isError():
                 raise ModbusException("Modbus returns error function code")
             else:
-                self.response.result = "Passed"
+                self.response.result = "OK"
         except ModbusException as e:
             self.response.error_message = f"Modbus Client returns exception:\n\n{e}"
         except Exception as e:

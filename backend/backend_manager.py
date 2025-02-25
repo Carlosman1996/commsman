@@ -43,7 +43,6 @@ class BackendManager(QThread):
         if run_items_tree is None:
             return
 
-        number_requests = 0
         for item_dict in run_items_tree:
             # Stop signal:
             if not self.running:
@@ -58,17 +57,18 @@ class BackendManager(QThread):
                 children = item_dict.get("children")
 
                 collection_result = CollectionResult(name=item.name,
-                                                     result="Passed",
+                                                     result="OK",
                                                      elapsed_time=0,
                                                      timestamp=request_timestamp)
                 if parent:
                     self.collection_handler.add_collection(parent, collection_result)
-
                 self.model.update_specific_item(item=item, last_response=collection_result)
 
                 self.run_requests(selected_item, children, collection_result)
 
             else:
+                time.sleep(selected_item.run_options.polling_interval)
+
                 # Set Running status:
                 request_result = BaseResult(name=item.name, item_type=item.item_type, result="Next", elapsed_time=0, timestamp=request_timestamp)
 
@@ -76,12 +76,8 @@ class BackendManager(QThread):
                 if parent:
                     self.collection_handler.add_request(parent, request_result)
 
+                # Update view:
                 self.signal_request_finished.emit()
-
-                # Polling interval:
-                if number_requests > 0:
-                    time.sleep(selected_item.run_options.polling_interval)
-                number_requests += 1
 
                 # Do request:
                 try:
@@ -111,10 +107,8 @@ class BackendManager(QThread):
         run_items_tree = self.get_run_items(selected_item)
 
         # Initialize Collection:
-        if selected_item.item_type == "Collection":
-            self.model.update_specific_item(item=selected_item,
-                                            last_response=CollectionResult(name=selected_item.name, result="Running"))
-            self.signal_request_finished.emit()
+        self.model.update_specific_item(item=selected_item, last_response=None)
+        self.signal_request_finished.emit()
 
         # Delayed start:
         time.sleep(selected_item.run_options.delayed_start)
@@ -122,6 +116,9 @@ class BackendManager(QThread):
         self.run_requests(selected_item, run_items_tree)
 
         self.model.protocol_client_manager.close_all_handlers()
+
+        # Update view:
+        self.signal_request_finished.emit()
         self.signal_finish.emit()
         self.running = False
 
