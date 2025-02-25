@@ -151,12 +151,12 @@ class ModbusResponseWidget(QWidget):
 
         # Response Tab
         self.response_tab = QWidget()
-        self.response_layout = QVBoxLayout()
-        self.response_tab.setLayout(self.response_layout)
+        self.result_layout = QVBoxLayout()
+        self.response_tab.setLayout(self.result_layout)
 
         # Response values table (initially hidden)
         self.values_table = CustomTable(["Address", "Value"])
-        self.response_layout.addWidget(self.values_table)
+        self.result_layout.addWidget(self.values_table)
 
         # Data type menu button
         self.data_type_layout = QHBoxLayout()
@@ -164,7 +164,7 @@ class ModbusResponseWidget(QWidget):
 
         self.data_type_combo = CustomComboBox()
         self.data_type_combo.addItems(["16-bit Integer", "16-bit Unsigned Integer", "32-bit Integer", "32-bit Unsigned Integer", "Hexadecimal", "Float", "Double", "String"])
-        self.data_type_combo.set_item(getattr(self.item.last_response, "data_type", "16-bit Integer"))
+        self.data_type_combo.set_item(getattr(self.item.last_result, "data_type", "16-bit Integer"))
         self.data_type_combo.setMaximumWidth(200)
         self.data_type_combo.setMinimumWidth(200)
         self.data_type_label = QLabel("Show data type:")
@@ -175,16 +175,16 @@ class ModbusResponseWidget(QWidget):
 
         self.data_type_layout.addWidget(self.data_type_label)
         self.data_type_layout.addWidget(self.data_type_combo)
-        self.response_layout.addLayout(self.data_type_layout)
+        self.result_layout.addLayout(self.data_type_layout)
 
         # Error display (initially hidden)
         self.error_data_edit = QTextEdit()
         self.error_data_edit.setReadOnly(True)
         self.error_data_edit.setStyleSheet("color: red;")
-        self.response_layout.addWidget(self.error_data_edit)
+        self.result_layout.addWidget(self.error_data_edit)
         self.error_data_edit.hide()  # Hide error group by default
 
-        self.response_layout.addStretch()
+        self.result_layout.addStretch()
 
         self.tabs.addTab(self.response_tab, "Response")
 
@@ -246,7 +246,7 @@ class ModbusResponseWidget(QWidget):
 
     def get_response_data(self):
         def get_value(key, replace_if_none: str = "-"):
-            return get_model_value(self.item.last_response, key, replace_if_none)
+            return get_model_value(self.item.last_result, key, replace_if_none)
 
         return {
             "name": get_value("name"),
@@ -271,8 +271,8 @@ class ModbusResponseWidget(QWidget):
         }
 
     def update_view(self):
-        response = self.item.last_response
-        if response is None:
+        result = self.item.last_result
+        if result is None:
             return
 
         response = self.get_response_data()
@@ -323,12 +323,12 @@ class ModbusResponseWidget(QWidget):
             self.update_table()
 
     def update_table(self):
-        response = self.item.last_response
-        if response is None:
+        result = self.item.last_result
+        if result is None:
             return
 
-        self.item.last_response.data_type = self.data_type_combo.currentText()
-        self.model.update_item(last_response=self.item.last_response)
+        self.item.last_result.data_type = self.data_type_combo.currentText()
+        self.model.update_item(last_result=self.item.last_result)
         response = self.get_response_data()
 
         data_type = self.data_type_combo.currentText()
@@ -357,7 +357,7 @@ class ModbusDetail(BaseDetail):
 
         # Fill splitter:
         self.request_layout.addWidget(self.request_tabs)
-        self.response_layout.addWidget(self.results_tabs)
+        self.result_layout.addWidget(self.results_tabs)
 
 
 if __name__ == "__main__":

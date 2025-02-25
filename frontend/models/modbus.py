@@ -82,5 +82,5 @@ class ModbusRequest:
     address: int = 0
     count: int = 1
     values: list = None
-    last_response: ModbusTcpResponse | ModbusRtuResponse = None
+    last_result: ModbusTcpResponse | ModbusRtuResponse = None
     run_options: RunOptions = None

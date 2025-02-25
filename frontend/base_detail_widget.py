@@ -86,16 +86,16 @@ class BaseDetail(QWidget):
         header_layout.addStretch(1)
 
         # Request side layout:
-        self.response_splitter_section = QWidget()
-        splitter.addWidget(self.response_splitter_section)
-        self.response_layout = QVBoxLayout()
-        self.response_splitter_section.setLayout(self.response_layout)
+        self.result_splitter_section = QWidget()
+        splitter.addWidget(self.result_splitter_section)
+        self.result_layout = QVBoxLayout()
+        self.result_splitter_section.setLayout(self.result_layout)
         # Header
         header_widget = QWidget()
         header_widget.setFixedHeight(self.header_height)
         header_layout = QHBoxLayout()
         header_widget.setLayout(header_layout)
-        self.response_layout.addWidget(header_widget)
+        self.result_layout.addWidget(header_widget)
         # Last results:
         self.frame_result = InfoBox("")
         header_layout.addWidget(self.frame_result)
@@ -134,13 +134,13 @@ class BaseDetail(QWidget):
         self.execute_button.set_run()
 
     def update_view(self):
-        response = self.item.last_response
-        if response is None:
-            self.response_splitter_section.setVisible(False)
+        result = self.item.last_result
+        if result is None:
+            self.result_splitter_section.setVisible(False)
             return
         else:
-            self.response_splitter_section.setVisible(True)
+            self.result_splitter_section.setVisible(True)
 
-        self.frame_result.setText(get_model_value(self.item.last_response, "result"))
-        self.frame_elapsed_time.setText(convert_time(get_model_value(self.item.last_response, "elapsed_time", 0)))
-        self.frame_timestamp.setText(get_model_value(self.item.last_response, "timestamp"))
+        self.frame_result.setText(get_model_value(self.item.last_result, "result"))
+        self.frame_elapsed_time.setText(convert_time(get_model_value(self.item.last_result, "elapsed_time", 0)))
+        self.frame_timestamp.setText(get_model_value(self.item.last_result, "timestamp"))

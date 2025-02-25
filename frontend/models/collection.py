@@ -26,4 +26,4 @@ class Collection:
     client_type: str = "No connection"
     client: dataclass = None
     run_options: RunOptions = None
-    last_response: CollectionResult = None
+    last_result: CollectionResult = None

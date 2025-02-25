@@ -2,11 +2,6 @@
 
 ## Priority
 
-TODO: Collections must show results:
-    - Scroll to last item is not working
-
-TODO: change self.item.last_response by self.item.last_result for better legibility
-
 TODO: model and components must be in backend layer (decouple frontend and backend). Frontend calls backend manager which returns JSON with data or saves/updates.
 
 TODO: move pickle to SQLITE. Also, save results history per request and collection.

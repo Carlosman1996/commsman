@@ -157,15 +157,15 @@ class CollectionResultWidget(QWidget):
         controller.signal_request_finished.connect(self.update_view)
 
     def update_view(self, load_data=False):
-        response = self.item.last_response
-        if response is None:
+        result = self.item.last_result
+        if result is None:
             return
 
-        self.results_tree.update_model(response, load_data)
+        self.results_tree.update_model(result, load_data)
 
     def update_view_table(self):
-        response = self.item.last_response
-        if response is None:
+        result = self.item.last_result
+        if result is None:
             return
 
         table_values = []
@@ -191,7 +191,7 @@ class CollectionResultWidget(QWidget):
                 add_row(subcollection)
                 set_collection_items(subcollection)
 
-        set_collection_items(self.item.last_response)
+        set_collection_items(self.item.last_result)
 
         self.values_table.clear()
         self.values_table.setRowCount(len(table_values))
@@ -210,7 +210,7 @@ class CollectionDetail(BaseDetail):
 
         # Fill splitter:
         self.request_layout.addWidget(self.request_tabs)
-        self.response_layout.addWidget(self.results_tabs)
+        self.result_layout.addWidget(self.results_tabs)
 
 
 if __name__ == "__main__":

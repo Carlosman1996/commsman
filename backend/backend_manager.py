@@ -62,7 +62,7 @@ class BackendManager(QThread):
                                                      timestamp=request_timestamp)
                 if parent:
                     self.collection_handler.add_collection(parent, collection_result)
-                self.model.update_specific_item(item=item, last_response=collection_result)
+                self.model.update_specific_item(item=item, last_result=collection_result)
 
                 self.run_requests(selected_item, children, collection_result)
 
@@ -88,7 +88,7 @@ class BackendManager(QThread):
                     request_result = BaseResult(name=item.name, item_type=item.item_type, result="Failed", elapsed_time=0, timestamp=request_timestamp, error_message=f"Error while getting client: {e}")
 
                 # Update item on model:
-                self.model.update_specific_item(item=item, last_response=request_result)
+                self.model.update_specific_item(item=item, last_result=request_result)
 
                 # Update collection:
                 if parent:
@@ -107,7 +107,7 @@ class BackendManager(QThread):
         run_items_tree = self.get_run_items(selected_item)
 
         # Initialize Collection:
-        self.model.update_specific_item(item=selected_item, last_response=None)
+        self.model.update_specific_item(item=selected_item, last_result=None)
         self.signal_request_finished.emit()
 
         # Delayed start:
