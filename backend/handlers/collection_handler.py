@@ -1,8 +1,8 @@
 import time
 from datetime import datetime
 
-from frontend.models.base import BaseResult
-from frontend.models.collection import CollectionResult
+from backend.models.base import BaseResult
+from backend.models.collection import CollectionResult
 
 
 class CollectionHandler:
@@ -12,18 +12,18 @@ class CollectionHandler:
 
     def add_request(self, collection: CollectionResult, request: BaseResult):
         """Add a request to a collection and update its status."""
-        collection.children.append(request)  # Add to the children list
+        collection.children.append(request.uuid)  # Add to the children list
         self.update_status(collection)
 
     def update_request(self, collection: CollectionResult, request: BaseResult):
         """Add a request to a collection and update its status."""
-        collection.children[-1] = request  # Add to the children list
+        collection.children[-1] = request.uuid  # Add to the children list
         self.update_status(collection)
 
     def add_collection(self, parent: CollectionResult, collection: CollectionResult):
         """Add a collection and update its status."""
-        collection.parent = parent
-        parent.children.append(collection)  # Add to the children list
+        collection.parent = parent.uuid
+        parent.children.append(collection.uuid)  # Add to the children list
         self.update_status(parent)
 
     def count_results(self, collection: CollectionResult):
@@ -32,8 +32,10 @@ class CollectionHandler:
         total_failed = 0
         total_pending = 0
 
-        for child in collection.children:
-            if child.item_type == "Collection":
+        for child_uuid in collection.children:
+            child = self.model.get_item(child_uuid)
+
+            if child.item_handler == "Collection":
                 # Recursively count results for sub-collections
                 ok, failed, pending = self.count_results(child)
                 total_ok += ok
@@ -66,4 +68,5 @@ class CollectionHandler:
 
         # Propagate status update to parent
         if collection.parent:
-            self.update_status(collection.parent)
+            collection_parent = self.model.get_item(collection.parent)
+            self.update_status(collection_parent)

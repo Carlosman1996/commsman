@@ -1,0 +1,502 @@
+[
+    {
+        "data": {
+            "name": "Project 1",
+            "item_type": "Collection",
+            "client_type": "No connection",
+            "client": null,
+            "run_options": {
+                "item_type": "run_options",
+                "name": "Project 1",
+                "polling": false,
+                "polling_interval": 2,
+                "delayed_start": 2
+            },
+            "last_result": null
+        },
+        "children": [
+            {
+                "data": {
+                    "name": "Request 1",
+                    "item_type": "Modbus",
+                    "client_type": "Modbus TCP",
+                    "client": {
+                        "name": "Request 1",
+                        "item_type": "Modbus",
+                        "host": "127.0.0.1",
+                        "port": 5020,
+                        "timeout": 3,
+                        "retries": 3
+                    },
+                    "function": "Read Discrete Inputs",
+                    "data_type": "16-bit Unsigned Integer",
+                    "slave": 1,
+                    "address": 3,
+                    "count": 2,
+                    "values": [
+                        "",
+                        ""
+                    ],
+                    "last_result": null,
+                    "run_options": {
+                        "item_type":  "run_options",
+                        "name": "Request 1",
+                        "polling": false,
+                        "polling_interval": 1,
+                        "delayed_start": 0
+                    }
+                },
+                "children": []
+            },
+            {
+                "data": {
+                    "name": "Modbus TCP",
+                    "item_type": "Collection",
+                    "client_type": "Modbus TCP",
+                    "client": {
+                        "name": "Modbus TCP",
+                        "item_type": "Modbus",
+                        "host": "localhost",
+                        "port": 5020,
+                        "timeout": 3,
+                        "retries": 3
+                    },
+                    "run_options": {
+                        "item_type":  "run_options",
+                        "name": "Modbus TCP",
+                        "polling": false,
+                        "polling_interval": 1,
+                        "delayed_start": 0
+                    },
+                    "last_result": null
+                },
+                "children": [
+                    {
+                        "data": {
+                            "name": "Request",
+                            "item_type": "Modbus",
+                            "client_type": "Modbus TCP",
+                            "client": {
+                                "name": "Request",
+                                "item_type": "Modbus",
+                                "host": "localhost",
+                                "port": 5020,
+                                "timeout": 3,
+                                "retries": 3
+                            },
+                            "function": "Read Holding Registers",
+                            "data_type": "16-bit Integer",
+                            "slave": 1,
+                            "address": 1,
+                            "count": 1,
+                            "values": [
+                                ""
+                            ],
+                            "last_result": null,
+                            "run_options": {
+                                "item_type":  "run_options",
+                                "name": "Request",
+                                "polling": false,
+                                "polling_interval": 1,
+                                "delayed_start": 0
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "name": "Request Hex",
+                            "item_type": "Modbus",
+                            "client_type": "Modbus TCP",
+                            "client": {
+                                "name": "Request Hex",
+                                "item_type": "Modbus",
+                                "host": "localhost",
+                                "port": 5020,
+                                "timeout": 3,
+                                "retries": 3
+                            },
+                            "function": "Write Registers",
+                            "data_type": "Hexadecimal",
+                            "slave": 7,
+                            "address": 3,
+                            "count": 1,
+                            "values": [
+                                "AABB"
+                            ],
+                            "last_result": null,
+                            "run_options": {
+                                "item_type":  "run_options",
+                                "name": "Request Hex",
+                                "polling": false,
+                                "polling_interval": 1,
+                                "delayed_start": 0
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "name": "Request Float",
+                            "item_type": "Modbus",
+                            "client_type": "Modbus TCP",
+                            "client": {
+                                "name": "Request Float",
+                                "item_type": "Modbus",
+                                "host": "localhost",
+                                "port": 5020,
+                                "timeout": 3,
+                                "retries": 3
+                            },
+                            "function": "Write Registers",
+                            "data_type": "Float",
+                            "slave": 1,
+                            "address": 4,
+                            "count": 1,
+                            "values": [
+                                "12."
+                            ],
+                            "last_result": null,
+                            "run_options": {
+                                "item_type":  "run_options",
+                                "name": "Request Float",
+                                "polling": false,
+                                "polling_interval": 1,
+                                "delayed_start": 0
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "name": "Request String",
+                            "item_type": "Modbus",
+                            "client_type": "Modbus TCP",
+                            "client": {
+                                "name": "Request String",
+                                "item_type": "Modbus",
+                                "host": "localhost",
+                                "port": 5020,
+                                "timeout": 3,
+                                "retries": 3
+                            },
+                            "function": "Write Registers",
+                            "data_type": "String",
+                            "slave": 2,
+                            "address": 3,
+                            "count": 3,
+                            "values": [
+                                "h",
+                                "aa",
+                                "h"
+                            ],
+                            "last_result": null,
+                            "run_options": {
+                                "item_type":  "run_options",
+                                "name": "Request String",
+                                "polling": false,
+                                "polling_interval": 1,
+                                "delayed_start": 0
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "name": "Request Double",
+                            "item_type": "Modbus",
+                            "client_type": "Modbus TCP",
+                            "client": {
+                                "name": "Request Double",
+                                "item_type": "Modbus",
+                                "host": "localhost",
+                                "port": 5020,
+                                "timeout": 3,
+                                "retries": 3
+                            },
+                            "function": "Read Holding Registers",
+                            "data_type": "Double",
+                            "slave": 1,
+                            "address": 1,
+                            "count": 1,
+                            "values": [
+                                ""
+                            ],
+                            "last_result": null,
+                            "run_options": {
+                                "item_type":  "run_options",
+                                "name": "Request Double",
+                                "polling": false,
+                                "polling_interval": 1,
+                                "delayed_start": 0
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "name": "Request inherit",
+                            "item_type": "Modbus",
+                            "client_type": "Inherit from parent",
+                            "client": null,
+                            "function": "Read Holding Registers",
+                            "data_type": "16-bit Integer",
+                            "slave": 1,
+                            "address": 1,
+                            "count": 1,
+                            "values": [
+                                ""
+                            ],
+                            "last_result": null,
+                            "run_options": {
+                                "item_type":  "run_options",
+                                "name": "Request inherit",
+                                "polling": false,
+                                "polling_interval": 1,
+                                "delayed_start": 0
+                            }
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "name": "Modbus RTU",
+                    "item_type": "Collection",
+                    "client_type": "Modbus RTU",
+                    "client": {
+                        "name": "Modbus RTU",
+                        "item_type": "Modbus",
+                        "port": "/dev/pts/2",
+                        "baudrate": 9600,
+                        "parity": "None",
+                        "stopbits": 1,
+                        "bytesize": 8,
+                        "timeout": 3,
+                        "retries": 3
+                    },
+                    "run_options": {
+                        "item_type":  "run_options",
+                        "name": "Modbus RTU",
+                        "polling": false,
+                        "polling_interval": 1,
+                        "delayed_start": 0
+                    },
+                    "last_result": null
+                },
+                "children": [
+                    {
+                        "data": {
+                            "name": "Request",
+                            "item_type": "Modbus",
+                            "client_type": "Modbus RTU",
+                            "client": {
+                                "name": "Request",
+                                "item_type": "Modbus",
+                                "port": "COM2",
+                                "baudrate": 19200,
+                                "parity": "Even",
+                                "stopbits": 2,
+                                "bytesize": 7,
+                                "timeout": 4,
+                                "retries": 4
+                            },
+                            "function": "Read Input Registers",
+                            "data_type": "32-bit Integer",
+                            "slave": 2,
+                            "address": 2,
+                            "count": 2,
+                            "values": [
+                                "",
+                                ""
+                            ],
+                            "last_result": null,
+                            "run_options": {
+                                "item_type":  "run_options",
+                                "name": "Request",
+                                "polling": false,
+                                "polling_interval": 2,
+                                "delayed_start": 1
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "name": "Request 1",
+                            "item_type": "Modbus",
+                            "client_type": "Modbus RTU",
+                            "client": {
+                                "name": "Request 1",
+                                "item_type": "Modbus",
+                                "port": "/dev/pts/2",
+                                "baudrate": 9600,
+                                "parity": "None",
+                                "stopbits": 1,
+                                "bytesize": 8,
+                                "timeout": 3,
+                                "retries": 3
+                            },
+                            "function": "Write Registers",
+                            "data_type": "Float",
+                            "slave": 1,
+                            "address": 1,
+                            "count": 1,
+                            "values": [
+                                "12.5"
+                            ],
+                            "last_result": null,
+                            "run_options": {
+                                "item_type":  "run_options",
+                                "name": "Request 1",
+                                "polling": false,
+                                "polling_interval": 1,
+                                "delayed_start": 0
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "name": "RTU test",
+                            "item_type": "Modbus",
+                            "client_type": "Modbus RTU",
+                            "client": {
+                                "name": "RTU test",
+                                "item_type": "Modbus",
+                                "port": "/dev/pts/2",
+                                "baudrate": 9600,
+                                "parity": "None",
+                                "stopbits": 1,
+                                "bytesize": 8,
+                                "timeout": 3,
+                                "retries": 3
+                            },
+                            "function": "Read Holding Registers",
+                            "data_type": "16-bit Integer",
+                            "slave": 1,
+                            "address": 1,
+                            "count": 1,
+                            "values": [
+                                ""
+                            ],
+                            "last_result": null,
+                            "run_options": {
+                                "item_type":  "run_options",
+                                "name": "RTU test",
+                                "polling": false,
+                                "polling_interval": 1,
+                                "delayed_start": 0
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "name": "Inherit connections",
+                            "item_type": "Collection",
+                            "client_type": "No connection",
+                            "client": null,
+                            "run_options": {
+                                "item_type":  "run_options",
+                                "name": "Inherit connections",
+                                "polling": false,
+                                "polling_interval": 1,
+                                "delayed_start": 0
+                            },
+                            "last_result": null
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "name": "Request Inherit",
+                                    "item_type": "Modbus",
+                                    "client_type": "Inherit from parent",
+                                    "client": null,
+                                    "function": "Read Holding Registers",
+                                    "data_type": "16-bit Integer",
+                                    "slave": 1,
+                                    "address": 3,
+                                    "count": 1,
+                                    "values": [
+                                        ""
+                                    ],
+                                    "last_result": null,
+                                    "run_options": {
+                                        "item_type":  "run_options",
+                                        "name": "Request Inherit",
+                                        "polling": false,
+                                        "polling_interval": 1,
+                                        "delayed_start": 0
+                                    }
+                                },
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "data": {
+            "name": "Project 2",
+            "item_type": "Collection",
+            "client_type": "No connection",
+            "client": null,
+            "run_options": {
+                "item_type":  "run_options",
+                "name": "Project 2",
+                "polling": false,
+                "polling_interval": 1,
+                "delayed_start": 0
+            },
+            "last_result": null
+        },
+        "children": [
+            {
+                "data": {
+                    "name": "Request",
+                    "item_type": "Modbus",
+                    "client_type": "Inherit from parent",
+                    "client": null,
+                    "function": "Read Holding Registers",
+                    "data_type": "16-bit Integer",
+                    "slave": 1,
+                    "address": 1,
+                    "count": 1,
+                    "values": [
+                        ""
+                    ],
+                    "last_result": null,
+                    "run_options": {
+                        "item_type":  "run_options",
+                        "name": "Request",
+                        "polling": false,
+                        "polling_interval": 1,
+                        "delayed_start": 0
+                    }
+                },
+                "children": []
+            }
+        ]
+    },
+    {
+        "data": {
+            "name": "Project 3",
+            "item_type": "Collection",
+            "client_type": "No connection",
+            "client": null,
+            "run_options": {
+                "item_type":  "run_options",
+                "name": "Project 3",
+                "polling": false,
+                "polling_interval": 1,
+                "delayed_start": 0
+            },
+            "last_result": null
+        },
+        "children": []
+    }
+]

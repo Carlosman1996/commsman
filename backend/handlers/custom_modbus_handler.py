@@ -6,8 +6,8 @@ from pymodbus import ModbusException
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.framer import FramerSocket, FramerRTU
 from pymodbus.pdu import DecodePDU
-from backend.base_handler import BaseHandler
-from frontend.models.modbus import ModbusTcpResponse, ModbusRtuResponse
+from backend.handlers.base_handler import BaseHandler
+from backend.models.modbus import ModbusTcpResponse, ModbusRtuResponse
 
 
 def convert_value_before_sending(data_type: str, values: list):

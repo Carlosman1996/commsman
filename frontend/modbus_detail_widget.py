@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QTabWidget, QTextEdit, QHBoxLayout, QGroupBox,
                              QTableWidgetItem)
 
-from backend.custom_modbus_handler import convert_value_after_sending
+from backend.handlers.custom_modbus_handler import convert_value_after_sending
 from frontend.base_detail_widget import BaseDetail
 from frontend.common import get_model_value, convert_time
 from frontend.components.components import CustomGridLayout, CustomTable, CustomComboBox

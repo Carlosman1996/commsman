@@ -16,6 +16,8 @@ TODO: STUDY - continuous requests in a request type, like a background process o
 
 ## Future LOW PRIORITY
 
+TODO: raise exception if requests have children. It must be a check in post_init dataclass
+
 TODO: long texts show ellipsis + tooltip to avoid overflow
 
 TODO: BATCH execution 

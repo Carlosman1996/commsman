@@ -1,3 +1,4 @@
+import json
 import os
 import pickle
 from dataclasses import asdict
@@ -5,8 +6,8 @@ from dataclasses import asdict
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QStandardItem, QIcon
 
-from backend.base_handler import BaseHandler
-from backend.custom_modbus_handler import CustomModbusTcpClient, CustomModbusRtuClient
+from backend.handlers.base_handler import BaseHandler
+from backend.handlers.custom_modbus_handler import CustomModbusTcpClient, CustomModbusRtuClient
 from frontend.common import ITEMS
 from frontend.components.components import CustomStandardItemModel
 from frontend.models.collection import Collection
@@ -160,6 +161,8 @@ class Model(CustomStandardItemModel):
         data = self.serialize_tree()
         with open(TREE_DATA_FILE, "wb") as file:
             pickle.dump(data, file)
+        with open(TREE_DATA_FILE + ".json", "w") as file:
+            json.dump(data, file)
 
     def load_tree_data(self):
         """Load the tree structure from a pickle file."""
@@ -173,7 +176,7 @@ class Model(CustomStandardItemModel):
     def serialize_tree(self):
         def serialize_item(item):
             return {
-                "data": item.data(Qt.ItemDataRole.UserRole),
+                "data": asdict(item.data(Qt.ItemDataRole.UserRole)),
                 "children": [serialize_item(item.child(i)) for i in range(item.rowCount())],
             }
 
@@ -183,6 +186,7 @@ class Model(CustomStandardItemModel):
     def deserialize_tree(self, data):
         def deserialize_item(data, parent):
             item = ModelItem(data["data"])
+            item.last_result = None
 
             parent.appendRow(item)
             for child_data in data["children"]:
