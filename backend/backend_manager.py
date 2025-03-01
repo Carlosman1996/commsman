@@ -21,7 +21,7 @@ class BackendManager(QThread):
         self.model = model
         self.running = False
         self.collection_handler = CollectionHandler(self.model)
-        self.protocol_client_manager = ProtocolClientManager()
+        self.protocol_client_manager = ProtocolClientManager(self.model)
 
         self.signal_finish.connect(self.stop)
 
@@ -33,7 +33,7 @@ class BackendManager(QThread):
         start_time = time.time()
         request_timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
 
-        if item.item_handler == "Collection":
+        if item.item_type == "Collection":
             collection_result = CollectionResult(name=item.name,
                                                  result="OK",
                                                  elapsed_time=0,
@@ -41,12 +41,10 @@ class BackendManager(QThread):
 
             # Update item on model:
             self.model.add_item(collection_result)
-            self.model.update_item(item=item, last_result=collection_result.uuid)
+            self.model.update_item(item_uuid=item.uuid, last_result=collection_result.uuid)
 
             if parent_result:
                 self.collection_handler.add_collection(parent_result, collection_result)
-
-
 
             for item_child_uuid in item.children:
                 item_child = self.model.get_item(item_child_uuid)
@@ -56,11 +54,16 @@ class BackendManager(QThread):
             time.sleep(item.run_options.polling_interval)
 
             # Set Running status:
-            request_result = BaseResult(name=item.name, item_handler=item.item_handler, result="Next", elapsed_time=0, timestamp=request_timestamp)
+            request_result = BaseResult(name=item.name,
+                                        item_type="Modbus",
+                                        result="Pending",
+                                        elapsed_time=0,
+                                        timestamp=request_timestamp)
+            request_result_uuid = request_result.uuid
 
             # Update item on model:
             self.model.add_item(request_result)
-            self.model.update_item(item=item, last_result=request_result.uuid)
+            self.model.update_item(item_uuid=item.uuid, last_result=request_result_uuid)
 
             # Update collection:
             if parent_result:
@@ -75,11 +78,16 @@ class BackendManager(QThread):
                 protocol_client.connect()
                 request_result = protocol_client.execute_request(**asdict(item))
             except Exception as e:
-                request_result = BaseResult(uuid=request_result.uuid, name=item.name, item_handler=item.item_handler, result="Failed", elapsed_time=0, timestamp=request_timestamp, error_message=f"Error while getting client: {e}")
+                request_result = BaseResult(name=item.name,
+                                            item_type="Modbus",
+                                            result="Failed",
+                                            elapsed_time=0,
+                                            timestamp=request_timestamp,
+                                            error_message=f"Error while getting client: {e}")
+            request_result.uuid = request_result_uuid
 
             # Update item on model:
-            self.model.add_item(request_result)
-            self.model.update_item(item=item, last_result=request_result.uuid)
+            self.model.update_item(item_uuid=request_result_uuid, **asdict(request_result))
 
             # Update collection:
             if parent_result:
@@ -94,7 +102,7 @@ class BackendManager(QThread):
         selected_item = self.model.get_selected_item()
 
         # Initialize Collection:
-        self.model.update_item(item=selected_item, last_result=None)
+        self.model.update_item(item_uuid=selected_item.uuid, last_result=None)
         self.signal_request_finished.emit()
 
         # Delayed start:

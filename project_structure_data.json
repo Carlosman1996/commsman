@@ -2,30 +2,12 @@
     "uuid_5f5bce55-fe7e-4185-9f5c-8b782cf70d98": {
         "name": "Project 1",
         "item_handler": "RunOptions",
-        "uuid": "uuid_5f5bce55-fe7e-4185-9f5c-8b782cf70d98",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 2,
-        "delayed_start": 2
+        "uuid": "uuid_5f5bce55-fe7e-4185-9f5c-8b782cf70d98"
     },
     "uuid_cec690fd-3568-4028-ac93-0516d03f3803": {
         "name": "Request 1",
         "item_handler": "RunOptions",
-        "uuid": "uuid_cec690fd-3568-4028-ac93-0516d03f3803",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_cec690fd-3568-4028-ac93-0516d03f3803"
     },
     "uuid_7fe26b32-3768-447f-8ee9-1086d654c4c0": {
         "name": "Request 1",
@@ -65,16 +47,7 @@
     "uuid_bc5065f3-d23f-4d37-b68e-29cc596ca6ad": {
         "name": "Modbus TCP",
         "item_handler": "RunOptions",
-        "uuid": "uuid_bc5065f3-d23f-4d37-b68e-29cc596ca6ad",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_bc5065f3-d23f-4d37-b68e-29cc596ca6ad"
     },
     "uuid_7deb0b84-912f-404c-92a2-8dba1d53cb70": {
         "name": "Modbus TCP",
@@ -94,16 +67,7 @@
     "uuid_01028212-bd10-4759-b3c5-55da008ea6e0": {
         "name": "Request",
         "item_handler": "RunOptions",
-        "uuid": "uuid_01028212-bd10-4759-b3c5-55da008ea6e0",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_01028212-bd10-4759-b3c5-55da008ea6e0"
     },
     "uuid_7ee4022d-6b6e-4b1f-94a3-88bb2bdd6f20": {
         "name": "Request",
@@ -142,16 +106,7 @@
     "uuid_9486a34d-096b-4b3f-9275-73301006e15c": {
         "name": "Request Hex",
         "item_handler": "RunOptions",
-        "uuid": "uuid_9486a34d-096b-4b3f-9275-73301006e15c",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_9486a34d-096b-4b3f-9275-73301006e15c"
     },
     "uuid_411a2b5e-f84f-4fe6-9266-907e5f2114d1": {
         "name": "Request Hex",
@@ -190,16 +145,7 @@
     "uuid_9793af22-93dc-4333-b861-71aab3af899f": {
         "name": "Request Float",
         "item_handler": "RunOptions",
-        "uuid": "uuid_9793af22-93dc-4333-b861-71aab3af899f",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_9793af22-93dc-4333-b861-71aab3af899f"
     },
     "uuid_b47d5f84-4e62-4b58-8ab6-9258d1683071": {
         "name": "Request Float",
@@ -238,16 +184,7 @@
     "uuid_2fbd3a4c-58dd-405b-b9ab-c05930ba0ab5": {
         "name": "Request String",
         "item_handler": "RunOptions",
-        "uuid": "uuid_2fbd3a4c-58dd-405b-b9ab-c05930ba0ab5",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_2fbd3a4c-58dd-405b-b9ab-c05930ba0ab5"
     },
     "uuid_82b9e805-cd51-47dd-a877-c7047fc86ea2": {
         "name": "Request String",
@@ -288,16 +225,7 @@
     "uuid_ad6413f3-ca90-47c3-81e4-642bf163b33c": {
         "name": "Request Double",
         "item_handler": "RunOptions",
-        "uuid": "uuid_ad6413f3-ca90-47c3-81e4-642bf163b33c",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_ad6413f3-ca90-47c3-81e4-642bf163b33c"
     },
     "uuid_582cb054-3e88-49d8-ae57-a383041ad638": {
         "name": "Request Double",
@@ -336,16 +264,7 @@
     "uuid_5622bf3b-456e-4bf2-af85-78d97878fd91": {
         "name": "Request inherit",
         "item_handler": "RunOptions",
-        "uuid": "uuid_5622bf3b-456e-4bf2-af85-78d97878fd91",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_5622bf3b-456e-4bf2-af85-78d97878fd91"
     },
     "uuid_b82ed8b5-e6d5-48b5-8616-b59f9c367337": {
         "name": "Request inherit",
@@ -387,16 +306,7 @@
     "uuid_e502e200-ee22-4d28-9842-21af51ba8cca": {
         "name": "Modbus RTU",
         "item_handler": "RunOptions",
-        "uuid": "uuid_e502e200-ee22-4d28-9842-21af51ba8cca",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_e502e200-ee22-4d28-9842-21af51ba8cca"
     },
     "uuid_1fcc366b-1842-4a65-a3b8-00ed830c5ead": {
         "name": "Modbus RTU",
@@ -419,16 +329,7 @@
     "uuid_9b49d204-e44a-4db5-ac4e-b2f7ab2a2655": {
         "name": "Request",
         "item_handler": "RunOptions",
-        "uuid": "uuid_9b49d204-e44a-4db5-ac4e-b2f7ab2a2655",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 2,
-        "delayed_start": 1
+        "uuid": "uuid_9b49d204-e44a-4db5-ac4e-b2f7ab2a2655"
     },
     "uuid_dc75333c-f9d7-4407-8f5c-17837af75d30": {
         "name": "Request",
@@ -471,16 +372,7 @@
     "uuid_c70f230c-c03b-4d8e-a35c-b1966b50e537": {
         "name": "Request 1",
         "item_handler": "RunOptions",
-        "uuid": "uuid_c70f230c-c03b-4d8e-a35c-b1966b50e537",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_c70f230c-c03b-4d8e-a35c-b1966b50e537"
     },
     "uuid_fb20ef39-f0bd-42ef-86ea-a0bbbe1367c3": {
         "name": "Request 1",
@@ -522,16 +414,7 @@
     "uuid_4706d5f6-5a71-4855-9cd0-599728e50262": {
         "name": "RTU test",
         "item_handler": "RunOptions",
-        "uuid": "uuid_4706d5f6-5a71-4855-9cd0-599728e50262",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_4706d5f6-5a71-4855-9cd0-599728e50262"
     },
     "uuid_31a30c1b-1293-4aa3-aa61-81d2cf89aaf6": {
         "name": "RTU test",
@@ -573,30 +456,12 @@
     "uuid_673ced9c-682e-4242-b1ea-731dca44e759": {
         "name": "Inherit connections",
         "item_handler": "RunOptions",
-        "uuid": "uuid_673ced9c-682e-4242-b1ea-731dca44e759",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_673ced9c-682e-4242-b1ea-731dca44e759"
     },
     "uuid_3157ae28-e2c6-4a51-b426-ff4ccecca6b6": {
         "name": "Request Inherit",
         "item_handler": "RunOptions",
-        "uuid": "uuid_3157ae28-e2c6-4a51-b426-ff4ccecca6b6",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_3157ae28-e2c6-4a51-b426-ff4ccecca6b6"
     },
     "uuid_532dbdb7-7b2d-4140-987c-bc6bcd25fec0": {
         "name": "Request Inherit",
@@ -664,30 +529,12 @@
     "uuid_dde094ae-1fe2-49bc-bef8-9a37dabf5219": {
         "name": "Project 2",
         "item_handler": "RunOptions",
-        "uuid": "uuid_dde094ae-1fe2-49bc-bef8-9a37dabf5219",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_dde094ae-1fe2-49bc-bef8-9a37dabf5219"
     },
     "uuid_fa2dda5c-f41a-49f3-b742-173291768a2e": {
         "name": "Request",
         "item_handler": "RunOptions",
-        "uuid": "uuid_fa2dda5c-f41a-49f3-b742-173291768a2e",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_fa2dda5c-f41a-49f3-b742-173291768a2e"
     },
     "uuid_7a256e51-404e-4f64-a49f-a96a99b565f4": {
         "name": "Request",
@@ -724,16 +571,7 @@
     "uuid_65768984-b267-4991-87ac-4fb73690d8db": {
         "name": "Project 3",
         "item_handler": "RunOptions",
-        "uuid": "uuid_65768984-b267-4991-87ac-4fb73690d8db",
-        "parent": null,
-        "children": [],
-        "client_type": "No connection",
-        "client": null,
-        "run_options": null,
-        "last_result": null,
-        "polling": false,
-        "polling_interval": 1,
-        "delayed_start": 0
+        "uuid": "uuid_65768984-b267-4991-87ac-4fb73690d8db"
     },
     "uuid_3aff2fe3-3db1-4871-8d57-ab16ebcc8a3d": {
         "name": "Project 3",

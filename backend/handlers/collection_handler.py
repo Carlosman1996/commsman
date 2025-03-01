@@ -1,4 +1,5 @@
 import time
+from dataclasses import asdict
 from datetime import datetime
 
 from backend.models.base import BaseResult
@@ -13,17 +14,22 @@ class CollectionHandler:
     def add_request(self, collection: CollectionResult, request: BaseResult):
         """Add a request to a collection and update its status."""
         collection.children.append(request.uuid)  # Add to the children list
+        self.model.update_item(item_uuid=request.uuid, parent=collection.uuid)
+        self.model.update_item(item_uuid=collection.uuid, children=collection.children)
         self.update_status(collection)
 
     def update_request(self, collection: CollectionResult, request: BaseResult):
         """Add a request to a collection and update its status."""
         collection.children[-1] = request.uuid  # Add to the children list
+        self.model.update_item(item_uuid=request.uuid, parent=collection.uuid)
+        self.model.update_item(item_uuid=collection.uuid, children=collection.children)
         self.update_status(collection)
 
     def add_collection(self, parent: CollectionResult, collection: CollectionResult):
         """Add a collection and update its status."""
-        collection.parent = parent.uuid
         parent.children.append(collection.uuid)  # Add to the children list
+        self.model.update_item(item_uuid=collection.uuid, parent=parent.uuid)
+        self.model.update_item(item_uuid=parent.uuid, children=parent.children)
         self.update_status(parent)
 
     def count_results(self, collection: CollectionResult):
@@ -65,6 +71,9 @@ class CollectionHandler:
 
         # Calculate elapsed time
         collection.elapsed_time = time.time() - datetime.strptime(collection.timestamp, "%Y-%m-%d %H:%M:%S").timestamp()
+
+        # Update model
+        self.model.update_item(item_uuid=collection.uuid, **asdict(collection))
 
         # Propagate status update to parent
         if collection.parent:

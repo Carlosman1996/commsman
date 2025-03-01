@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 
-from backend.models import BaseItem
+from backend.models.base import Base
 
 
 @dataclass
-class RunOptions(BaseItem):
-    name: str
+class RunOptions(Base):
+    item_type: str = "RunOptions"
     polling: bool = False
     polling_interval: int = 1
     delayed_start: int = 0

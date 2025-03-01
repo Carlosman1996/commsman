@@ -5,6 +5,7 @@ from backend.models.base import BaseResult, BaseItem
 
 @dataclass
 class ModbusTcpClient(BaseItem):
+    item_type: str = "Modbus"
     host: str = "127.0.0.1"
     port: int = 502
     timeout: int = 3
@@ -13,6 +14,7 @@ class ModbusTcpClient(BaseItem):
 
 @dataclass
 class ModbusRtuClient(BaseItem):
+    item_type: str = "Modbus"
     port: str = "COM1"
     baudrate: int = 9600
     parity: str = "None"
@@ -24,7 +26,7 @@ class ModbusRtuClient(BaseItem):
 
 @dataclass
 class ModbusTcpResponse(BaseResult):
-    client_type: str = "Modbus TCP"
+    item_type: str = "Modbus"
     slave: int = None
     transaction_id: int = None
     protocol_id: int = None
@@ -39,7 +41,7 @@ class ModbusTcpResponse(BaseResult):
 
 @dataclass
 class ModbusRtuResponse(BaseResult):
-    client_type: str = "Modbus RTU"
+    item_type: str = "Modbus"
     slave: int = None
     function_code: int = None
     address: int = None
@@ -53,6 +55,8 @@ class ModbusRtuResponse(BaseResult):
 
 @dataclass
 class ModbusRequest(BaseItem):
+    item_type: str = "Modbus"
+    client_type: str = "Inherit from parent"
     function: str = "Read Holding Registers"
     data_type: str = "16-bit Integer"
     slave: int = 0

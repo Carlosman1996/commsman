@@ -6,7 +6,8 @@ from backend.models.base import BaseItem
 
 
 class ProtocolClientManager:
-    def __init__(self):
+    def __init__(self, model):
+        self.model = model
         self.handlers: dict[str, BaseHandler] = {}  # Key: handler ID, Value: handler
 
     def get_handler(self, item: BaseItem) -> BaseHandler:
@@ -16,30 +17,27 @@ class ProtocolClientManager:
             if item.client_type == "No connection":
                 raise Exception(f"Current request does not have client")
             elif item.client_type == "Inherit from parent":
-                parent = item.parent
+                parent = self.model.get_item(item.parent)
                 return find_item_client(parent, base_item)
             elif item.client:
-                if item.client.item_handler == base_item.client.item_handler:
-                    return item
+                if item.client.item_type == base_item.item_type:
+                    return item.client
                 else:
-                    raise Exception(f"Current request client protocol is not correct: expected {base_item.client.item_handler} - found {item.client.item_handler}")
+                    raise Exception(f"Current request client protocol is not correct: expected {base_item.item_type} - found {item.item_type}")
             else:
-                raise Exception(f"FATAL ERROR - Could not resolve item client: {item.client.item_handler} - {item}")
+                raise Exception(f"FATAL ERROR - Could not resolve item client: {item.client} - {item}")
 
-        item_with_client = find_item_client(item=item, base_item=item)
-
-        client_type = item_with_client.client_type
-        client_data = asdict(item_with_client.client)
-        del client_data["name"]
+        item_client = find_item_client(item=item, base_item=item)
+        client_data = asdict(item_client)
 
         handler_id = self._generate_handler_id(**client_data)
         if handler_id not in self.handlers:
-            if client_type == "Modbus TCP":
+            if item_client.item_handler == "ModbusTcpClient":
                 self.handlers[handler_id] = CustomModbusTcpClient(**client_data)
-            elif client_type == "Modbus RTU":
+            elif item_client.item_handler == "ModbusRtuClient":
                 self.handlers[handler_id] = CustomModbusRtuClient(**client_data)
             else:
-                raise ValueError(f"Unsupported Modbus client type: {client_type}")
+                raise ValueError(f"Unsupported Modbus client type: {item_client.item_handler}")
         return self.handlers[handler_id]
 
     def close_handler(self, protocol: str, **kwargs):

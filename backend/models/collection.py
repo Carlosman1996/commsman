@@ -1,10 +1,11 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from backend.models.base import BaseResult, BaseItem
 
 
 @dataclass
 class CollectionResult(BaseResult):
+    item_type: str = "Collection"
     total_ok: int = 0
     total_failed: int = 0
     total_pending: int = 0
@@ -12,4 +13,4 @@ class CollectionResult(BaseResult):
 
 @dataclass
 class Collection(BaseItem):
-    pass
+    item_type: str = "Collection"
