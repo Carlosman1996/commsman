@@ -16,6 +16,7 @@ class Model:
         self.json_file_path = json_file_path
         self.json_file_path_save = os.path.join(PROJECT_PATH, "project_structure_data_save.json")
         self.selected_item = None
+        self.load_from_json()
 
     def item_dict_to_dataclass(self, item_dict: dict) -> BaseItem:
         cls_name = item_dict.get("item_handler")
@@ -44,12 +45,39 @@ class Model:
         with open(self.json_file_path_save, "w") as file:
             json.dump(items_dict, file)
 
+    def create_item(self, item_name: str, item_type: str, parent_uuid: str = None):
+        """Agrega un nuevo ítem al almacenamiento y guarda cambios."""
+        if item_type == "Collection":
+            item = DATACLASS_REGISTRY.get("Collection")(name=item_name, item_type=item_type, parent=parent_uuid)
+        elif item_type == "Modbus":
+            item = DATACLASS_REGISTRY.get("ModbusRequest")(name=item_name, item_type=item_type, parent=parent_uuid)
+        else:
+            raise NotImplementedError(f"Item type {item_type} not implemented")
+
+        self.add_item(item)
+
     def add_item(self, item: BaseItem):
         """Agrega un nuevo ítem al almacenamiento y guarda cambios."""
         self.items[item.uuid] = item
         if item.parent and item.parent in self.items:
             self.items[item.parent].children.append(item.uuid)
         self.save_to_json()
+
+    def add_item_run_options(self, item_uuid: str, item_name: str) -> BaseItem:
+        """Agrega un nuevo ítem al almacenamiento y guarda cambios."""
+        run_options_item = DATACLASS_REGISTRY.get("RunOptions")(name=item_name, parent=item_uuid)
+        self.items[run_options_item.uuid] = run_options_item
+        self.items[item_uuid].run_options = run_options_item.uuid
+        self.save_to_json()
+        return run_options_item
+
+    def add_item_client(self, item_uuid: str, item_handler: str, item_name: str) -> BaseItem:
+        """Agrega un nuevo ítem al almacenamiento y guarda cambios."""
+        client_item = DATACLASS_REGISTRY.get(item_handler)(name=item_name, parent=item_uuid)
+        self.items[client_item.uuid] = client_item
+        self.items[item_uuid].client = client_item.uuid
+        self.save_to_json()
+        return client_item
 
     def update_item(self, item_uuid: str, **kwargs):
         """Actualiza un ítem existente y guarda cambios."""
@@ -58,15 +86,15 @@ class Model:
                 setattr(self.items[item_uuid], key, value)
             self.save_to_json()
 
-    def delete_item(self, uuid: str):
+    def delete_item(self, item_uuid: str):
         """Elimina un ítem y actualiza referencias. Luego, guarda los cambios."""
-        if uuid in self.items:
-            item = self.items.pop(uuid)
+        if item_uuid in self.items:
+            item = self.items.pop(item_uuid)
             if item.parent and item.parent in self.items:
-                self.items[item.parent].children.remove(uuid)
+                self.items[item.parent].children.remove(item_uuid)
             for child_uuid in item.children:
                 if child_uuid in self.items:
-                    self.items[child_uuid].parent = None
+                    self.items.pop(child_uuid)
             self.save_to_json()
 
     def _resolve_references(self, value, key: str = None):

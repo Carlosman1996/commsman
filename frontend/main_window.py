@@ -14,8 +14,8 @@ from PyQt6.QtWidgets import (
 )
 
 from backend.backend_manager import BackendManager
+from backend.model import Model
 from frontend.collection_detail_widget import CollectionDetail
-from frontend.model import Model
 from frontend.project_structure_section import ProjectStructureSection
 from qt_material import apply_stylesheet
 from frontend.modbus_detail_widget import ModbusDetail
@@ -73,14 +73,13 @@ class MainWindow(QMainWindow):
         container.setLayout(self.main_window_layout)
         self.setCentralWidget(container)
 
-        # Load data:
-        self.model.load_tree_data()
-
     def set_detail_section(self):
-        item = self.project_structure_section.get_selected_item()
-        self.model.set_selected_item(item)
+        item_uuid = self.project_structure_section.get_selected_item_uuid()
+        self.model.set_selected_item(item_uuid)
+        item = self.model.get_selected_item()
 
         if item is not None:
+            print(item)
             if item.item_type == "Modbus":
                 self.detail_section = ModbusDetail(self.model, self.controller)
             elif item.item_type == "Collection":
@@ -98,7 +97,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, *args, **kwargs):
         """Override the close event to perform custom actions."""
         # Close all handlers before exit:
-        self.model.protocol_client_manager.close_all_handlers()
+        self.controller.protocol_client_manager.close_all_handlers()
 
         # Wait until backend stops:
         self.controller.signal_finish.emit()

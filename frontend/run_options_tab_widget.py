@@ -4,9 +4,7 @@ from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtWidgets import (QWidget, QLabel,
                              QLineEdit, QSpinBox, QVBoxLayout)
 
-from frontend.components.components import CustomGridLayout, CustomComboBox
-from frontend.models.modbus import ModbusRtuClient, ModbusTcpClient
-from frontend.models.run_options import RunOptions
+from frontend.components.components import CustomGridLayout
 
 
 class RunOptionsTabWidget(QWidget):
@@ -46,7 +44,7 @@ class RunOptionsTabWidget(QWidget):
 
     def update_view(self, load_data: bool = False):
         if self.item.run_options is None:
-            run_options = RunOptions(self.item.name)
+            run_options = self.model.add_item_run_options(item_uuid=self.item.uuid, item_name=self.item.name)
         else:
             run_options = self.item.run_options
 
@@ -57,10 +55,9 @@ class RunOptionsTabWidget(QWidget):
         self.update_item()
 
     def update_item(self):
-        run_options = RunOptions(
-            name=self.item.name,
-            polling_interval=int(self.polling_interval_label.text()),
-            delayed_start=int(self.delayed_start.text()),
-        )
-
-        self.model.update_item(run_options=run_options)
+        run_options = {
+            "name": self.item.name,
+            "polling_interval": int(self.polling_interval_label.text()),
+            "delayed_start": int(self.delayed_start.text()),
+        }
+        self.model.update_item(item_uuid=self.item.run_options.uuid, **run_options)

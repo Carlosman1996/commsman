@@ -10,8 +10,6 @@ from backend.backend_manager import BackendManager
 from frontend.base_detail_widget import BaseDetail
 from frontend.common import convert_time
 from frontend.connection_tab_widget import ConnectionTabWidget
-from frontend.model import Model
-from frontend.models.collection import Collection
 from frontend.run_options_tab_widget import RunOptionsTabWidget
 
 
@@ -30,7 +28,7 @@ class CollectionRequestWidget(QWidget):
         detail_tabs = QTabWidget()
 
         item = model.get_selected_item()
-        if hasattr(item, "parent") and (item.parent()):
+        if hasattr(item, "parent") and item.parent:
             self.connection_widget = ConnectionTabWidget(model, controller, ["Inherit from parent"] + self.CLIENT_TYPES)
         else:
             self.connection_widget = ConnectionTabWidget(model, controller, self.CLIENT_TYPES)

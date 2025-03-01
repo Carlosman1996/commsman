@@ -11,8 +11,6 @@ from frontend.base_detail_widget import BaseDetail
 from frontend.common import get_model_value, convert_time
 from frontend.components.components import CustomGridLayout, CustomTable, CustomComboBox
 from frontend.connection_tab_widget import ConnectionTabWidget
-from frontend.model import Model
-from frontend.models.modbus import ModbusRequest, ModbusTcpResponse, ModbusRtuResponse
 from frontend.run_options_tab_widget import RunOptionsTabWidget
 
 FUNCTIONS_DICT = {

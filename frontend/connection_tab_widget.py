@@ -5,7 +5,6 @@ from PyQt6.QtWidgets import (QWidget, QLabel,
                              QLineEdit, QSpinBox, QVBoxLayout)
 
 from frontend.components.components import CustomGridLayout, CustomComboBox
-from frontend.models.modbus import ModbusRtuClient, ModbusTcpClient
 
 
 class ConnectionTabWidget(QWidget):
@@ -51,9 +50,9 @@ class ConnectionTabWidget(QWidget):
 
             if item_client_type == "Modbus TCP":
                 if not item_client:
-                    item_client = ModbusTcpClient(
-                        name=self.item.name
-                    )
+                    item_client = self.model.add_item_client(item_uuid=self.item.uuid,
+                                                             item_handler="ModbusTcpClient",
+                                                             item_name=self.item.name)
 
                 host_line_edit = QLineEdit(item_client.host)
                 self.grid_layout.add_widget(QLabel("Host:"), host_line_edit)
@@ -74,9 +73,9 @@ class ConnectionTabWidget(QWidget):
                 self.grid_layout.add_widget(QLabel("Timeout:"), retries_spinbox)
             elif item_client_type == "Modbus RTU":
                 if not item_client:
-                    item_client = ModbusRtuClient(
-                        name=self.item.name
-                    )
+                    item_client = self.model.add_item_client(item_uuid=self.item.uuid,
+                                                             item_handler="ModbusRtuClient",
+                                                             item_name=self.item.name)
 
                 port_line_edit = QLineEdit(item_client.port)
                 self.grid_layout.add_widget(QLabel("Port:"), port_line_edit)
@@ -118,25 +117,27 @@ class ConnectionTabWidget(QWidget):
     def update_item(self):
         client_type = self.connection_type_combo.currentText()
         if client_type == "Modbus TCP":
-            client = ModbusTcpClient(
-                name=self.item.name,
-                host=self.grid_layout.get_field(0, 1).text(),
-                port=int(self.grid_layout.get_field(0, 2).text()),
-                timeout=int(self.grid_layout.get_field(0, 3).text()),
-                retries=int(self.grid_layout.get_field(0, 4).text()),
-            )
+            client = {
+                "name": self.item.name,
+                "host": self.grid_layout.get_field(0, 1).text(),
+                "port": int(self.grid_layout.get_field(0, 2).text()),
+                "timeout": int(self.grid_layout.get_field(0, 3).text()),
+                "retries": int(self.grid_layout.get_field(0, 4).text()),
+            }
         elif client_type == "Modbus RTU":
-            client = ModbusRtuClient(
-                name=self.item.name,
-                port=self.grid_layout.get_field(0, 1).text(),
-                baudrate=int(self.grid_layout.get_field(0, 2).currentText()),
-                parity=self.grid_layout.get_field(0, 3).currentText(),
-                stopbits=int(self.grid_layout.get_field(0, 4).text()),
-                bytesize=int(self.grid_layout.get_field(0, 5).text()),
-                timeout=int(self.grid_layout.get_field(0, 6).text()),
-                retries=int(self.grid_layout.get_field(0, 7).text()),
-            )
+            client = {
+                "name": self.item.name,
+                "port": self.grid_layout.get_field(0, 1).text(),
+                "baudrate": int(self.grid_layout.get_field(0, 2).currentText()),
+                "parity": self.grid_layout.get_field(0, 3).currentText(),
+                "stopbits": int(self.grid_layout.get_field(0, 4).text()),
+                "bytesize": int(self.grid_layout.get_field(0, 5).text()),
+                "timeout": int(self.grid_layout.get_field(0, 6).text()),
+                "retries": int(self.grid_layout.get_field(0, 7).text()),
+            }
         else:
             client = None
 
-        self.model.update_item(client_type=client_type, client=client)
+        if client:
+            self.model.update_item(item_uuid=self.item.client.uuid, **client)
+        self.model.update_item(item_uuid=self.item.uuid, client_type=client_type)
