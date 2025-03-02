@@ -44,48 +44,38 @@ class Model:
         with open(self.json_file_path, "w") as file:
             json.dump(items_dict, file)
 
-    def create_item(self, item_name: str, item_type: str, parent_uuid: str = None):
+    def create_item(self, item_name: str, item_handler: str, parent_uuid: str = None, attribute: str = None) -> BaseItem:
         """Agrega un nuevo ítem al almacenamiento y guarda cambios."""
-        if item_type == "Collection":
-            item = DATACLASS_REGISTRY.get("Collection")(name=item_name, item_type=item_type, parent=parent_uuid)
-        elif item_type == "Modbus":
-            item = DATACLASS_REGISTRY.get("ModbusRequest")(name=item_name, item_type=item_type, parent=parent_uuid)
-        else:
-            raise NotImplementedError(f"Item type {item_type} not implemented")
+        item = DATACLASS_REGISTRY.get(item_handler)(name=item_name, parent=parent_uuid)
+        self.add_item(item, attribute)
+        return self.items[item.uuid]
 
-        self.add_item(item)
-
-    def add_item(self, item: BaseItem):
+    def add_item(self, item: BaseItem, attribute: str = None) -> BaseItem:
         """Agrega un nuevo ítem al almacenamiento y guarda cambios."""
         self.items[item.uuid] = item
-        if item.parent and item.parent in self.items:
-            self.items[item.parent].children.append(item.uuid)
+        if item.parent:
+            if item.parent in self.items:
+                # Save as attribute or as a child:
+                if attribute:
+                    self.update_item(item_uuid=item.parent, **{attribute: item.uuid})
+                else:
+                    self.items[item.parent].children.append(item.uuid)
+            else:
+                raise Exception(f"Item {item.parent} not found")
         self.save_to_json()
+        return self.items[item.uuid]
 
-    def add_item_run_options(self, item_uuid: str, item_name: str) -> BaseItem:
-        """Agrega un nuevo ítem al almacenamiento y guarda cambios."""
-        run_options_item = DATACLASS_REGISTRY.get("RunOptions")(name=item_name, parent=item_uuid)
-        self.items[run_options_item.uuid] = run_options_item
-        self.items[item_uuid].run_options = run_options_item.uuid
-        self.save_to_json()
-        return run_options_item
-
-    def add_item_client(self, item_uuid: str, item_handler: str, item_name: str) -> BaseItem:
-        """Agrega un nuevo ítem al almacenamiento y guarda cambios."""
-        client_item = DATACLASS_REGISTRY.get(item_handler)(name=item_name, parent=item_uuid)
-        self.items[client_item.uuid] = client_item
-        self.items[item_uuid].client = client_item.uuid
-        self.save_to_json()
-        return client_item
-
-    def update_item(self, item_uuid: str, **kwargs):
+    def update_item(self, item_uuid: str, **kwargs) -> BaseItem:
         """Actualiza un ítem existente y guarda cambios."""
         if item_uuid in self.items:
             for key, value in kwargs.items():
                 setattr(self.items[item_uuid], key, value)
             self.save_to_json()
+        else:
+            raise Exception(f"Item {item_uuid} not found")
+        return self.items[item_uuid]
 
-    def replace_item(self, item_uuid: str, new_item: BaseItem):
+    def replace_item(self, item_uuid: str, new_item: BaseItem) -> BaseItem:
         """Actualiza un ítem existente y guarda cambios."""
         if item_uuid != new_item.uuid:
             raise Exception(f"Items must have same uuid {item_uuid}, replace uuid {new_item.uuid}")
@@ -93,6 +83,9 @@ class Model:
         if item_uuid in self.items:
             self.items[item_uuid] = new_item
             self.save_to_json()
+        else:
+            raise Exception(f"Item {item_uuid} not found")
+        return self.items[item_uuid]
 
     def delete_item(self, item_uuid: str):
         """Elimina un ítem y actualiza referencias. Luego, guarda los cambios."""
@@ -102,50 +95,38 @@ class Model:
                 self.items[item.parent].children.remove(item_uuid)
             for child_uuid in item.children:
                 if child_uuid in self.items:
-                    self.items.pop(child_uuid)
+                    self.delete_item(child_uuid)
             self.save_to_json()
-
-    def _resolve_references(self, value, key: str = None):
-        """Replace 'uuid_XXX' values with actual item references."""
-        if key == "uuid" or key == "parent" or key == "children":
-            return value
-
-        if isinstance(value, str) and "uuid_" in value:
-            return self.items.get(value)
-        elif isinstance(value, list):
-            return [self._resolve_references(v) for v in value]
-        elif isinstance(value, dict):
-            return {k: self._resolve_references(v, k) for k, v in value.items()}
-        return value
+        else:
+            raise Exception(f"Item {item_uuid} not found")
 
     def get_item(self, item_uuid: str) -> BaseItem:
+        def _resolve_references(value, key: str = None):
+            """Replace 'uuid_XXX' values with actual item references."""
+            if key == "uuid" or key == "parent" or key == "children":
+                return value
+
+            if isinstance(value, str) and "uuid_" in value:
+                return self.items.get(value)
+            elif isinstance(value, list):
+                return [_resolve_references(v) for v in value]
+            elif isinstance(value, dict):
+                return {k: _resolve_references(v, k) for k, v in value.items()}
+            return value
+
         item = self.items.get(item_uuid)
         if item:
             # Resolve only first level references to complete necessary data. Parent and children will not be resolved:
-            item_dict = asdict(item)
-            item_dict = self._resolve_references(item_dict)
+            item_dict = _resolve_references(asdict(item))
             item = self.item_dict_to_dataclass(item_dict)
-        return item
 
-    def get_items(self, items_uuid: list[str]) -> list[BaseItem]:
-        items = []
-        for item_uuid in items_uuid:
-            items.append(self.get_item(item_uuid))
-        return items
+        return item
 
     def set_selected_item(self, item_uuid: str):
         self.selected_item = item_uuid
 
     def get_selected_item(self) -> BaseItem:
         return self.get_item(self.selected_item)
-
-    def get_item_parent(self, item_uuid: str) -> BaseItem:
-        item = self.get_item(item_uuid)
-        return self.get_item(item.parent)
-
-    def get_item_children(self, item_uuid: str) -> list[BaseItem]:
-        item = self.get_item(item_uuid)
-        return self.get_items(item.children)
 
 
 if __name__ == "__main__":

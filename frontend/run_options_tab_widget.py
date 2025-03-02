@@ -44,7 +44,12 @@ class RunOptionsTabWidget(QWidget):
 
     def update_view(self, load_data: bool = False):
         if self.item.run_options is None:
-            run_options = self.model.add_item_run_options(item_uuid=self.item.uuid, item_name=self.item.name)
+            run_options = self.model.create_item(item_name=self.item.name,
+                                                 item_handler="RunOptions",
+                                                 parent_uuid=self.item.uuid,
+                                                 attribute="run_options")
+            self.item = self.model.get_selected_item()
+
         else:
             run_options = self.item.run_options
 

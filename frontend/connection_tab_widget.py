@@ -50,9 +50,11 @@ class ConnectionTabWidget(QWidget):
 
             if item_client_type == "Modbus TCP":
                 if not item_client:
-                    item_client = self.model.add_item_client(item_uuid=self.item.uuid,
-                                                             item_handler="ModbusTcpClient",
-                                                             item_name=self.item.name)
+                    item_client = self.model.create_item(item_name=self.item.name,
+                                                         item_handler="ModbusTcpClient",
+                                                         parent_uuid=self.item.uuid,
+                                                         attribute="client")
+                    self.item = self.model.get_selected_item()
 
                 host_line_edit = QLineEdit(item_client.host)
                 self.grid_layout.add_widget(QLabel("Host:"), host_line_edit)
@@ -73,9 +75,12 @@ class ConnectionTabWidget(QWidget):
                 self.grid_layout.add_widget(QLabel("Timeout:"), retries_spinbox)
             elif item_client_type == "Modbus RTU":
                 if not item_client:
-                    item_client = self.model.add_item_client(item_uuid=self.item.uuid,
-                                                             item_handler="ModbusRtuClient",
-                                                             item_name=self.item.name)
+                    item_client = self.model.create_item(item_name=self.item.name,
+                                                         item_handler="ModbusRtuClient",
+                                                         parent_uuid=self.item.uuid,
+                                                         attribute="client")
+                    self.item = self.model.get_selected_item()
+
 
                 port_line_edit = QLineEdit(item_client.port)
                 self.grid_layout.add_widget(QLabel("Port:"), port_line_edit)

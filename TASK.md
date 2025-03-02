@@ -2,8 +2,6 @@
 
 ## Priority
 
-TODO: model and components must be in backend layer (decouple frontend and backend). Frontend calls backend manager which returns JSON with data or saves/updates.
-
 TODO: move pickle to SQLITE. Also, save results history per request and collection.
 
 TODO: show history in requests
@@ -12,7 +10,11 @@ TODO: collections must have table view option and show history
 
 TODO: Protect SQLite by encrypting
 
+TODO: Reload items on detail view Qwidgets when any change is produced on database, not only when data is required (see run_options_tab and connection_tab which has to reload item). Create a signal to reload data and make it generic for all views in a baseclass in "base_detail_widget".
+
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
+
+TODO: running an object and change to another must show it is not being runned
 
 ## Future LOW PRIORITY
 
