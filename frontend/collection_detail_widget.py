@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QTreeView, QSizePolicy)
 
 from backend.backend_manager import BackendManager
-from frontend.base_detail_widget import BaseDetail
+from frontend.base_detail_widget import BaseDetail, BaseLogic
 from frontend.common import convert_time
 from frontend.connection_tab_widget import ConnectionTabWidget
 from frontend.run_options_tab_widget import RunOptionsTabWidget
@@ -40,8 +40,10 @@ class CollectionRequestWidget(QWidget):
 
 
 class CollectionResultTreeView(QTreeView):
-    def __init__(self):
+    def __init__(self, model):
         super().__init__()
+
+        self.model = model
 
         self.setStyleSheet("""
             QTreeView::item:selected {
@@ -54,16 +56,16 @@ class CollectionResultTreeView(QTreeView):
         """)
 
         # Create a QTreeView and a QStandardItemModel
-        self.model = QStandardItemModel()
-        self.model.setHorizontalHeaderLabels(["Name", "Status"])
+        self.view_model = QStandardItemModel()
+        self.view_model.setHorizontalHeaderLabels(["Name", "Status"])
 
         # Set the model to the tree view
-        self.setModel(self.model)
+        self.setModel(self.view_model)
 
     def update_model(self, collection_results, collapse_view=False):
         # Clear the model and repopulate it with updated data
-        self.model.clear()
-        self.model.setHorizontalHeaderLabels(["Name", "Status"])
+        self.view_model.clear()
+        self.view_model.setHorizontalHeaderLabels(["Name", "Status"])
 
         self.setColumnWidth(0, 200)  # Minimum width for column 0
         self.setColumnWidth(1, 200)  # Minimum width for column 1
@@ -74,7 +76,7 @@ class CollectionResultTreeView(QTreeView):
             # Expand all items in the tree view
             self.expandAll()
         else:
-            first_index = self.model.index(0, 0)
+            first_index = self.view_model.index(0, 0)
             self.expand(first_index)
 
     def populate_model(self, collection_result, parent=None):
@@ -84,12 +86,14 @@ class CollectionResultTreeView(QTreeView):
         status_item = QStandardItem(self.get_collection_status(collection_result))
 
         if parent is None:
-            self.model.appendRow([folder_item, status_item])
+            self.view_model.appendRow([folder_item, status_item])
         else:
             parent.appendRow([folder_item, status_item])
 
         # Iterate through children (both collections and requests)
-        for child in collection_result.children:
+        for child_uuid in collection_result.children:
+            child = self.model.get_item(child_uuid)
+
             if child.item_type == "Collection":
                 # Handle sub-collection
                 self.populate_model(child, folder_item)
@@ -98,7 +102,7 @@ class CollectionResultTreeView(QTreeView):
                 request_item = QStandardItem(child.name)
                 text = self.get_request_status(child)
                 status_item = QStandardItem(text)
-                if child.result == "Next":
+                if child.result == "Pending":
                     status_item.setIcon(QIcon.fromTheme("go-next"))  # Green check icon
                 elif child.result == "OK":
                     status_item.setIcon(QIcon.fromTheme("dialog-ok"))  # Green check icon
@@ -114,21 +118,18 @@ class CollectionResultTreeView(QTreeView):
             return f"Success ({total_requests} requests: {collection_result.total_ok} OK)"
 
     def get_request_status(self, request):
-        if request.result == "Next":
-            return f"Next"
+        if request.result == "Pending":
+            return f"Pending"
         elif request.result == "OK":
             return f"OK  [ {convert_time(request.elapsed_time)} ]"
         else:
             return f"Failed  [ {convert_time(request.elapsed_time)} ]"
 
 
-class CollectionResultWidget(QWidget):
+class CollectionResultWidget(BaseLogic):
 
     def __init__(self, model, controller):
-        super().__init__()
-
-        self.model = model
-        self.item = self.model.get_selected_item()
+        super().__init__(model, controller)
 
         # Main layout
         main_layout = QVBoxLayout()
@@ -144,15 +145,13 @@ class CollectionResultWidget(QWidget):
         self.results_tab.setLayout(self.results_layout)
 
         # Tree view in results tab
-        self.results_tree = CollectionResultTreeView()
+        self.results_tree = CollectionResultTreeView(self.model)
         self.results_layout.addWidget(self.results_tree)
 
         self.tabs.addTab(self.results_tab, "Results")
 
         # Set initial state and connect signals:
         self.update_view(load_data=True)
-
-        controller.signal_request_finished.connect(self.update_view)
 
     def update_view(self, load_data=False):
         result = self.item.last_result

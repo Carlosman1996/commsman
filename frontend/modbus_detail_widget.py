@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QTableWidgetItem)
 
 from backend.handlers.custom_modbus_handler import convert_value_after_sending
-from frontend.base_detail_widget import BaseDetail
+from frontend.base_detail_widget import BaseDetail, BaseLogic
 from frontend.common import get_model_value, convert_time
 from frontend.components.components import CustomGridLayout, CustomTable, CustomComboBox
 from frontend.connection_tab_widget import ConnectionTabWidget
@@ -105,7 +105,7 @@ class ModbusRequestTabWidget(QWidget):
             "values": self.values_table.get_values(),
         }
 
-        self.model.update_item(**update_data)
+        self.model.update_item(item_uuid=self.item.uuid, **update_data)
 
 
 class ModbusRequestWidget(QWidget):
@@ -131,10 +131,10 @@ class ModbusRequestWidget(QWidget):
         main_layout.addWidget(detail_tabs)
 
 
-class ModbusResponseWidget(QWidget):
+class ModbusResponseWidget(BaseLogic):
 
     def __init__(self, model, controller):
-        super().__init__()
+        super().__init__(model, controller)
 
         self.model = model
         self.item = self.model.get_selected_item()
@@ -239,8 +239,8 @@ class ModbusResponseWidget(QWidget):
         # Set initial state and connect signals:
         self.update_view()
 
-        controller.signal_request_finished.connect(self.update_view)
         self.data_type_combo.currentTextChanged.connect(self.update_table)
+        self.signal_update_view.connect(self.update_view)
 
     def get_response_data(self):
         def get_value(key, replace_if_none: str = "-"):
@@ -270,7 +270,7 @@ class ModbusResponseWidget(QWidget):
 
     def update_view(self):
         result = self.item.last_result
-        if result is None:
+        if result is None or result.result == "Pending":
             return
 
         response = self.get_response_data()
@@ -322,16 +322,16 @@ class ModbusResponseWidget(QWidget):
 
     def update_table(self):
         result = self.item.last_result
-        if result is None:
+        if result is None or result.result == "Pending":
             return
 
         self.item.last_result.data_type = self.data_type_combo.currentText()
-        self.model.update_item(last_result=self.item.last_result)
         response = self.get_response_data()
 
         data_type = self.data_type_combo.currentText()
         self.values_table.clear()
 
+        # TODO: move logic to backend
         address_values = convert_value_after_sending(data_type, int(response["address"]), response["registers"])
         self.values_table.setRowCount(len(list(address_values.keys())))
         row = 0

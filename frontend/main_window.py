@@ -79,7 +79,6 @@ class MainWindow(QMainWindow):
         item = self.model.get_selected_item()
 
         if item is not None:
-            print(item)
             if item.item_type == "Modbus":
                 self.detail_section = ModbusDetail(self.model, self.controller)
             elif item.item_type == "Collection":

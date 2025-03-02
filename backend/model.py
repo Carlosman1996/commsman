@@ -14,7 +14,6 @@ class Model:
     def __init__(self, json_file_path: str = JSON_DATA_FILE):
         self.items = {}
         self.json_file_path = json_file_path
-        self.json_file_path_save = os.path.join(PROJECT_PATH, "project_structure_data_save.json")
         self.selected_item = None
         self.load_from_json()
 
@@ -42,7 +41,7 @@ class Model:
         for item_uuid, item_dataclass in self.items.items():
             items_dict[item_uuid] = asdict(item_dataclass)
 
-        with open(self.json_file_path_save, "w") as file:
+        with open(self.json_file_path, "w") as file:
             json.dump(items_dict, file)
 
     def create_item(self, item_name: str, item_type: str, parent_uuid: str = None):
@@ -84,6 +83,15 @@ class Model:
         if item_uuid in self.items:
             for key, value in kwargs.items():
                 setattr(self.items[item_uuid], key, value)
+            self.save_to_json()
+
+    def replace_item(self, item_uuid: str, new_item: BaseItem):
+        """Actualiza un ítem existente y guarda cambios."""
+        if item_uuid != new_item.uuid:
+            raise Exception(f"Items must have same uuid {item_uuid}, replace uuid {new_item.uuid}")
+
+        if item_uuid in self.items:
+            self.items[item_uuid] = new_item
             self.save_to_json()
 
     def delete_item(self, item_uuid: str):

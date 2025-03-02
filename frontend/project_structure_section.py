@@ -136,7 +136,7 @@ class CustomStandardItemModel(QStandardItemModel):
         view_items_dict = {}
         root_level_item = self.invisibleRootItem()
         for uuid, item in self.model.items.items():
-            if item.item_type == "Collection" or item.item_type == "Modbus":
+            if item.item_handler == "Collection" or item.item_handler == "ModbusRequest":
                 view_item = CustomStandardItem(item.name, item.item_type)
                 view_item.setData(uuid, role=Qt.ItemDataRole.UserRole)  # Store UUID for reference
                 view_item.setData(item.item_type, role=Qt.ItemDataRole.UserRole + 1)  # Store type

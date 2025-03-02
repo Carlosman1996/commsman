@@ -92,8 +92,9 @@ def convert_value_after_sending(data_type: str, address: int, values: list):
 
 
 class CustomModbusHandler(BaseHandler):
-    def __init__(self):
+    def __init__(self, client_type: str, **kwargs):
         self.client = None
+        self.client_type = client_type
         self.framer = None
         self.response = None
 
@@ -133,6 +134,7 @@ class CustomModbusHandler(BaseHandler):
         request_timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
         self.response.timestamp = request_timestamp
         self.response.result = "Failed"
+        self.response.client_type = self.client_type
 
         try:
             if "Write" in function:
@@ -208,8 +210,8 @@ class CustomSocketFramer(FramerSocket):
 
 
 class CustomModbusTcpClient(CustomModbusHandler):
-    def __init__(self, host: str, port: int, timeout: int, retries: int, **kwargs):
-        super().__init__()
+    def __init__(self, host: str, port: int, timeout: int, retries: int, client_type: str, **kwargs):
+        super().__init__(client_type)
         self.client = ModbusTcpClient(host=host,
                                       port=port,
                                       timeout=timeout,
@@ -253,9 +255,8 @@ class CustomRtuFramer(FramerRTU):
 
 
 class CustomModbusRtuClient(CustomModbusHandler):
-    def __init__(self, port: str, baudrate: int, parity: str, stopbits: int, bytesize: int, timeout: int, retries: int, **kwargs):
-        super().__init__()
-
+    def __init__(self, port: str, baudrate: int, parity: str, stopbits: int, bytesize: int, timeout: int, retries: int, client_type: str, **kwargs):
+        super().__init__(client_type)
         parity = "N" if parity == "None" else parity
         parity = "E" if parity == "Even" else parity
         parity = "O" if parity == "Odd" else parity
@@ -274,7 +275,6 @@ class CustomModbusRtuClient(CustomModbusHandler):
         self.response = ModbusRtuResponse(name=name)
 
     def process_response_data(self, modbus_response, address: int, values: list[int]):
-
         self.response.slave = self.framer.last_packet_recv[0]
         self.response.function_code = self.framer.last_packet_recv[1]
         self.response.byte_count = len(self.framer.last_packet_recv)

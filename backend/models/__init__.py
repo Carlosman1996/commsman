@@ -16,7 +16,7 @@ for _, module_name, _ in pkgutil.iter_modules(__path__, __name__ + "."):
             __all__.append(name)
 
 # Create a registry for dynamic loading
-DATACLASS_REGISTRY = {"Base": Base, "BaseItem": BaseItem, "BaseResult": BaseResult}
+DATACLASS_REGISTRY = {"Base": Base, "BaseItem": BaseItem, "BaseLogic": BaseResult}
 DATACLASS_REGISTRY.update({cls.__name__: cls for cls in Base.__subclasses__()})
 DATACLASS_REGISTRY.update({cls.__name__: cls for cls in BaseItem.__subclasses__()})
 DATACLASS_REGISTRY.update({cls.__name__: cls for cls in BaseResult.__subclasses__()})

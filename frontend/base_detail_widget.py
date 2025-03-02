@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtCore import Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy, QFrame, QGridLayout, \
     QLabel, QGroupBox
@@ -46,9 +46,32 @@ class ExecuteButton(QPushButton):
         """)
 
 
-class BaseDetail(QWidget):
+class BaseLogic(QWidget):
+
+    signal_update_view = pyqtSignal()
+
+    def __init__(self, model, controller, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.model = model
+        self.item = self.model.get_selected_item()
+        self.controller = controller
+
+        # Set initial state and connect signals:
+        controller.signal_request_finished.connect(self.reload_data)
+        self.signal_update_view.connect(self.update_view)
+
+    def reload_data(self):
+        self.item = self.model.get_selected_item()
+        self.signal_update_view.emit()
+
+    def update_view(self):
+        pass
+
+
+class BaseDetail(BaseLogic):
     def __init__(self, model, controller):
-        super().__init__()
+        super().__init__(model, controller)
 
         self.setMinimumSize(500, 600)
 
@@ -117,7 +140,6 @@ class BaseDetail(QWidget):
         self.update_view()
 
         self.execute_button.clicked.connect(self.execute)
-        controller.signal_request_finished.connect(self.update_view)
 
     def execute(self):
         if self.execute_button.run:

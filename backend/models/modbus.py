@@ -6,6 +6,7 @@ from backend.models.base import BaseResult, BaseItem
 @dataclass
 class ModbusTcpClient(BaseItem):
     item_type: str = "Modbus"
+    client_type: str = "Modbus TCP"
     host: str = "127.0.0.1"
     port: int = 502
     timeout: int = 3
@@ -15,6 +16,7 @@ class ModbusTcpClient(BaseItem):
 @dataclass
 class ModbusRtuClient(BaseItem):
     item_type: str = "Modbus"
+    client_type: str = "Modbus RTU"
     port: str = "COM1"
     baudrate: int = 9600
     parity: str = "None"

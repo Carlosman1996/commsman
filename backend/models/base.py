@@ -28,6 +28,7 @@ class BaseItem(Base):
 class BaseResult(Base):
     parent: str = None
     children: list[str] = field(default_factory=list)
+    client_type: str = None
     result: str = None
     elapsed_time: float = None
     timestamp: str = None

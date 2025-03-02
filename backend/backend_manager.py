@@ -63,7 +63,6 @@ class BackendManager(QThread):
 
             # Update item on model:
             self.model.add_item(request_result)
-            self.model.update_item(item_uuid=item.uuid, last_result=request_result_uuid)
 
             # Update collection:
             if parent_result:
@@ -83,11 +82,12 @@ class BackendManager(QThread):
                                             result="Failed",
                                             elapsed_time=0,
                                             timestamp=request_timestamp,
-                                            error_message=f"Error while getting client: {e}")
+                                            error_message=f"Error while doing request: {e}")
             request_result.uuid = request_result_uuid
 
             # Update item on model:
-            self.model.update_item(item_uuid=request_result_uuid, **asdict(request_result))
+            self.model.replace_item(item_uuid=request_result.uuid, new_item=request_result)
+            self.model.update_item(item_uuid=item.uuid, last_result=request_result.uuid)
 
             # Update collection:
             if parent_result:
