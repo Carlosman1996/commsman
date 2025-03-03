@@ -1,16 +1,16 @@
 from functools import partial
 
-from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtWidgets import (QWidget, QLabel,
                              QLineEdit, QSpinBox, QVBoxLayout)
 
+from frontend.base_detail_widget import BaseRequest
 from frontend.components.components import CustomGridLayout, CustomComboBox
 
 
-class ConnectionTabWidget(QWidget):
+class ConnectionTabWidget(BaseRequest):
 
     def __init__(self, model, controller, connection_types):
-        super().__init__()
+        super().__init__(model)
 
         self.model = model
         self.item = self.model.get_selected_item()
@@ -34,6 +34,7 @@ class ConnectionTabWidget(QWidget):
         self.grid_layout.signal_update_item.connect(partial(self.update_view, load_data=False))
 
     def update_view(self, load_data: bool = False):
+        # TODO: refactor to follow the strategy of run_options widget, for example. Use BaseRequest to update the view when the item changes, not when the view changes
         item_client_type = self.item.client_type
         item_client = self.item.client
 

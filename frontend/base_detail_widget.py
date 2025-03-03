@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 from PyQt6.QtCore import Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy, QFrame, QGridLayout, \
@@ -46,9 +48,27 @@ class ExecuteButton(QPushButton):
         """)
 
 
-class BaseLogic(QWidget):
+class BaseRequest(QWidget):
 
-    signal_update_view = pyqtSignal()
+    def __init__(self, model, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.model = model
+        self.item = self.model.get_selected_item()
+
+        # Set initial state and connect signals:
+        self.model.signal_model_update.connect(self.reload_data)
+
+    def reload_data(self):
+        self.item = self.model.get_selected_item()
+        # TODO:
+        # self.update_view()
+
+    @abstractmethod
+    def update_view(self):
+        pass
+
+class BaseResult(QWidget):
 
     def __init__(self, model, controller, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -58,18 +78,18 @@ class BaseLogic(QWidget):
         self.controller = controller
 
         # Set initial state and connect signals:
-        controller.signal_request_finished.connect(self.reload_data)
-        self.signal_update_view.connect(self.update_view)
+        self.controller.signal_request_finished.connect(self.reload_data)
 
     def reload_data(self):
         self.item = self.model.get_selected_item()
-        self.signal_update_view.emit()
+        self.update_view()
 
+    @abstractmethod
     def update_view(self):
-        pass
+        raise NotImplementedError
 
 
-class BaseDetail(BaseLogic):
+class BaseDetail(BaseResult):
     def __init__(self, model, controller):
         super().__init__(model, controller)
 

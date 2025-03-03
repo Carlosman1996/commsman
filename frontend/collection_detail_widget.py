@@ -7,18 +7,18 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QTreeView, QSizePolicy)
 
 from backend.backend_manager import BackendManager
-from frontend.base_detail_widget import BaseDetail, BaseLogic
+from frontend.base_detail_widget import BaseDetail, BaseResult, BaseRequest
 from frontend.common import convert_time
 from frontend.connection_tab_widget import ConnectionTabWidget
 from frontend.run_options_tab_widget import RunOptionsTabWidget
 
 
-class CollectionRequestWidget(QWidget):
+class CollectionRequestWidget(BaseRequest):
 
     CLIENT_TYPES = ["No connection", "Modbus TCP", "Modbus RTU"]
 
     def __init__(self, model, controller):
-        super().__init__()
+        super().__init__(model)
 
         # Main layout
         main_layout = QVBoxLayout()
@@ -126,7 +126,7 @@ class CollectionResultTreeView(QTreeView):
             return f"Failed  [ {convert_time(request.elapsed_time)} ]"
 
 
-class CollectionResultWidget(BaseLogic):
+class CollectionResultWidget(BaseResult):
 
     def __init__(self, model, controller):
         super().__init__(model, controller)

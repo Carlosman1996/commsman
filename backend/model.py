@@ -2,6 +2,9 @@ import json
 import os
 from dataclasses import asdict
 
+from PyQt6.QtWidgets import QWidget
+from PyQt6.QtCore import pyqtSignal
+
 from backend.models import DATACLASS_REGISTRY
 from backend.models.base import BaseItem
 from utils.common import PROJECT_PATH
@@ -10,8 +13,13 @@ from utils.common import PROJECT_PATH
 JSON_DATA_FILE = os.path.join(PROJECT_PATH, "project_structure_data.json")
 
 
-class Model:
+class Model(QWidget):
+
+    signal_model_update = pyqtSignal()
+
     def __init__(self, json_file_path: str = JSON_DATA_FILE):
+        super().__init__()
+
         self.items = {}
         self.json_file_path = json_file_path
         self.selected_item = None
@@ -43,6 +51,9 @@ class Model:
 
         with open(self.json_file_path, "w") as file:
             json.dump(items_dict, file)
+
+        # Send update model signal:
+        self.signal_model_update.emit()
 
     def create_item(self, item_name: str, item_handler: str, parent_uuid: str = None, attribute: str = None) -> BaseItem:
         """Agrega un nuevo ítem al almacenamiento y guarda cambios."""
@@ -121,6 +132,9 @@ class Model:
             item = self.item_dict_to_dataclass(item_dict)
 
         return item
+
+    def get_items(self):
+        return self.items
 
     def set_selected_item(self, item_uuid: str):
         self.selected_item = item_uuid

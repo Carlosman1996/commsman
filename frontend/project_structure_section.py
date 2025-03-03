@@ -141,15 +141,17 @@ class CustomStandardItemModel(QStandardItemModel):
         self.clear()
         self.setHorizontalHeaderLabels(["Project"])
 
+        model_items = self.model.get_items()
+
         # Step 1: Create QStandardItem objects for each item
         self.view_items = {}
         root_level_item = self.invisibleRootItem()
-        for item in self.model.items.values():
+        for item in model_items.values():
             if item.item_handler == "Collection" or item.item_handler == "ModbusRequest":
                 self.create_view_item(item)
 
         # Step 2: Resolve parent-child relationships
-        for item in self.model.items.values():
+        for item in model_items.values():
             if item.uuid in self.view_items:
                 if item.parent and item.parent in self.view_items:  # If parent exists, attach
                     self.view_items[item.parent].appendRow(self.view_items[item.uuid])
@@ -157,7 +159,7 @@ class CustomStandardItemModel(QStandardItemModel):
                     root_level_item.appendRow(self.view_items[item.uuid])
 
     def add_item(self, item_uuid: str):
-        item = self.model.items[item_uuid]
+        item = self.model.get_item(item_uuid)
         view_item = self.create_view_item(item)
         root_level_item = self.invisibleRootItem()
         if item.parent:

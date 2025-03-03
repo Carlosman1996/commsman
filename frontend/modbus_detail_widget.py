@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QTableWidgetItem)
 
 from backend.handlers.custom_modbus_handler import convert_value_after_sending
-from frontend.base_detail_widget import BaseDetail, BaseLogic
+from frontend.base_detail_widget import BaseDetail, BaseResult, BaseRequest
 from frontend.common import get_model_value, convert_time
 from frontend.components.components import CustomGridLayout, CustomTable, CustomComboBox
 from frontend.connection_tab_widget import ConnectionTabWidget
@@ -22,9 +22,9 @@ for functions in FUNCTIONS_DICT.values():
     FUNCTIONS += functions
 
 
-class ModbusRequestTabWidget(QWidget):
+class ModbusRequestTabWidget(BaseRequest):
     def __init__(self, model):
-        super().__init__()
+        super().__init__(model)
 
         self.model = model
         self.item = self.model.get_selected_item()
@@ -66,7 +66,20 @@ class ModbusRequestTabWidget(QWidget):
         # Set initial state and connect signals:
         self.update_view()
 
-        self.grid_layout.signal_update_item.connect(self.update_view)
+        self.grid_layout.signal_update_item.connect(self.update_item)
+
+    def update_item(self):
+        update_data = {
+            "function": self.function_combo.currentText(),
+            "address": int(self.address_spinbox.text()),
+            "count": int(self.quantity_spinbox.text()),
+            "slave": int(self.unit_id_spinbox.text()),
+            "data_type": self.data_type_combo.currentText(),
+            "values": self.values_table.get_values(),
+        }
+
+        self.model.update_item(item_uuid=self.item.uuid, **update_data)
+        self.update_view()
 
     def update_view(self):
         selected_function = self.function_combo.currentText()
@@ -83,7 +96,6 @@ class ModbusRequestTabWidget(QWidget):
             self.quantity_spinbox.setRange(1, 247)
 
         self.update_table_rows_view()
-        self.update_item()
 
     def update_table_rows_view(self):
         value = self.quantity_spinbox.value()
@@ -94,18 +106,6 @@ class ModbusRequestTabWidget(QWidget):
         elif value < current_rows:
             for index in range(current_rows - value):
                 self.values_table.removeRow(current_rows - index - 1)
-
-    def update_item(self):
-        update_data = {
-            "function": self.function_combo.currentText(),
-            "address": int(self.address_spinbox.text()),
-            "count": int(self.quantity_spinbox.text()),
-            "slave": int(self.unit_id_spinbox.text()),
-            "data_type": self.data_type_combo.currentText(),
-            "values": self.values_table.get_values(),
-        }
-
-        self.model.update_item(item_uuid=self.item.uuid, **update_data)
 
 
 class ModbusRequestWidget(QWidget):
@@ -131,7 +131,7 @@ class ModbusRequestWidget(QWidget):
         main_layout.addWidget(detail_tabs)
 
 
-class ModbusResponseWidget(BaseLogic):
+class ModbusResponseWidget(BaseResult):
 
     def __init__(self, model, controller):
         super().__init__(model, controller)
@@ -240,7 +240,6 @@ class ModbusResponseWidget(BaseLogic):
         self.update_view()
 
         self.data_type_combo.currentTextChanged.connect(self.update_table)
-        self.signal_update_view.connect(self.update_view)
 
     def get_response_data(self):
         def get_value(key, replace_if_none: str = "-"):

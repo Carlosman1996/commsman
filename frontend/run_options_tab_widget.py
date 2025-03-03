@@ -4,13 +4,14 @@ from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtWidgets import (QWidget, QLabel,
                              QLineEdit, QSpinBox, QVBoxLayout)
 
+from frontend.base_detail_widget import BaseRequest
 from frontend.components.components import CustomGridLayout
 
 
-class RunOptionsTabWidget(QWidget):
+class RunOptionsTabWidget(BaseRequest):
 
     def __init__(self, model):
-        super().__init__()
+        super().__init__(model)
 
         self.model = model
         self.item = self.model.get_selected_item()
@@ -40,29 +41,26 @@ class RunOptionsTabWidget(QWidget):
         # Set initial state and connect signals:
         self.update_view(load_data=True)
 
-        self.grid_layout.signal_update_item.connect(partial(self.update_view, load_data=False))
-
-    def update_view(self, load_data: bool = False):
-        if self.item.run_options is None:
-            run_options = self.model.create_item(item_name=self.item.name,
-                                                 item_handler="RunOptions",
-                                                 parent_uuid=self.item.uuid,
-                                                 attribute="run_options")
-            self.item = self.model.get_selected_item()
-
-        else:
-            run_options = self.item.run_options
-
-        if load_data:
-            self.polling_interval_label.setValue(run_options.polling_interval)
-            self.delayed_start.setValue(run_options.delayed_start)
-
-        self.update_item()
+        self.grid_layout.signal_update_item.connect(self.update_item)
 
     def update_item(self):
-        run_options = {
-            "name": self.item.name,
-            "polling_interval": int(self.polling_interval_label.text()),
-            "delayed_start": int(self.delayed_start.text()),
-        }
-        self.model.update_item(item_uuid=self.item.run_options.uuid, **run_options)
+        if self.item.run_options:
+            run_options = {
+                "name": self.item.name,
+                "polling_interval": int(self.polling_interval_label.text()),
+                "delayed_start": int(self.delayed_start.text()),
+            }
+            self.model.update_item(item_uuid=self.item.run_options.uuid, **run_options)
+        else:
+            self.model.create_item(item_name=self.item.name,
+                                   item_handler="RunOptions",
+                                   parent_uuid=self.item.uuid,
+                                   attribute="run_options")
+        self.update_view()
+
+    def update_view(self, load_data: bool = False):
+        if load_data and not self.item.run_options:
+            self.update_item()
+
+        self.polling_interval_label.setValue(self.item.run_options.polling_interval)
+        self.delayed_start.setValue(self.item.run_options.delayed_start)
