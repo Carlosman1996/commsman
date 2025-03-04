@@ -1,10 +1,143 @@
-from functools import partial
-
 from PyQt6.QtWidgets import (QWidget, QLabel,
                              QLineEdit, QSpinBox, QVBoxLayout)
 
 from frontend.base_detail_widget import BaseRequest
 from frontend.components.components import CustomGridLayout, CustomComboBox
+
+
+class BaseConnectionGrid(BaseRequest):
+
+    def __init__(self, model, grid_layout):
+        super().__init__(model)
+
+        self.grid_layout = grid_layout
+
+        self.model = model
+        self.item = model.get_selected_item()
+
+    def update_item(self):
+        pass
+
+    def update_view(self, load_data: bool = False):
+        pass
+
+
+class ModbusTcpConnectionGrid(BaseConnectionGrid):
+
+    def __init__(self, model, grid_layout):
+        super().__init__(model, grid_layout)
+
+        self.host_line_edit = QLineEdit("")
+        self.grid_layout.add_widget(QLabel("Host:"), self.host_line_edit)
+
+        self.port_spinbox = QSpinBox()
+        self.port_spinbox.setRange(1, 65535)
+        self.grid_layout.add_widget(QLabel("Port:"), self.port_spinbox)
+
+        self.timeout_spinbox = QSpinBox()
+        self.timeout_spinbox.setRange(1, 65535)
+        self.grid_layout.add_widget(QLabel("Timeout:"), self.timeout_spinbox)
+
+        self.retries_spinbox = QSpinBox()
+        self.retries_spinbox.setRange(1, 65535)
+        self.grid_layout.add_widget(QLabel("Timeout:"), self.retries_spinbox)
+
+        # Set initial state and connect signals:
+        self.update_view(load_data=True)
+
+    def update_item(self):
+        if self.item.client:
+            client = {
+                "name": self.item.name,
+                "host": self.host_line_edit.text(),
+                "port": int(self.port_spinbox.text()),
+                "timeout": int(self.timeout_spinbox.text()),
+                "retries": int(self.retries_spinbox.text()),
+            }
+            self.model.update_item(item_uuid=self.item.client.uuid, **client)
+        else:
+            self.model.create_item(item_name=self.item.name,
+                                   item_handler="ModbusTcpClient",
+                                   parent_uuid=self.item.uuid,
+                                   attribute="client")
+
+    def update_view(self, load_data: bool = False):
+        if load_data and not self.item.client:
+            self.update_item()
+
+        self.host_line_edit.setText(self.item.client.host)
+        self.port_spinbox.setValue(self.item.client.port)
+        self.timeout_spinbox.setValue(self.item.client.timeout)
+        self.retries_spinbox.setValue(self.item.client.retries)
+
+
+class ModbusRtuConnectionGrid(BaseConnectionGrid):
+
+    def __init__(self, model, grid_layout):
+        super().__init__(model, grid_layout)
+
+        self.port_line_edit = QLineEdit("")
+        self.grid_layout.add_widget(QLabel("Port:"), self.port_line_edit)
+
+        self.baudrate_combo = CustomComboBox()
+        self.baudrate_combo.addItems(["9600", "19200", "38400", "57600", "115200"])
+        self.grid_layout.add_widget(QLabel("Baudrate:"), self.baudrate_combo)
+
+        self.parity_combo = CustomComboBox()
+        self.parity_combo.addItems(["None", "Even", "Odd"])
+        self.grid_layout.add_widget(QLabel("Parity:"), self.parity_combo)
+
+        self.stopbits_spinbox = QSpinBox()
+        self.stopbits_spinbox.setRange(0, 2)
+        self.grid_layout.add_widget(QLabel("Stopbits:"), self.stopbits_spinbox)
+
+        self.bytesize_spinbox = QSpinBox()
+        self.bytesize_spinbox.setRange(7, 8)
+        self.grid_layout.add_widget(QLabel("Bytesize:"), self.bytesize_spinbox)
+
+        self.timeout_spinbox = QSpinBox()
+        self.timeout_spinbox.setRange(1, 65535)
+        self.grid_layout.add_widget(QLabel("Timeout:"), self.timeout_spinbox)
+
+        self.retries_spinbox = QSpinBox()
+        self.retries_spinbox.setRange(1, 65535)
+        self.grid_layout.add_widget(QLabel("Retries:"), self.retries_spinbox)
+
+        # Set initial state and connect signals:
+        self.update_view(load_data=True)
+
+    def update_item(self):
+        if self.item.client:
+            client = {
+                "name": self.item.name,
+                "port": self.port_line_edit.text(),
+                "baudrate": int(self.baudrate_combo.currentText()),
+                "parity": self.parity_combo.currentText(),
+                "stopbits": int(self.stopbits_spinbox.text()),
+                "bytesize": int(self.bytesize_spinbox.text()),
+                "timeout": int(self.timeout_spinbox.text()),
+                "retries": int(self.retries_spinbox.text()),
+            }
+            self.model.update_item(item_uuid=self.item.client.uuid, **client)
+        else:
+            self.model.create_item(item_name=self.item.name,
+                                   item_handler="ModbusRtuClient",
+                                   parent_uuid=self.item.uuid,
+                                   attribute="client")
+
+    def update_view(self, load_data: bool = False):
+        if load_data and not self.item.client:
+            self.update_item()
+
+        self.port_line_edit.setText(self.item.client.port)
+        index = self.baudrate_combo.findText(str(self.item.client.baudrate))
+        self.baudrate_combo.setCurrentIndex(index)
+        index = self.parity_combo.findText(str(self.item.client.parity))
+        self.parity_combo.setCurrentIndex(index)
+        self.stopbits_spinbox.setValue(self.item.client.stopbits)
+        self.bytesize_spinbox.setValue(self.item.client.bytesize)
+        self.timeout_spinbox.setValue(self.item.client.timeout)
+        self.retries_spinbox.setValue(self.item.client.retries)
 
 
 class ConnectionTabWidget(BaseRequest):
@@ -14,136 +147,52 @@ class ConnectionTabWidget(BaseRequest):
 
         self.model = model
         self.item = self.model.get_selected_item()
+        self.current_layout_name = connection_types[0]
 
-        main_layout = QVBoxLayout()
+        self.main_layout = QVBoxLayout()
 
         self.grid_layout = CustomGridLayout()
+        self.setLayout(self.grid_layout)
 
+        # Common component:
         self.connection_type_combo = CustomComboBox()
         self.connection_type_combo.addItems(connection_types)
         self.grid_layout.add_widget(QLabel("Connection Type:"), self.connection_type_combo)
 
-        # Add the grid layout to the main layout
-        main_layout.addLayout(self.grid_layout)
-
-        self.setLayout(main_layout)
+        # Create components:
+        self.connection_grids = {
+            "No connection": BaseConnectionGrid,
+            "Inherit from parent": BaseConnectionGrid,
+            "Modbus TCP": ModbusTcpConnectionGrid,
+            "Modbus RTU": ModbusRtuConnectionGrid,
+        }
+        self.current_connection_grid = self.connection_grids[self.current_layout_name](self.model, self.grid_layout)
 
         # Set initial state and connect signals:
         self.update_view(load_data=True)
 
-        self.grid_layout.signal_update_item.connect(partial(self.update_view, load_data=False))
-
-    def update_view(self, load_data: bool = False):
-        # TODO: refactor to follow the strategy of run_options widget, for example. Use BaseRequest to update the view when the item changes, not when the view changes
-        item_client_type = self.item.client_type
-        item_client = self.item.client
-
-        if item_client_type != self.connection_type_combo.currentText():
-            if load_data:
-                index = self.connection_type_combo.findText(item_client_type)
-                self.connection_type_combo.setCurrentIndex(index)
-            else:
-                # Reset all information related to client due to type has been changed:
-                item_client = None
-                item_client_type = self.connection_type_combo.currentText()
-
-            self.grid_layout.clear_layout(from_item_row=1)
-
-            if item_client_type == "Modbus TCP":
-                if not item_client:
-                    item_client = self.model.create_item(item_name=self.item.name,
-                                                         item_handler="ModbusTcpClient",
-                                                         parent_uuid=self.item.uuid,
-                                                         attribute="client")
-                    self.item = self.model.get_selected_item()
-
-                host_line_edit = QLineEdit(item_client.host)
-                self.grid_layout.add_widget(QLabel("Host:"), host_line_edit)
-
-                port_spinbox = QSpinBox()
-                port_spinbox.setRange(1, 65535)
-                port_spinbox.setValue(item_client.port)
-                self.grid_layout.add_widget(QLabel("Port:"), port_spinbox)
-
-                timeout_spinbox = QSpinBox()
-                timeout_spinbox.setRange(1, 65535)
-                timeout_spinbox.setValue(item_client.timeout)
-                self.grid_layout.add_widget(QLabel("Timeout:"), timeout_spinbox)
-
-                retries_spinbox = QSpinBox()
-                retries_spinbox.setRange(1, 65535)
-                retries_spinbox.setValue(item_client.retries)
-                self.grid_layout.add_widget(QLabel("Timeout:"), retries_spinbox)
-            elif item_client_type == "Modbus RTU":
-                if not item_client:
-                    item_client = self.model.create_item(item_name=self.item.name,
-                                                         item_handler="ModbusRtuClient",
-                                                         parent_uuid=self.item.uuid,
-                                                         attribute="client")
-                    self.item = self.model.get_selected_item()
-
-
-                port_line_edit = QLineEdit(item_client.port)
-                self.grid_layout.add_widget(QLabel("Port:"), port_line_edit)
-
-                baudrate_combo = CustomComboBox()
-                baudrate_combo.addItems(["9600", "19200", "38400", "57600", "115200"])
-                index = baudrate_combo.findText(str(item_client.baudrate))
-                baudrate_combo.setCurrentIndex(index)
-                self.grid_layout.add_widget(QLabel("Baudrate:"), baudrate_combo)
-
-                parity_combo = CustomComboBox()
-                parity_combo.addItems(["None", "Even", "Odd"])
-                index = parity_combo.findText(str(item_client.parity))
-                parity_combo.setCurrentIndex(index)
-                self.grid_layout.add_widget(QLabel("Parity:"), parity_combo)
-
-                stopbits_spinbox = QSpinBox()
-                stopbits_spinbox.setRange(0, 2)
-                stopbits_spinbox.setValue(item_client.stopbits)
-                self.grid_layout.add_widget(QLabel("Stopbits:"), stopbits_spinbox)
-
-                bytesize_spinbox = QSpinBox()
-                bytesize_spinbox.setRange(7, 8)
-                bytesize_spinbox.setValue(item_client.bytesize)
-                self.grid_layout.add_widget(QLabel("Bytesize:"), bytesize_spinbox)
-
-                timeout_spinbox = QSpinBox()
-                timeout_spinbox.setRange(1, 65535)
-                timeout_spinbox.setValue(item_client.timeout)
-                self.grid_layout.add_widget(QLabel("Timeout:"), timeout_spinbox)
-
-                retries_spinbox = QSpinBox()
-                retries_spinbox.setRange(1, 65535)
-                retries_spinbox.setValue(item_client.retries)
-                self.grid_layout.add_widget(QLabel("Retries:"), retries_spinbox)
-
-        self.update_item()
+        self.grid_layout.signal_update_item.connect(self.update_item)
 
     def update_item(self):
-        client_type = self.connection_type_combo.currentText()
-        if client_type == "Modbus TCP":
-            client = {
-                "name": self.item.name,
-                "host": self.grid_layout.get_field(0, 1).text(),
-                "port": int(self.grid_layout.get_field(0, 2).text()),
-                "timeout": int(self.grid_layout.get_field(0, 3).text()),
-                "retries": int(self.grid_layout.get_field(0, 4).text()),
-            }
-        elif client_type == "Modbus RTU":
-            client = {
-                "name": self.item.name,
-                "port": self.grid_layout.get_field(0, 1).text(),
-                "baudrate": int(self.grid_layout.get_field(0, 2).currentText()),
-                "parity": self.grid_layout.get_field(0, 3).currentText(),
-                "stopbits": int(self.grid_layout.get_field(0, 4).text()),
-                "bytesize": int(self.grid_layout.get_field(0, 5).text()),
-                "timeout": int(self.grid_layout.get_field(0, 6).text()),
-                "retries": int(self.grid_layout.get_field(0, 7).text()),
-            }
+        new_connection_grid = self.connection_type_combo.currentText()
+        print(new_connection_grid)
+        if self.item.client_type == new_connection_grid:
+            self.current_connection_grid.update_item()
         else:
-            client = None
+            print("wdfqwfwef")
+            self.model.update_item(item_uuid=self.item.uuid, client=None, client_type=new_connection_grid)
 
-        if client:
-            self.model.update_item(item_uuid=self.item.client.uuid, **client)
-        self.model.update_item(item_uuid=self.item.uuid, client_type=client_type)
+    def update_view(self, load_data: bool = False):
+        """Switch between GridLayouts when QComboBox changes value."""
+        new_connection_grid = self.item.client_type
+        if not load_data and new_connection_grid == self.current_layout_name:
+            self.current_connection_grid.update_view()
+            return
+
+        # Remove previous layout:
+        self.grid_layout.clear_layout(from_item_row=1)
+        # Add new layout:
+        self.current_connection_grid = self.connection_grids[new_connection_grid](self.model, self.grid_layout)
+        print(len(self.grid_layout.table[0]))
+
+        self.current_layout_name = new_connection_grid  # Update current state

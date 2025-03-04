@@ -61,8 +61,7 @@ class BaseRequest(QWidget):
 
     def reload_data(self):
         self.item = self.model.get_selected_item()
-        # TODO:
-        # self.update_view()
+        self.update_view()
 
     @abstractmethod
     def update_view(self):

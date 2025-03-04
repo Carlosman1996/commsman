@@ -56,7 +56,6 @@ class RunOptionsTabWidget(BaseRequest):
                                    item_handler="RunOptions",
                                    parent_uuid=self.item.uuid,
                                    attribute="run_options")
-        self.update_view()
 
     def update_view(self, load_data: bool = False):
         if load_data and not self.item.run_options:

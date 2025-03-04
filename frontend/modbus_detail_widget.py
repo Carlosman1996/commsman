@@ -77,9 +77,7 @@ class ModbusRequestTabWidget(BaseRequest):
             "data_type": self.data_type_combo.currentText(),
             "values": self.values_table.get_values(),
         }
-
         self.model.update_item(item_uuid=self.item.uuid, **update_data)
-        self.update_view()
 
     def update_view(self):
         selected_function = self.function_combo.currentText()

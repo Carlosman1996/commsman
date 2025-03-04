@@ -136,6 +136,20 @@ class CustomGridLayout(QGridLayout):
                     new_table[index_column][index_row] = widgets
         self.table = new_table
 
+    def hide_all_rows(self):
+        """Remove and delete all widgets from a layout."""
+        for rows in self.table:
+            for widgets in rows:
+                for widget in widgets:
+                    widget.hide()
+
+    def show_all_rows(self):
+        """Remove and delete all widgets from a layout."""
+        for rows in self.table:
+            for widgets in rows:
+                for widget in widgets:
+                    widget.show()
+
 
 class CustomTable(QTableWidget):
     def __init__(self, headers):
