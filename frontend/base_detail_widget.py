@@ -76,12 +76,8 @@ class BaseResult(QWidget):
         self.item = self.model.get_selected_item()
         self.controller = controller
 
-        # Set initial state and connect signals:
-        self.controller.signal_request_finished.connect(self.reload_data)
-
     def reload_data(self):
         self.item = self.model.get_selected_item()
-        self.update_view()
 
     @abstractmethod
     def update_view(self):

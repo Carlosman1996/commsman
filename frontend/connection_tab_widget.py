@@ -60,6 +60,8 @@ class ModbusTcpConnectionGrid(BaseConnectionGrid):
                                    item_handler="ModbusTcpClient",
                                    parent_uuid=self.item.uuid,
                                    attribute="client")
+        self.reload_data()
+        self.update_view()
 
     def update_view(self, load_data: bool = False):
         if load_data and not self.item.client:
@@ -124,6 +126,8 @@ class ModbusRtuConnectionGrid(BaseConnectionGrid):
                                    item_handler="ModbusRtuClient",
                                    parent_uuid=self.item.uuid,
                                    attribute="client")
+        self.reload_data()
+        self.update_view()
 
     def update_view(self, load_data: bool = False):
         if load_data and not self.item.client:
@@ -175,24 +179,28 @@ class ConnectionTabWidget(BaseRequest):
 
     def update_item(self):
         new_connection_grid = self.connection_type_combo.currentText()
-        print(new_connection_grid)
         if self.item.client_type == new_connection_grid:
             self.current_connection_grid.update_item()
         else:
-            print("wdfqwfwef")
             self.model.update_item(item_uuid=self.item.uuid, client=None, client_type=new_connection_grid)
 
+        self.reload_data()
+        self.update_view()
+
     def update_view(self, load_data: bool = False):
+        self.grid_layout.blockSignals(False)
         """Switch between GridLayouts when QComboBox changes value."""
         new_connection_grid = self.item.client_type
         if not load_data and new_connection_grid == self.current_layout_name:
             self.current_connection_grid.update_view()
-            return
+
+        index = self.connection_type_combo.findText(str(self.item.client_type))
+        self.connection_type_combo.setCurrentIndex(index)
 
         # Remove previous layout:
         self.grid_layout.clear_layout(from_item_row=1)
         # Add new layout:
         self.current_connection_grid = self.connection_grids[new_connection_grid](self.model, self.grid_layout)
-        print(len(self.grid_layout.table[0]))
 
         self.current_layout_name = new_connection_grid  # Update current state
+        self.grid_layout.blockSignals(True)

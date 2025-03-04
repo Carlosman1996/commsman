@@ -78,6 +78,7 @@ class Model(QWidget):
         return self.items[item.uuid]
 
     def update_item(self, item_uuid: str, **kwargs) -> BaseItem:
+        print(item_uuid, kwargs)
         """Actualiza un ítem existente y guarda cambios."""
         if item_uuid in self.items:
             for key, value in kwargs.items():
