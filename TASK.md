@@ -8,8 +8,6 @@ TODO: show history in requests
 
 TODO: collections must have table view option and show history
 
-TODO: Protect SQLite by encrypting
-
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
 
 TODO: running an object and change to another must show it is not being runned
@@ -18,9 +16,7 @@ TODO: HOME page with running instances. Also, running instances must be shown in
 
 ## Future LOW PRIORITY
 
-TODO: Reload items on detail view Qwidgets when any change is produced on database, not only when data is required 
-(see run_options_tab and connection_tab which has to reload item). Create a signal to reload data and make it generic 
-for all views in a baseclass in "base_detail_widget".
+TODO: Protect SQLite by encrypting
 
 TODO: model must be inside backend layer. Also, backend must wrap all pyqt signals in an independent method, as a "connector"
 between back and front.

@@ -50,7 +50,7 @@ class ModbusTcpConnectionGrid(BaseConnectionGrid):
             client = {
                 "name": self.item.name,
                 "host": self.host_line_edit.text(),
-                "port": int(self.port_spinbox.text()),
+                "com_port": int(self.port_spinbox.text()),
                 "timeout": int(self.timeout_spinbox.text()),
                 "retries": int(self.retries_spinbox.text()),
             }
@@ -66,7 +66,7 @@ class ModbusTcpConnectionGrid(BaseConnectionGrid):
             self.update_sequence()
 
         self.host_line_edit.setText(self.item.client.host)
-        self.port_spinbox.setValue(self.item.client.port)
+        self.port_spinbox.setValue(self.item.client.com_port)
         self.timeout_spinbox.setValue(self.item.client.timeout)
         self.retries_spinbox.setValue(self.item.client.retries)
 
@@ -110,7 +110,7 @@ class ModbusRtuConnectionGrid(BaseConnectionGrid):
         if self.item.client:
             client = {
                 "name": self.item.name,
-                "port": self.port_line_edit.text(),
+                "com_port": self.port_line_edit.text(),
                 "baudrate": int(self.baudrate_combo.currentText()),
                 "parity": self.parity_combo.currentText(),
                 "stopbits": int(self.stopbits_spinbox.text()),
@@ -129,7 +129,7 @@ class ModbusRtuConnectionGrid(BaseConnectionGrid):
         if load_data and not self.item.client:
             self.update_sequence()
 
-        self.port_line_edit.setText(self.item.client.port)
+        self.port_line_edit.setText(self.item.client.com_port)
         index = self.baudrate_combo.findText(str(self.item.client.baudrate))
         self.baudrate_combo.setCurrentIndex(index)
         index = self.parity_combo.findText(str(self.item.client.parity))

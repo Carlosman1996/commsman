@@ -15,7 +15,7 @@ class Base:
 
 
 @dataclass
-class BaseItem(Base):
+class BaseRequest(Base):
     parent: str = None
     children: list[str] = field(default_factory=list)
     client: str = None

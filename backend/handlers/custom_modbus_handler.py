@@ -287,7 +287,7 @@ class CustomModbusRtuClient(CustomModbusHandler):
 
 
 if __name__ == "__main__":
-    modbus_handler = CustomModbusRtuClient(port='/dev/pts/3',  # Replace with your serial port
+    modbus_handler = CustomModbusRtuClient(port='/dev/pts/3',  # Replace with your serial com_port
                                            baudrate=9600,
                                            parity='N',
                                            stopbits=1,

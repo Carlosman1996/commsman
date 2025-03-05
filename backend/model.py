@@ -3,10 +3,9 @@ import os
 from dataclasses import asdict
 
 from PyQt6.QtWidgets import QWidget
-from PyQt6.QtCore import pyqtSignal
 
 from backend.models import DATACLASS_REGISTRY
-from backend.models.base import BaseItem
+from backend.models.base import BaseRequest
 from utils.common import PROJECT_PATH
 
 
@@ -14,8 +13,6 @@ JSON_DATA_FILE = os.path.join(PROJECT_PATH, "project_structure_data.json")
 
 
 class Model(QWidget):
-
-    signal_model_update = pyqtSignal()
 
     def __init__(self, json_file_path: str = JSON_DATA_FILE):
         super().__init__()
@@ -25,7 +22,7 @@ class Model(QWidget):
         self.selected_item = None
         self.load_from_json()
 
-    def item_dict_to_dataclass(self, item_dict: dict) -> BaseItem:
+    def item_dict_to_dataclass(self, item_dict: dict) -> BaseRequest:
         cls_name = item_dict.get("item_handler")
         cls = DATACLASS_REGISTRY.get(cls_name)
 
@@ -52,16 +49,13 @@ class Model(QWidget):
         with open(self.json_file_path, "w") as file:
             json.dump(items_dict, file)
 
-        # Send update model signal:
-        self.signal_model_update.emit()
-
-    def create_item(self, item_name: str, item_handler: str, parent_uuid: str = None, attribute: str = None) -> BaseItem:
+    def create_item(self, item_name: str, item_handler: str, parent_uuid: str = None, attribute: str = None) -> BaseRequest:
         """Agrega un nuevo ítem al almacenamiento y guarda cambios."""
         item = DATACLASS_REGISTRY.get(item_handler)(name=item_name, parent=parent_uuid)
         self.add_item(item, attribute)
         return self.items[item.uuid]
 
-    def add_item(self, item: BaseItem, attribute: str = None) -> BaseItem:
+    def add_item(self, item: BaseRequest, attribute: str = None) -> BaseRequest:
         """Agrega un nuevo ítem al almacenamiento y guarda cambios."""
         self.items[item.uuid] = item
         if item.parent:
@@ -76,7 +70,7 @@ class Model(QWidget):
         self.save_to_json()
         return self.items[item.uuid]
 
-    def update_item(self, item_uuid: str, **kwargs) -> BaseItem:
+    def update_item(self, item_uuid: str, **kwargs) -> BaseRequest:
         """Actualiza un ítem existente y guarda cambios."""
         if item_uuid in self.items:
             for key, value in kwargs.items():
@@ -86,7 +80,7 @@ class Model(QWidget):
             raise Exception(f"Item {item_uuid} not found")
         return self.items[item_uuid]
 
-    def replace_item(self, item_uuid: str, new_item: BaseItem) -> BaseItem:
+    def replace_item(self, item_uuid: str, new_item: BaseRequest) -> BaseRequest:
         """Actualiza un ítem existente y guarda cambios."""
         if item_uuid != new_item.uuid:
             raise Exception(f"Items must have same uuid {item_uuid}, replace uuid {new_item.uuid}")
@@ -111,7 +105,7 @@ class Model(QWidget):
         else:
             raise Exception(f"Item {item_uuid} not found")
 
-    def get_item(self, item_uuid: str) -> BaseItem:
+    def get_item(self, item_uuid: str) -> BaseRequest:
         def _resolve_references(value, key: str = None):
             """Replace 'uuid_XXX' values with actual item references."""
             if key == "uuid" or key == "parent" or key == "children":
@@ -139,7 +133,7 @@ class Model(QWidget):
     def set_selected_item(self, item_uuid: str):
         self.selected_item = item_uuid
 
-    def get_selected_item(self) -> BaseItem:
+    def get_selected_item(self) -> BaseRequest:
         return self.get_item(self.selected_item)
 
 

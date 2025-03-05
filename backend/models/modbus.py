@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
-from backend.models.base import BaseResult, BaseItem
+from backend.models.base import BaseRequest, BaseResult, Base
 
 
 @dataclass
-class ModbusTcpClient(BaseItem):
+class ModbusTcpClient(Base):
     item_type: str = "Modbus"
     client_type: str = "Modbus TCP"
     host: str = "127.0.0.1"
@@ -14,10 +14,10 @@ class ModbusTcpClient(BaseItem):
 
 
 @dataclass
-class ModbusRtuClient(BaseItem):
+class ModbusRtuClient(Base):
     item_type: str = "Modbus"
     client_type: str = "Modbus RTU"
-    port: str = "COM1"
+    com_port: str = "COM1"
     baudrate: int = 9600
     parity: str = "None"
     stopbits: int = 1
@@ -56,7 +56,7 @@ class ModbusRtuResponse(BaseResult):
 
 
 @dataclass
-class ModbusRequest(BaseItem):
+class ModbusRequest(BaseRequest):
     item_type: str = "Modbus"
     client_type: str = "Inherit from parent"
     function: str = "Read Holding Registers"

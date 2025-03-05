@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from backend.models.base import BaseResult, BaseItem
+from backend.models.base import BaseResult, BaseRequest
 
 
 @dataclass
@@ -12,5 +12,5 @@ class CollectionResult(BaseResult):
 
 
 @dataclass
-class Collection(BaseItem):
+class Collection(BaseRequest):
     item_type: str = "Collection"
