@@ -166,3 +166,5 @@ poetry.lock
 qt5ct
 outputs
 **/*.txt
+*.db
+*.pkl
