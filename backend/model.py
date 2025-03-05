@@ -73,17 +73,14 @@ class Model(QWidget):
                     self.items[item.parent].children.append(item.uuid)
             else:
                 raise Exception(f"Item {item.parent} not found")
-        print("add")
         self.save_to_json()
         return self.items[item.uuid]
 
     def update_item(self, item_uuid: str, **kwargs) -> BaseItem:
-        print(item_uuid, kwargs)
         """Actualiza un ítem existente y guarda cambios."""
         if item_uuid in self.items:
             for key, value in kwargs.items():
                 setattr(self.items[item_uuid], key, value)
-            print("update")
             self.save_to_json()
         else:
             raise Exception(f"Item {item_uuid} not found")
@@ -96,7 +93,6 @@ class Model(QWidget):
 
         if item_uuid in self.items:
             self.items[item_uuid] = new_item
-            print("replace")
             self.save_to_json()
         else:
             raise Exception(f"Item {item_uuid} not found")
@@ -111,7 +107,6 @@ class Model(QWidget):
             for child_uuid in item.children:
                 if child_uuid in self.items:
                     self.delete_item(child_uuid)
-            print("delete")
             self.save_to_json()
         else:
             raise Exception(f"Item {item_uuid} not found")

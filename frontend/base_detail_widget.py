@@ -56,12 +56,17 @@ class BaseRequest(QWidget):
         self.model = model
         self.item = self.model.get_selected_item()
 
-        # Set initial state and connect signals:
-        self.model.signal_model_update.connect(self.reload_data)
+    def update_sequence(self):
+        self.update_item()
+        self.reload_data()
+        self.update_view()
 
     def reload_data(self):
         self.item = self.model.get_selected_item()
-        self.update_view()
+
+    @abstractmethod
+    def update_item(self):
+        pass
 
     @abstractmethod
     def update_view(self):

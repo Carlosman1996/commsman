@@ -41,7 +41,7 @@ class RunOptionsTabWidget(BaseRequest):
         # Set initial state and connect signals:
         self.update_view(load_data=True)
 
-        self.grid_layout.signal_update_item.connect(self.update_item)
+        self.grid_layout.signal_update_item.connect(self.update_sequence)
 
     def update_item(self):
         if self.item.run_options:
@@ -59,7 +59,7 @@ class RunOptionsTabWidget(BaseRequest):
 
     def update_view(self, load_data: bool = False):
         if load_data and not self.item.run_options:
-            self.update_item()
+            self.update_sequence()
 
         self.polling_interval_label.setValue(self.item.run_options.polling_interval)
         self.delayed_start.setValue(self.item.run_options.delayed_start)

@@ -66,7 +66,7 @@ class ModbusRequestTabWidget(BaseRequest):
         # Set initial state and connect signals:
         self.update_view()
 
-        self.grid_layout.signal_update_item.connect(self.update_item)
+        self.grid_layout.signal_update_item.connect(self.update_sequence)
 
     def update_item(self):
         update_data = {
