@@ -17,8 +17,8 @@ class CollectionRequestWidget(BaseRequest):
 
     CLIENT_TYPES = ["No connection", "Modbus TCP", "Modbus RTU"]
 
-    def __init__(self, model, controller):
-        super().__init__(model)
+    def __init__(self, repository):
+        super().__init__(repository)
 
         # Main layout
         main_layout = QVBoxLayout()
@@ -27,23 +27,23 @@ class CollectionRequestWidget(BaseRequest):
         # Set tabs:
         detail_tabs = QTabWidget()
 
-        item = model.get_selected_item()
+        item = repository.get_selected_item()
         if hasattr(item, "parent") and item.parent:
-            self.connection_widget = ConnectionTabWidget(model, controller, ["Inherit from parent"] + self.CLIENT_TYPES)
+            self.connection_widget = ConnectionTabWidget(repository, ["Inherit from parent"] + self.CLIENT_TYPES)
         else:
-            self.connection_widget = ConnectionTabWidget(model, controller, self.CLIENT_TYPES)
+            self.connection_widget = ConnectionTabWidget(repository, self.CLIENT_TYPES)
 
         detail_tabs.addTab(self.connection_widget, "Connection")
-        detail_tabs.addTab(RunOptionsTabWidget(model), "Run options")
+        detail_tabs.addTab(RunOptionsTabWidget(repository), "Run options")
 
         main_layout.addWidget(detail_tabs)
 
 
 class CollectionResultTreeView(QTreeView):
-    def __init__(self, model):
+    def __init__(self, repository):
         super().__init__()
 
-        self.model = model
+        self.repository = repository
 
         self.setStyleSheet("""
             QTreeView::item:selected {
@@ -59,11 +59,11 @@ class CollectionResultTreeView(QTreeView):
         self.view_model = QStandardItemModel()
         self.view_model.setHorizontalHeaderLabels(["Name", "Status"])
 
-        # Set the model to the tree view
+        # Set the repository to the tree view
         self.setModel(self.view_model)
 
     def update_model(self, collection_results, collapse_view=False):
-        # Clear the model and repopulate it with updated data
+        # Clear the repository and repopulate it with updated data
         self.view_model.clear()
         self.view_model.setHorizontalHeaderLabels(["Name", "Status"])
 
@@ -92,7 +92,7 @@ class CollectionResultTreeView(QTreeView):
 
         # Iterate through children (both collections and requests)
         for child_uuid in collection_result.children:
-            child = self.model.get_item(child_uuid)
+            child = self.repository.get_item(child_uuid)
 
             if child.item_type == "Collection":
                 # Handle sub-collection
@@ -128,8 +128,10 @@ class CollectionResultTreeView(QTreeView):
 
 class CollectionResultWidget(BaseResult):
 
-    def __init__(self, model, controller):
-        super().__init__(model, controller)
+    def __init__(self, backend):
+        super().__init__(backend)
+
+        self.repository = backend.repository
 
         # Main layout
         main_layout = QVBoxLayout()
@@ -145,7 +147,7 @@ class CollectionResultWidget(BaseResult):
         self.results_tab.setLayout(self.results_layout)
 
         # Tree view in results tab
-        self.results_tree = CollectionResultTreeView(self.model)
+        self.results_tree = CollectionResultTreeView(self.repository)
         self.results_layout.addWidget(self.results_tree)
 
         self.tabs.addTab(self.results_tab, "Results")
@@ -198,24 +200,15 @@ class CollectionResultWidget(BaseResult):
 
 
 class CollectionDetail(BaseDetail):
-    def __init__(self, model, controller):
-        super().__init__(model, controller)
+    def __init__(self, backend):
+        super().__init__(backend)
+
+        repository = backend.repository
 
         # Detail
-        self.request_tabs = CollectionRequestWidget(model, controller)
-        self.results_tabs = CollectionResultWidget(model, controller)
+        self.request_tabs = CollectionRequestWidget(repository)
+        self.results_tabs = CollectionResultWidget(backend)
 
         # Fill splitter:
         self.request_layout.addWidget(self.request_tabs)
         self.result_layout.addWidget(self.results_tabs)
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    model = Model()
-    model.set_selected_item(Collection(name="Collection Test"))
-    controller = BackendManager(model)
-    window = CollectionDetail(model, controller)
-    window.show()
-    sys.exit(app.exec())

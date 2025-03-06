@@ -7,13 +7,13 @@ from frontend.components.components import CustomGridLayout, CustomComboBox
 
 class BaseConnectionGrid(BaseRequest):
 
-    def __init__(self, model, grid_layout):
-        super().__init__(model)
+    def __init__(self, repository, grid_layout):
+        super().__init__(repository)
 
         self.grid_layout = grid_layout
 
-        self.model = model
-        self.item = model.get_selected_item()
+        self.repository = repository
+        self.item = repository.get_selected_item()
 
     def update_item(self):
         pass
@@ -24,8 +24,8 @@ class BaseConnectionGrid(BaseRequest):
 
 class ModbusTcpConnectionGrid(BaseConnectionGrid):
 
-    def __init__(self, model, grid_layout):
-        super().__init__(model, grid_layout)
+    def __init__(self, repository, grid_layout):
+        super().__init__(repository, grid_layout)
 
         self.host_line_edit = QLineEdit("")
         self.grid_layout.add_widget(QLabel("Host:"), self.host_line_edit)
@@ -54,9 +54,9 @@ class ModbusTcpConnectionGrid(BaseConnectionGrid):
                 "timeout": int(self.timeout_spinbox.text()),
                 "retries": int(self.retries_spinbox.text()),
             }
-            self.model.update_item(item_uuid=self.item.client.uuid, **client)
+            self.repository.update_item(item_uuid=self.item.client.uuid, **client)
         else:
-            self.model.create_item(item_name=self.item.name,
+            self.repository.create_item(item_name=self.item.name,
                                    item_handler="ModbusTcpClient",
                                    parent_uuid=self.item.uuid,
                                    attribute="client")
@@ -66,15 +66,15 @@ class ModbusTcpConnectionGrid(BaseConnectionGrid):
             self.update_sequence()
 
         self.host_line_edit.setText(self.item.client.host)
-        self.port_spinbox.setValue(self.item.client.com_port)
+        self.port_spinbox.setValue(self.item.client.port)
         self.timeout_spinbox.setValue(self.item.client.timeout)
         self.retries_spinbox.setValue(self.item.client.retries)
 
 
 class ModbusRtuConnectionGrid(BaseConnectionGrid):
 
-    def __init__(self, model, grid_layout):
-        super().__init__(model, grid_layout)
+    def __init__(self, repository, grid_layout):
+        super().__init__(repository, grid_layout)
 
         self.port_line_edit = QLineEdit("")
         self.grid_layout.add_widget(QLabel("Port:"), self.port_line_edit)
@@ -118,9 +118,9 @@ class ModbusRtuConnectionGrid(BaseConnectionGrid):
                 "timeout": int(self.timeout_spinbox.text()),
                 "retries": int(self.retries_spinbox.text()),
             }
-            self.model.update_item(item_uuid=self.item.client.uuid, **client)
+            self.repository.update_item(item_uuid=self.item.client.uuid, **client)
         else:
-            self.model.create_item(item_name=self.item.name,
+            self.repository.create_item(item_name=self.item.name,
                                    item_handler="ModbusRtuClient",
                                    parent_uuid=self.item.uuid,
                                    attribute="client")
@@ -142,11 +142,11 @@ class ModbusRtuConnectionGrid(BaseConnectionGrid):
 
 class ConnectionTabWidget(BaseRequest):
 
-    def __init__(self, model, controller, connection_types):
-        super().__init__(model)
+    def __init__(self, repository, connection_types):
+        super().__init__(repository)
 
-        self.model = model
-        self.item = self.model.get_selected_item()
+        self.repository = repository
+        self.item = self.repository.get_selected_item()
         self.current_layout_name = connection_types[0]
 
         self.main_layout = QVBoxLayout()
@@ -166,7 +166,7 @@ class ConnectionTabWidget(BaseRequest):
             "Modbus TCP": ModbusTcpConnectionGrid,
             "Modbus RTU": ModbusRtuConnectionGrid,
         }
-        self.current_connection_grid = self.connection_grids[self.current_layout_name](self.model, self.grid_layout)
+        self.current_connection_grid = self.connection_grids[self.current_layout_name](self.repository, self.grid_layout)
 
         # Set initial state and connect signals:
         self.update_view(load_data=True)
@@ -178,7 +178,7 @@ class ConnectionTabWidget(BaseRequest):
         if self.item.client_type == new_connection_grid:
             self.current_connection_grid.update_item()
         else:
-            self.model.update_item(item_uuid=self.item.uuid, client=None, client_type=new_connection_grid)
+            self.repository.update_item(item_uuid=self.item.uuid, client=None, client_type=new_connection_grid)
 
     def update_view(self, load_data: bool = False):
         """Switch between GridLayouts when QComboBox changes value."""
@@ -196,7 +196,7 @@ class ConnectionTabWidget(BaseRequest):
         # Remove previous layout:
         self.grid_layout.clear_layout(from_item_row=1)
         # Add new layout:
-        self.current_connection_grid = self.connection_grids[new_connection_grid](self.model, self.grid_layout)
+        self.current_connection_grid = self.connection_grids[new_connection_grid](self.repository, self.grid_layout)
 
         self.current_layout_name = new_connection_grid  # Update current state
 

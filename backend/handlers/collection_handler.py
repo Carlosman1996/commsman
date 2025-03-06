@@ -72,7 +72,7 @@ class CollectionHandler:
         # Calculate elapsed time
         collection.elapsed_time = time.time() - datetime.strptime(collection.timestamp, "%Y-%m-%d %H:%M:%S").timestamp()
 
-        # Update model
+        # Update repository
         self.model.replace_item(item_uuid=collection.uuid, new_item=collection)
 
         # Propagate status update to parent

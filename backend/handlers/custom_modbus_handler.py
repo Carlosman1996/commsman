@@ -10,87 +10,6 @@ from backend.handlers.base_handler import BaseHandler
 from backend.models.modbus import ModbusTcpResponse, ModbusRtuResponse
 
 
-def convert_value_before_sending(data_type: str, values: list):
-    registers = []
-    for value in values:
-        if data_type == "16-bit Integer":
-            raw_bytes = struct.pack(">h", int(value))
-            registers.extend(struct.unpack(">H", raw_bytes))
-        elif data_type == "16-bit Unsigned Integer":
-            raw_bytes = struct.pack(">H", int(value))
-            registers.extend(struct.unpack(">H", raw_bytes))
-        elif data_type == "32-bit Integer":
-            raw_bytes = struct.pack(">i", int(value))
-            registers.extend(struct.unpack(">HH", raw_bytes))
-        elif data_type == "32-bit Unsigned Integer":
-            raw_bytes = struct.pack(">I", int(value))
-            registers.extend(struct.unpack(">HH", raw_bytes))
-        elif data_type == "Hexadecimal":
-            value = str(value)
-            if len(value) % 4 != 0:
-                value = value.zfill(len(value) + (4 - len(value) % 4))  # Ensure 16-bit alignment
-            raw_bytes = bytes.fromhex(value)
-            registers.extend(struct.unpack(">" + "H" * (len(raw_bytes) // 2), raw_bytes))
-        elif data_type == "Float":
-            raw_bytes = struct.pack(">f", float(value))
-            registers.extend(struct.unpack(">HH", raw_bytes))
-        elif data_type == "Double":
-            raw_bytes = struct.pack(">d", float(value))
-            registers.extend(struct.unpack(">HHHH", raw_bytes))
-        elif data_type == "String":
-            text_bytes = str(value).encode("utf-8")
-            if len(text_bytes) % 2 != 0:
-                text_bytes += b"\x00"
-            registers.extend(struct.unpack(">" + "H" * (len(text_bytes) // 2), text_bytes))
-        else:
-            raise Exception(f"Data type '{data_type}' not supported")
-
-    return registers
-
-
-def convert_value_after_sending(data_type: str, address: int, values: list):
-    address_values = {}
-    index = 0
-    while index < len(values):
-        new_address = address + index
-        try:
-            if data_type == "16-bit Integer":
-                raw_bytes = struct.pack(">H", values[index])
-                address_values[f"{new_address}"] = struct.unpack(">h", raw_bytes[:2])[0]
-            elif data_type == "16-bit Unsigned Integer":
-                raw_bytes = struct.pack(">H", values[index])
-                address_values[f"{new_address}"] = struct.unpack(">H", raw_bytes[:2])[0]
-            elif data_type == "32-bit Integer":
-                index += 1
-                raw_bytes = struct.pack(">" + "H" * 2, *values[index - 1:index + 1])
-                address_values[f"{new_address}-{new_address + 1}"] = struct.unpack(">i", raw_bytes[:4])[0]
-            elif data_type == "32-bit Unsigned Integer":
-                index += 1
-                raw_bytes = struct.pack(">" + "H" * 2, *values[index - 1:index + 1])
-                address_values[f"{new_address}-{new_address + 1}"] = struct.unpack(">I", raw_bytes[:4])[0]
-            elif data_type == "Hexadecimal":
-                address_values[f"{new_address}"] = hex(values[index])[2:].zfill(4).upper()
-            elif data_type == "Float":
-                index += 1
-                raw_bytes = struct.pack(">" + "H" * 2, *values[index - 1:index + 1])
-                address_values[f"{new_address}-{new_address + 1}"] = struct.unpack(">f", raw_bytes)[0]
-            elif data_type == "Double":
-                index += 3
-                raw_bytes = struct.pack(">" + "H" * 4, *values[index - 3:index + 1])
-                address_values[f"{new_address}-{new_address + 3}"] = struct.unpack(">d", raw_bytes)[0]
-            elif data_type == "String":
-                raw_bytes = struct.pack(">H", values[index])
-                address_values[f"{new_address}"] = raw_bytes.decode("utf-8").rstrip("\x00")
-            else:
-                raise Exception(f"Data type '{data_type}' not supported")
-        except Exception as e:
-            address_values[f"{new_address}"] = [f"❗ Decode Error: {e}"]
-
-        index += 1
-
-    return address_values
-
-
 class CustomModbusHandler(BaseHandler):
     def __init__(self, client_type: str, **kwargs):
         self.client = None
@@ -100,6 +19,44 @@ class CustomModbusHandler(BaseHandler):
 
     def connect(self):
         return self.client.connect()
+
+    @staticmethod
+    def convert_value_before_sending(data_type: str, values: list):
+        registers = []
+        for value in values:
+            if data_type == "16-bit Integer":
+                raw_bytes = struct.pack(">h", int(value))
+                registers.extend(struct.unpack(">H", raw_bytes))
+            elif data_type == "16-bit Unsigned Integer":
+                raw_bytes = struct.pack(">H", int(value))
+                registers.extend(struct.unpack(">H", raw_bytes))
+            elif data_type == "32-bit Integer":
+                raw_bytes = struct.pack(">i", int(value))
+                registers.extend(struct.unpack(">HH", raw_bytes))
+            elif data_type == "32-bit Unsigned Integer":
+                raw_bytes = struct.pack(">I", int(value))
+                registers.extend(struct.unpack(">HH", raw_bytes))
+            elif data_type == "Hexadecimal":
+                value = str(value)
+                if len(value) % 4 != 0:
+                    value = value.zfill(len(value) + (4 - len(value) % 4))  # Ensure 16-bit alignment
+                raw_bytes = bytes.fromhex(value)
+                registers.extend(struct.unpack(">" + "H" * (len(raw_bytes) // 2), raw_bytes))
+            elif data_type == "Float":
+                raw_bytes = struct.pack(">f", float(value))
+                registers.extend(struct.unpack(">HH", raw_bytes))
+            elif data_type == "Double":
+                raw_bytes = struct.pack(">d", float(value))
+                registers.extend(struct.unpack(">HHHH", raw_bytes))
+            elif data_type == "String":
+                text_bytes = str(value).encode("utf-8")
+                if len(text_bytes) % 2 != 0:
+                    text_bytes += b"\x00"
+                registers.extend(struct.unpack(">" + "H" * (len(text_bytes) // 2), text_bytes))
+            else:
+                raise Exception(f"Data type '{data_type}' not supported")
+
+        return registers
 
     def execute_modbus_request(self, function: str, address: int, count: int, slave: int, values: list = None):
         match function:
@@ -138,9 +95,9 @@ class CustomModbusHandler(BaseHandler):
 
         try:
             if "Write" in function:
-                values = convert_value_before_sending(data_type, values)
+                values = self.convert_value_before_sending(data_type, values)
             else:
-                values = convert_value_before_sending(data_type, [0 for _ in range(count)])
+                values = self.convert_value_before_sending(data_type, [0 for _ in range(count)])
             count = len(values)
 
             modbus_response = self.execute_modbus_request(function=function,

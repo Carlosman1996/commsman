@@ -1,17 +1,17 @@
-import sys
+import struct
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QLabel,
                              QSpinBox,
                              QTabWidget, QTextEdit, QHBoxLayout, QGroupBox,
                              QTableWidgetItem)
 
-from backend.handlers.custom_modbus_handler import convert_value_after_sending
 from frontend.base_detail_widget import BaseDetail, BaseResult, BaseRequest
-from frontend.common import get_model_value, convert_time
+from frontend.common import convert_time, get_model_value
 from frontend.components.components import CustomGridLayout, CustomTable, CustomComboBox
 from frontend.connection_tab_widget import ConnectionTabWidget
 from frontend.run_options_tab_widget import RunOptionsTabWidget
+
 
 FUNCTIONS_DICT = {
     "read": ["Read Holding Registers", "Read Input Registers", "Read Coils", "Read Discrete Inputs"],
@@ -22,12 +22,56 @@ for functions in FUNCTIONS_DICT.values():
     FUNCTIONS += functions
 
 
-class ModbusRequestTabWidget(BaseRequest):
-    def __init__(self, model):
-        super().__init__(model)
+def convert_value_after_sending(data_type: str, address: int, values: list):
+    address_values = {}
+    index = 0
+    while index < len(values):
+        new_address = address + index
+        try:
+            if data_type == "16-bit Integer":
+                raw_bytes = struct.pack(">H", values[index])
+                address_values[f"{new_address}"] = struct.unpack(">h", raw_bytes[:2])[0]
+            elif data_type == "16-bit Unsigned Integer":
+                raw_bytes = struct.pack(">H", values[index])
+                address_values[f"{new_address}"] = struct.unpack(">H", raw_bytes[:2])[0]
+            elif data_type == "32-bit Integer":
+                index += 1
+                raw_bytes = struct.pack(">" + "H" * 2, *values[index - 1:index + 1])
+                address_values[f"{new_address}-{new_address + 1}"] = struct.unpack(">i", raw_bytes[:4])[0]
+            elif data_type == "32-bit Unsigned Integer":
+                index += 1
+                raw_bytes = struct.pack(">" + "H" * 2, *values[index - 1:index + 1])
+                address_values[f"{new_address}-{new_address + 1}"] = struct.unpack(">I", raw_bytes[:4])[0]
+            elif data_type == "Hexadecimal":
+                address_values[f"{new_address}"] = hex(values[index])[2:].zfill(4).upper()
+            elif data_type == "Float":
+                index += 1
+                raw_bytes = struct.pack(">" + "H" * 2, *values[index - 1:index + 1])
+                address_values[f"{new_address}-{new_address + 1}"] = struct.unpack(">f", raw_bytes)[0]
+            elif data_type == "Double":
+                index += 3
+                raw_bytes = struct.pack(">" + "H" * 4, *values[index - 3:index + 1])
+                address_values[f"{new_address}-{new_address + 3}"] = struct.unpack(">d", raw_bytes)[0]
+            elif data_type == "String":
+                raw_bytes = struct.pack(">H", values[index])
+                address_values[f"{new_address}"] = raw_bytes.decode("utf-8").rstrip("\x00")
+            else:
+                raise Exception(f"Data type '{data_type}' not supported")
+        except Exception as e:
+            address_values[f"{new_address}"] = [f"❗ Decode Error: {e}"]
 
-        self.model = model
-        self.item = self.model.get_selected_item()
+        index += 1
+
+    return address_values
+
+
+
+class ModbusRequestTabWidget(BaseRequest):
+    def __init__(self, repository):
+        super().__init__(repository)
+
+        self.repository = repository
+        self.item = self.repository.get_selected_item()
 
         self.grid_layout = CustomGridLayout()
 
@@ -77,7 +121,7 @@ class ModbusRequestTabWidget(BaseRequest):
             "data_type": self.data_type_combo.currentText(),
             "values": self.values_table.get_values(),
         }
-        self.model.update_item(item_uuid=self.item.uuid, **update_data)
+        self.repository.update_item(item_uuid=self.item.uuid, **update_data)
 
     def update_view(self):
         selected_function = self.function_combo.currentText()
@@ -108,7 +152,7 @@ class ModbusRequestTabWidget(BaseRequest):
 
 class ModbusRequestWidget(QWidget):
 
-    def __init__(self, model, controller):
+    def __init__(self, repository):
         super().__init__()
 
         # Main layout
@@ -118,24 +162,24 @@ class ModbusRequestWidget(QWidget):
         # Set tabs:
         detail_tabs = QTabWidget()
 
-        self.connection_widget = ConnectionTabWidget(model, controller, ["Inherit from parent", "Modbus TCP", "Modbus RTU"])
+        self.connection_widget = ConnectionTabWidget(repository, ["Inherit from parent", "Modbus TCP", "Modbus RTU"])
         detail_tabs.addTab(self.connection_widget, "Connection")
 
-        self.request_widget = ModbusRequestTabWidget(model)
+        self.request_widget = ModbusRequestTabWidget(repository)
         detail_tabs.addTab(self.request_widget, "Request")
 
-        detail_tabs.addTab(RunOptionsTabWidget(model), "Run options")
+        detail_tabs.addTab(RunOptionsTabWidget(repository), "Run options")
 
         main_layout.addWidget(detail_tabs)
 
 
 class ModbusResponseWidget(BaseResult):
 
-    def __init__(self, model, controller):
-        super().__init__(model, controller)
+    def __init__(self, backend):
+        super().__init__(backend)
 
-        self.model = model
-        self.item = self.model.get_selected_item()
+        self.repository = backend.repository
+        self.item = self.repository.get_selected_item()
 
         # Main layout
         main_layout = QVBoxLayout()
@@ -328,7 +372,6 @@ class ModbusResponseWidget(BaseResult):
         data_type = self.data_type_combo.currentText()
         self.values_table.clear()
 
-        # TODO: move logic to backend
         address_values = convert_value_after_sending(data_type, int(response["address"]), response["registers"])
         self.values_table.setRowCount(len(list(address_values.keys())))
         row = 0
@@ -341,25 +384,17 @@ class ModbusResponseWidget(BaseResult):
 
 
 class ModbusDetail(BaseDetail):
-    def __init__(self, model, controller):
-        super().__init__(model, controller)
+    def __init__(self, backend):
+        super().__init__(backend)
+
+        repository = backend.repository
 
         # Detail
-        self.request_tabs = ModbusRequestWidget(model, controller)
+        self.request_tabs = ModbusRequestWidget(repository)
 
         # Results
-        self.results_tabs = ModbusResponseWidget(model, controller)
+        self.results_tabs = ModbusResponseWidget(backend)
 
         # Fill splitter:
         self.request_layout.addWidget(self.request_tabs)
         self.result_layout.addWidget(self.results_tabs)
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    model = Model()
-    model.set_selected_item(ModbusRequest(name="Request"))
-    window = ModbusDetail(model)
-    window.show()
-    sys.exit(app.exec())

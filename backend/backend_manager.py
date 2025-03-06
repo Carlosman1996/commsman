@@ -5,10 +5,10 @@ from dataclasses import asdict
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from backend.handlers.collection_handler import CollectionHandler
-from backend.model import Model
+from backend.database import *
 from backend.models.base import BaseResult
 from backend.models.collection import CollectionResult
-from backend.protocol_client_manager import ProtocolClientManager
+from backend.handlers.protocol_client_manager import ProtocolClientManager
 
 
 class BackendManager(QThread):
@@ -16,12 +16,12 @@ class BackendManager(QThread):
     signal_request_finished = pyqtSignal()
     signal_finish = pyqtSignal()
 
-    def __init__(self, model):
+    def __init__(self, repository: BaseRepository = JsonRepository):
         super().__init__()
-        self.model = model
+        self.repository = repository()
         self.running = False
-        self.collection_handler = CollectionHandler(self.model)
-        self.protocol_client_manager = ProtocolClientManager(self.model)
+        self.collection_handler = CollectionHandler(self.repository)
+        self.protocol_client_manager = ProtocolClientManager(self.repository)
 
         self.signal_finish.connect(self.stop)
 
@@ -39,15 +39,15 @@ class BackendManager(QThread):
                                                  elapsed_time=0,
                                                  timestamp=request_timestamp)
 
-            # Update item on model:
-            self.model.add_item(collection_result)
-            self.model.update_item(item_uuid=item.uuid, last_result=collection_result.uuid)
+            # Update item on repository:
+            self.repository.add_item(collection_result)
+            self.repository.update_item(item_uuid=item.uuid, last_result=collection_result.uuid)
 
             if parent_result:
                 self.collection_handler.add_collection(parent_result, collection_result)
 
             for item_child_uuid in item.children:
-                item_child = self.model.get_item(item_child_uuid)
+                item_child = self.repository.get_item(item_child_uuid)
                 self.run_requests(item_child, collection_result)
 
         else:
@@ -61,8 +61,8 @@ class BackendManager(QThread):
                                         timestamp=request_timestamp)
             request_result_uuid = request_result.uuid
 
-            # Update item on model:
-            self.model.add_item(request_result)
+            # Update item on repository:
+            self.repository.add_item(request_result)
 
             # Update collection:
             if parent_result:
@@ -85,9 +85,9 @@ class BackendManager(QThread):
                                             error_message=f"Error while doing request: {e}")
             request_result.uuid = request_result_uuid
 
-            # Update item on model:
-            self.model.replace_item(item_uuid=request_result.uuid, new_item=request_result)
-            self.model.update_item(item_uuid=item.uuid, last_result=request_result.uuid)
+            # Update item on repository:
+            self.repository.replace_item(item_uuid=request_result.uuid, new_item=request_result)
+            self.repository.update_item(item_uuid=item.uuid, last_result=request_result.uuid)
 
             # Update collection:
             if parent_result:
@@ -99,10 +99,10 @@ class BackendManager(QThread):
     def run(self):
         self.running = True
 
-        selected_item = self.model.get_selected_item()
+        selected_item = self.repository.get_selected_item()
 
         # Initialize Collection:
-        self.model.update_item(item_uuid=selected_item.uuid, last_result=None)
+        self.repository.update_item(item_uuid=selected_item.uuid, last_result=None)
         self.signal_request_finished.emit()
 
         # Delayed start:
@@ -122,13 +122,6 @@ class BackendManager(QThread):
 
 
 if __name__ == "__main__":
-    model_obj = Model()
-    model_obj.load_from_json()
-    backend_manager_obj = BackendManager(model_obj)
-    model_obj.set_selected_item("uuid_1e65f48c-dcef-4def-b0c4-7dc3c129ffb0")
+    backend_manager_obj = BackendManager()
+    backend_manager_obj.repository.set_selected_item("uuid_1e65f48c-dcef-4def-b0c4-7dc3c129ffb0")
     backend_manager_obj.run()
-
-    with open(model_obj.json_file_path_save, 'r') as file:
-        data = json.load(file)
-        json_str = json.dumps(data, indent=4)
-        print(json_str)

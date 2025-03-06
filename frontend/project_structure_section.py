@@ -20,6 +20,7 @@ from PyQt6.QtWidgets import (
     QStyle,
 )
 
+from backend.backend_manager import BackendManager
 from frontend.common import ITEMS
 from frontend.item_creation_dialog import ItemCreationDialog
 from utils.common import FRONTEND_PATH, OUTPUTS_PATH
@@ -47,9 +48,9 @@ class CustomStandardItemModel(QStandardItemModel):
     signal_move_item = pyqtSignal(CustomStandardItem)
     signal_update_item = pyqtSignal()
 
-    def __init__(self, model, *args, **kwargs):
+    def __init__(self, repository, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.model = model
+        self.repository = repository
         self.view_items = {}
         self.load_model()
 
@@ -120,8 +121,8 @@ class CustomStandardItemModel(QStandardItemModel):
 
         self.layoutChanged.emit()
 
-        # Update backend model
-        self.model.update_item(item_uuid=item_uuid, parent=parent_uuid)
+        # Update backend repository
+        self.repository.update_item(item_uuid=item_uuid, parent=parent_uuid)
 
         if destination_item != self.invisibleRootItem():
             self.signal_move_item.emit(destination_item)
@@ -141,7 +142,7 @@ class CustomStandardItemModel(QStandardItemModel):
         self.clear()
         self.setHorizontalHeaderLabels(["Project"])
 
-        model_items = self.model.get_items()
+        model_items = self.repository.get_items()
 
         # Step 1: Create QStandardItem objects for each item
         self.view_items = {}
@@ -159,7 +160,7 @@ class CustomStandardItemModel(QStandardItemModel):
                     root_level_item.appendRow(self.view_items[item.uuid])
 
     def add_item(self, item_uuid: str):
-        item = self.model.get_item(item_uuid)
+        item = self.repository.get_item(item_uuid)
         view_item = self.create_view_item(item)
         root_level_item = self.invisibleRootItem()
         if item.parent:
@@ -255,7 +256,7 @@ class CustomTreeView(QTreeView):
         source_model_index = proxy_model.mapToSource(source_index)
         destination_model_index = proxy_model.mapToSource(destination_index)
 
-        # Move the item in the source model
+        # Move the item in the source repository
         proxy_model.sourceModel().move_to_destination(source_model_index, destination_model_index)
 
         event.accept()
@@ -333,7 +334,7 @@ class CustomItemDelegate(QStyledItemDelegate):
 
 
 class ProjectStructureSection(QWidget):
-    def __init__(self, model=None):
+    def __init__(self, repository):
         super().__init__()
 
         self.setMinimumWidth(300)
@@ -359,13 +360,13 @@ class ProjectStructureSection(QWidget):
         self.delegate.signal_export_clicked.connect(self.export_selected_item)
         self.delegate.signal_item_clicked.connect(self.set_add_button_visibility)
 
-        # Data model:
-        self.model = model
-        self.view_model = CustomStandardItemModel(self.model)
+        # Data repository:
+        self.repository = repository
+        self.view_model = CustomStandardItemModel(self.repository)
         self.view_model.itemChanged.connect(self.edit_item)
         self.view_model.signal_move_item.connect(self.move_item)
 
-        # Proxy model to filter tree:
+        # Proxy repository to filter tree:
         self.proxy_model = HierarchicalFilterProxyModel(self)
         self.proxy_model.setSourceModel(self.view_model)
         self.proxy_model.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
@@ -439,7 +440,7 @@ class ProjectStructureSection(QWidget):
             else:
                 item_parent_uuid = None
 
-            item = self.model.create_item(item_name=dialog.item_name, item_handler=ITEMS[dialog.item_type]["item_handler"], parent_uuid=item_parent_uuid)
+            item = self.repository.create_item(item_name=dialog.item_name, item_handler=ITEMS[dialog.item_type]["item_handler"], parent_uuid=item_parent_uuid)
             self.view_model.add_item(item_uuid=item.uuid)
 
             self.expand_tree_view_item(selected_item)
@@ -453,7 +454,7 @@ class ProjectStructureSection(QWidget):
 
     def edit_item(self, item):
         item_uuid = item.data(Qt.ItemDataRole.UserRole)
-        self.model.update_item(item_uuid=item_uuid, name=item.text())
+        self.repository.update_item(item_uuid=item_uuid, name=item.text())
 
     def move_item(self, item):
         self.proxy_model.setSourceModel(None)
@@ -475,7 +476,7 @@ class ProjectStructureSection(QWidget):
             if reply == QMessageBox.StandardButton.Yes:
                 selected_item = self.get_item_from_selected_index(indexes[0])
                 item_uuid = selected_item.data(Qt.ItemDataRole.UserRole)
-                self.model.delete_item(item_uuid=item_uuid)
+                self.repository.delete_item(item_uuid=item_uuid)
                 self.view_model.delete_item(item_uuid=item_uuid)
                 self.set_add_button_visibility()
 
@@ -499,12 +500,3 @@ class ProjectStructureSection(QWidget):
             with open(file_path, "w") as file:
                 json.dump(data, file, indent=4)
             QMessageBox.information(None, "Export Successful", f"Data exported to {file_path}")
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    window = ProjectStructureSection(Model())
-    window.show()
-
-    app.exec()

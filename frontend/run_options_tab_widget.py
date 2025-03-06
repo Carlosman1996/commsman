@@ -1,6 +1,3 @@
-from functools import partial
-
-from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtWidgets import (QWidget, QLabel,
                              QLineEdit, QSpinBox, QVBoxLayout)
 
@@ -10,11 +7,11 @@ from frontend.components.components import CustomGridLayout
 
 class RunOptionsTabWidget(BaseRequest):
 
-    def __init__(self, model):
-        super().__init__(model)
+    def __init__(self, repository):
+        super().__init__(repository)
 
-        self.model = model
-        self.item = self.model.get_selected_item()
+        self.repository = repository
+        self.item = self.repository.get_selected_item()
 
         main_layout = QVBoxLayout()
 
@@ -50,9 +47,9 @@ class RunOptionsTabWidget(BaseRequest):
                 "polling_interval": int(self.polling_interval_label.text()),
                 "delayed_start": int(self.delayed_start.text()),
             }
-            self.model.update_item(item_uuid=self.item.run_options.uuid, **run_options)
+            self.repository.update_item(item_uuid=self.item.run_options.uuid, **run_options)
         else:
-            self.model.create_item(item_name=self.item.name,
+            self.repository.create_item(item_name=self.item.name,
                                    item_handler="RunOptions",
                                    parent_uuid=self.item.uuid,
                                    attribute="run_options")

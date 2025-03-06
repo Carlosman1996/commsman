@@ -2,8 +2,7 @@ import json
 import os
 from dataclasses import asdict
 
-from PyQt6.QtWidgets import QWidget
-
+from backend.database.base_repository import BaseRepository
 from backend.models import DATACLASS_REGISTRY
 from backend.models.base import BaseRequest
 from utils.common import PROJECT_PATH
@@ -12,7 +11,7 @@ from utils.common import PROJECT_PATH
 JSON_DATA_FILE = os.path.join(PROJECT_PATH, "project_structure_data.json")
 
 
-class Model(QWidget):
+class JsonRepository(BaseRepository):
 
     def __init__(self, json_file_path: str = JSON_DATA_FILE):
         super().__init__()
@@ -20,19 +19,9 @@ class Model(QWidget):
         self.items = {}
         self.json_file_path = json_file_path
         self.selected_item = None
-        self.load_from_json()
+        self.load()
 
-    def item_dict_to_dataclass(self, item_dict: dict) -> BaseRequest:
-        cls_name = item_dict.get("item_handler")
-        cls = DATACLASS_REGISTRY.get(cls_name)
-
-        if cls is None:
-            raise ValueError(f"Unknown item type: {cls_name}")
-
-        item = cls(**item_dict)  # Instantiate the dataclass
-        return item
-
-    def load_from_json(self):
+    def load(self):
         # Open and read the JSON file
         with open(self.json_file_path, 'r') as file:
             data = json.load(file)
@@ -41,7 +30,7 @@ class Model(QWidget):
             item = self.item_dict_to_dataclass(item_info)
             self.items[item_uuid] = item
 
-    def save_to_json(self):
+    def save(self):
         items_dict = {}
         for item_uuid, item_dataclass in self.items.items():
             items_dict[item_uuid] = asdict(item_dataclass)
@@ -67,7 +56,7 @@ class Model(QWidget):
                     self.items[item.parent].children.append(item.uuid)
             else:
                 raise Exception(f"Item {item.parent} not found")
-        self.save_to_json()
+        self.save()
         return self.items[item.uuid]
 
     def update_item(self, item_uuid: str, **kwargs) -> BaseRequest:
@@ -75,7 +64,7 @@ class Model(QWidget):
         if item_uuid in self.items:
             for key, value in kwargs.items():
                 setattr(self.items[item_uuid], key, value)
-            self.save_to_json()
+            self.save()
         else:
             raise Exception(f"Item {item_uuid} not found")
         return self.items[item_uuid]
@@ -87,7 +76,7 @@ class Model(QWidget):
 
         if item_uuid in self.items:
             self.items[item_uuid] = new_item
-            self.save_to_json()
+            self.save()
         else:
             raise Exception(f"Item {item_uuid} not found")
         return self.items[item_uuid]
@@ -101,7 +90,7 @@ class Model(QWidget):
             for child_uuid in item.children:
                 if child_uuid in self.items:
                     self.delete_item(child_uuid)
-            self.save_to_json()
+            self.save()
         else:
             raise Exception(f"Item {item_uuid} not found")
 
@@ -127,18 +116,11 @@ class Model(QWidget):
 
         return item
 
-    def get_items(self):
+    def get_items(self) -> dict[str, BaseRequest]:
         return self.items
 
-    def set_selected_item(self, item_uuid: str):
-        self.selected_item = item_uuid
-
-    def get_selected_item(self) -> BaseRequest:
-        return self.get_item(self.selected_item)
-
-
 if __name__ == "__main__":
-    model_obj = Model()
-    model_obj.load_from_json()
+    model_obj = JsonRepository()
+    model_obj.load()
     print(model_obj.items)
-    model_obj.save_to_json()
+    model_obj.save()

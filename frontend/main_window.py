@@ -14,7 +14,6 @@ from PyQt6.QtWidgets import (
 )
 
 from backend.backend_manager import BackendManager
-from backend.model import Model
 from frontend.collection_detail_widget import CollectionDetail
 from frontend.project_structure_section import ProjectStructureSection
 from qt_material import apply_stylesheet
@@ -40,17 +39,15 @@ class MainWindow(QMainWindow):
         # self.showMaximized()
         self.resize(1280, 720)
 
-        # Define general model:
-        self.model = Model()
-
         # Define general controller:
-        self.controller = BackendManager(self.model)
+        self.backend = BackendManager()
+        self.repository = self.backend.repository
 
         # Divide window in two sections:
         self.main_window_sections_splitter = QSplitter()
 
         # Left section:
-        self.project_structure_section = ProjectStructureSection(self.model)
+        self.project_structure_section = ProjectStructureSection(self.repository)
         self.project_structure_section.tree_view.selectionModel().selectionChanged.connect(self.set_detail_section)
 
         # Right section:
@@ -75,14 +72,14 @@ class MainWindow(QMainWindow):
 
     def set_detail_section(self):
         item_uuid = self.project_structure_section.get_selected_item_uuid()
-        self.model.set_selected_item(item_uuid)
-        item = self.model.get_selected_item()
+        self.repository.set_selected_item(item_uuid)
+        item = self.repository.get_selected_item()
 
         if item is not None:
             if item.item_type == "Modbus":
-                self.detail_section = ModbusDetail(self.model, self.controller)
+                self.detail_section = ModbusDetail(self.backend)
             elif item.item_type == "Collection":
-                self.detail_section = CollectionDetail(self.model, self.controller)
+                self.detail_section = CollectionDetail(self.backend)
             else:
                 self.detail_section = QLabel("Not implemented yet")
         else:
@@ -96,11 +93,11 @@ class MainWindow(QMainWindow):
     def closeEvent(self, *args, **kwargs):
         """Override the close event to perform custom actions."""
         # Close all handlers before exit:
-        self.controller.protocol_client_manager.close_all_handlers()
+        self.backend.protocol_client_manager.close_all_handlers()
 
         # Wait until backend stops:
-        self.controller.signal_finish.emit()
-        while self.controller.running:
+        self.backend.signal_finish.emit()
+        while self.backend.running:
             time.sleep(0.5)
 
         super().closeEvent(*args, **kwargs)

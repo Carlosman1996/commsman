@@ -50,11 +50,11 @@ class ExecuteButton(QPushButton):
 
 class BaseRequest(QWidget):
 
-    def __init__(self, model, *args, **kwargs):
+    def __init__(self, repository, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.model = model
-        self.item = self.model.get_selected_item()
+        self.repository = repository
+        self.item = self.repository.get_selected_item()
 
     def update_sequence(self):
         self.update_item()
@@ -62,7 +62,7 @@ class BaseRequest(QWidget):
         self.update_view()
 
     def reload_data(self):
-        self.item = self.model.get_selected_item()
+        self.item = self.repository.get_selected_item()
 
     @abstractmethod
     def update_item(self):
@@ -72,17 +72,20 @@ class BaseRequest(QWidget):
     def update_view(self):
         pass
 
-class BaseResult(QWidget):
 
-    def __init__(self, model, controller, *args, **kwargs):
+class BaseResult(QWidget):
+    def __init__(self, backend, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.model = model
-        self.item = self.model.get_selected_item()
-        self.controller = controller
+        self.backend = backend
+        self.repository = self.backend.repository
+        self.item = self.backend.repository.get_selected_item()
+
+        self.backend.signal_request_finished.connect(self.reload_data)
 
     def reload_data(self):
-        self.item = self.model.get_selected_item()
+        self.item = self.repository.get_selected_item()
+        self.update_view()
 
     @abstractmethod
     def update_view(self):
@@ -90,16 +93,14 @@ class BaseResult(QWidget):
 
 
 class BaseDetail(BaseResult):
-    def __init__(self, model, controller):
-        super().__init__(model, controller)
+    def __init__(self, backend):
+        # BaseResult is needed because it inherits methods related with backend:
+        super().__init__(backend)
 
         self.setMinimumSize(500, 600)
 
         self.setWindowTitle("Detail View")
 
-        self.model = model
-        self.item = self.model.get_selected_item()
-        self.controller = controller
         self.header_height = 100
 
         main_layout = QVBoxLayout()
@@ -123,7 +124,7 @@ class BaseDetail(BaseResult):
         self.title_label = IconTextWidget(self.item.name, QIcon(ITEMS[self.item.item_type]["icon"]), QSize(75, 50))
         header_layout.addWidget(self.title_label)
         # Execute request:
-        self.execute_button = ExecuteButton(self.controller.running)
+        self.execute_button = ExecuteButton(self.backend.running)
         header_layout.addWidget(self.execute_button)
         # All items at left side:
         header_layout.addStretch(1)
@@ -166,10 +167,10 @@ class BaseDetail(BaseResult):
             self.execute_button.set_stop()
 
             # Create and start the backend_manager thread
-            self.controller.signal_finish.connect(self.on_finished)
-            self.controller.start()
+            self.backend.signal_finish.connect(self.on_finished)
+            self.backend.start()
         else:
-            self.controller.signal_finish.emit()
+            self.backend.signal_finish.emit()
             self.execute_button.set_run()
 
     def on_finished(self):
