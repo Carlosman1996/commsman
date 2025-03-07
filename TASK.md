@@ -6,15 +6,19 @@ TODO: move pickle to SQLITE. Also, save results history per request and collecti
 
 TODO: show history in requests
 
-TODO: collections must have table view option and show history
-
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
 
-TODO: running an object and change to another must show it is not being runned
+TODO: running an object and change to another must show it is not being runned. Show running instances in notification bar and link to home page which must have all of them.
 
-TODO: HOME page with running instances. Also, running instances must be shown in notification bar
+TODO: HOME page with running instances.
+
+TODO: migrate QT to PYSIDE
+
+TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
+
+TODO: collections must have table view option and show history
 
 TODO: Protect SQLite by encrypting
 
