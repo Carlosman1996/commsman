@@ -2,9 +2,9 @@ import json
 import os
 from dataclasses import asdict
 
-from backend.database.base_repository import BaseRepository
-from backend.models import DATACLASS_REGISTRY
-from backend.models.base import BaseRequest
+from backend.repository.base_repository import BaseRepository
+from backend._old_models import DATACLASS_REGISTRY
+from backend._old_models.base import BaseRequest
 from utils.common import PROJECT_PATH
 
 

@@ -18,6 +18,8 @@ TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
 
+TODO: add foreign keys and relationships - cascade deletes: https://www.codearmo.com/python-tutorial/sql-alchemy-foreign-keys-and-relationships#google_vignette
+
 TODO: collections must have table view option and show history
 
 TODO: Protect SQLite by encrypting
@@ -70,6 +72,8 @@ TODO: allow to export results
 TODO: MQTT
 
 TODO: add_widget method of custmo qgridlayout must save by key, so accessing its elements can be easier and more clear than an index.
+
+TODO: repository layer with relationships, not joins.
 
 ## Future pymodbus
 

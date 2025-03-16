@@ -436,11 +436,13 @@ class ProjectStructureSection(QWidget):
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
             if selected_item and selected_item != self.view_model.invisibleRootItem():
-                item_parent_uuid = selected_item.data(Qt.ItemDataRole.UserRole)
+                parent_item = selected_item.data(Qt.ItemDataRole.UserRole)
             else:
-                item_parent_uuid = None
+                parent_item = None
 
-            item = self.repository.create_item(item_name=dialog.item_name, item_handler=ITEMS[dialog.item_type]["item_handler"], parent_uuid=item_parent_uuid)
+            item = self.repository.create_item_from_handler(item_name=dialog.item_name,
+                                                            item_handler=ITEMS[dialog.item_type]["item_handler"],
+                                                            parent=parent_item)
             self.view_model.add_item(item_uuid=item.uuid)
 
             self.expand_tree_view_item(selected_item)

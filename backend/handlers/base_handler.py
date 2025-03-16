@@ -5,14 +5,17 @@ class BaseHandler(ABC):
     @abstractmethod
     def connect(self):
         """Connect to the client."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def disconnect(self):
         """Disconnect from the client."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def is_connected(self) -> bool:
         """Check if the client is connected."""
-        pass
+        raise NotImplementedError
+
+    def execute_request(self, param):
+        raise NotImplementedError

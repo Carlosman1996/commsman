@@ -1,22 +1,12 @@
-import pkgutil
-import importlib
-import inspect
-from backend.models.base import BaseRequest, BaseResult, Base
+from backend.models.base import Base, BaseItem, BaseRequest, BaseResult
+from backend.models.client import Client
+from backend.models.collection import Collection, CollectionResult
+from backend.models.modbus import ModbusTcpClient, ModbusRtuClient, ModbusRequest, ModbusResponse
+from backend.models.run_options import RunOptions
 
-# Dynamically import all modules in the package
-__all__ = []  # Keep track of the imported dataclasses
-
-for _, module_name, _ in pkgutil.iter_modules(__path__, __name__ + "."):
-    module = importlib.import_module(module_name)
-
-    # Find all dataclasses that inherit from BaseModel
-    for name, obj in inspect.getmembers(module):
-        if inspect.isclass(obj) and issubclass(obj, BaseRequest) and obj is not BaseRequest:
-            globals()[name] = obj  # Make available at package level
-            __all__.append(name)
 
 # Create a registry for dynamic loading
-DATACLASS_REGISTRY = {"Base": Base, "BaseRequest": BaseRequest, "BaseResult": BaseResult}
-DATACLASS_REGISTRY.update({cls.__name__: cls for cls in Base.__subclasses__()})
+DATACLASS_REGISTRY = {"BaseItem": BaseItem, "BaseRequest": BaseRequest, "BaseResult": BaseResult}
+DATACLASS_REGISTRY.update({cls.__name__: cls for cls in BaseItem.__subclasses__()})
 DATACLASS_REGISTRY.update({cls.__name__: cls for cls in BaseRequest.__subclasses__()})
 DATACLASS_REGISTRY.update({cls.__name__: cls for cls in BaseResult.__subclasses__()})

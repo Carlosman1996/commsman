@@ -2,8 +2,8 @@ import time
 from dataclasses import asdict
 from datetime import datetime
 
-from backend.models.base import BaseResult
-from backend.models.collection import CollectionResult
+from backend._old_models.base import BaseResult
+from backend._old_models.collection import CollectionResult
 
 
 class CollectionHandler:

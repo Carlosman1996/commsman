@@ -1,35 +1,56 @@
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass
+from datetime import datetime, timezone
 
-import uuid
+from sqlalchemy import Integer, String, ForeignKey, Column, Boolean, JSON, DateTime
+from sqlalchemy.orm import Mapped, MappedAsDataclass, DeclarativeBase, relationship
+from sqlalchemy.testing.schema import mapped_column
+
+
+class Base(MappedAsDataclass, DeclarativeBase):
+    pass
 
 
 @dataclass
-class Base:
-    name: str
-    item_type: str
-    item_handler: str = None
-    uuid: str = field(default_factory=lambda: "uuid_" + str(uuid.uuid4()))
+class BaseItem(Base):
+    __abstract__ = True
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, init=False)
+    name: Mapped[str] = mapped_column(String)
+    item_handler: Mapped[str] = mapped_column(String, init=False)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, init=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, onupdate=datetime.now(timezone.utc), init=False)
+    modified_by: Mapped[str] = mapped_column(String, init=False)
 
     def __post_init__(self):
         self.item_handler = self.__class__.__name__
+        self.created_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(timezone.utc)
+        self.modified_by = "Ordillan"
 
 
 @dataclass
-class BaseRequest(Base):
-    parent: str = None
-    children: list[str] = field(default_factory=list)
-    client: str = None
-    client_type: str = "No connection"
-    run_options: str = None
-    last_result: str = None
+class BaseRequest(BaseItem):
+    __abstract__ = True
+
+    item_response_handler: str = None
+
+    parent_id: Mapped[int] = mapped_column(Integer, ForeignKey('collection.id'), nullable=True, default=None)
+    client_id: Mapped[int] = mapped_column(Integer, ForeignKey('client.id'), nullable=True, default=None)
+    run_options_id: Mapped[int] = mapped_column(Integer, ForeignKey('run_options.id'), nullable=True, default=None)
+
+    position: Mapped[int] = mapped_column(Integer, nullable=True, default=None)
+    client_type: Mapped[int] = mapped_column(String, default="No connection")
 
 
 @dataclass
-class BaseResult(Base):
-    parent: str = None
-    children: list[str] = field(default_factory=list)
-    client_type: str = None
-    result: str = None
-    elapsed_time: float = None
-    timestamp: str = None
-    error_message: str = ""
+class BaseResult(BaseItem):
+    __abstract__ = True
+
+    parent_id: Mapped[int] = mapped_column(Integer, ForeignKey('collection_result.id'), nullable=True)
+
+    client_type: Mapped[str] = mapped_column(String)
+    result: Mapped[str] = mapped_column(String)
+    elapsed_time: Mapped[int] = mapped_column(String)
+    timestamp: Mapped[str] = mapped_column(String)
+    error_message: Mapped[str] = mapped_column(String, nullable=True)

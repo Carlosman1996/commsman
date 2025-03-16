@@ -2,7 +2,7 @@ from dataclasses import asdict
 
 from backend.handlers.base_handler import BaseHandler
 from backend.handlers.custom_modbus_handler import CustomModbusTcpClient, CustomModbusRtuClient
-from backend.models.base import BaseRequest
+from backend.models import BaseRequest, BaseResult, DATACLASS_REGISTRY
 
 
 class ProtocolClientManager:
@@ -10,7 +10,7 @@ class ProtocolClientManager:
         self.model = model
         self.handlers: dict[str, BaseHandler] = {}  # Key: handler ID, Value: handler
 
-    def get_handler(self, item: BaseRequest) -> BaseHandler:
+    def get_client_handler(self, item: BaseRequest) -> BaseHandler:
         """Get or create a handler for the specified protocol."""
 
         def find_item_client(item: BaseRequest, base_item: BaseRequest) -> BaseRequest:

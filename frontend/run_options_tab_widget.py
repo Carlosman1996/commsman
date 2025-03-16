@@ -49,10 +49,9 @@ class RunOptionsTabWidget(BaseRequest):
             }
             self.repository.update_item(item_uuid=self.item.run_options.uuid, **run_options)
         else:
-            self.repository.create_item(item_name=self.item.name,
-                                   item_handler="RunOptions",
-                                   parent_uuid=self.item.uuid,
-                                   attribute="run_options")
+            self.repository.create_run_options_item(item_name=self.item.name,
+                                                    item_handler="RunOptions",
+                                                    parent=self.item)
 
     def update_view(self, load_data: bool = False):
         if load_data and not self.item.run_options:

@@ -7,7 +7,7 @@ from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.framer import FramerSocket, FramerRTU
 from pymodbus.pdu import DecodePDU
 from backend.handlers.base_handler import BaseHandler
-from backend.models.modbus import ModbusTcpResponse, ModbusRtuResponse
+from backend.models.modbus import ModbusResponse
 
 
 class CustomModbusHandler(BaseHandler):
@@ -177,7 +177,7 @@ class CustomModbusTcpClient(CustomModbusHandler):
         self.client.transaction.framer = self.framer
 
     def initialize_response_dataclass(self, name: str):
-        self.response = ModbusTcpResponse(name=name)
+        self.response = ModbusResponse(name=name)
 
     def process_response_data(self, modbus_response, address: int, values: list[int]):
         self.response.slave = self.framer.last_packet_recv[6]
@@ -229,7 +229,7 @@ class CustomModbusRtuClient(CustomModbusHandler):
         self.client.transaction.framer = self.framer
 
     def initialize_response_dataclass(self, name: str):
-        self.response = ModbusRtuResponse(name=name)
+        self.response = ModbusResponse(name=name)
 
     def process_response_data(self, modbus_response, address: int, values: list[int]):
         self.response.slave = self.framer.last_packet_recv[0]

@@ -1,67 +1,68 @@
-from dataclasses import dataclass
-
-from backend.models.base import BaseRequest, BaseResult, Base
+from backend.models.base import *
 
 
 @dataclass
-class ModbusTcpClient(Base):
-    item_type: str = "Modbus"
-    client_type: str = "Modbus TCP"
-    host: str = "127.0.0.1"
-    port: int = 502
-    timeout: int = 3
-    retries: int = 3
+class ModbusTcpClient(BaseItem):
+    __tablename__ = "modbus_tcp_client"
+
+    client_id: Mapped[int] = mapped_column(Integer, ForeignKey('client.id'))
+
+    item_type: Mapped[int] = mapped_column(String, default="Modbus")
+    client_type: Mapped[int] = mapped_column(String, default="Modbus TCP")
+    host: Mapped[int] = mapped_column(String, default="127.0.0.1")
+    port: Mapped[int] = mapped_column(Integer, default=502)
+    timeout: Mapped[int] = mapped_column(Integer, default=3)
+    retries: Mapped[int] = mapped_column(Integer, default=3)
 
 
 @dataclass
-class ModbusRtuClient(Base):
-    item_type: str = "Modbus"
-    client_type: str = "Modbus RTU"
-    com_port: str = "COM1"
-    baudrate: int = 9600
-    parity: str = "None"
-    stopbits: int = 1
-    bytesize: int = 8
-    timeout: int = 3
-    retries: int = 3
+class ModbusRtuClient(BaseItem):
+    __tablename__ = "modbus_rtu_client"
 
+    client_id: Mapped[int] = mapped_column(Integer, ForeignKey('client.id'))
 
-@dataclass
-class ModbusTcpResponse(BaseResult):
-    item_type: str = "Modbus"
-    slave: int = None
-    transaction_id: int = None
-    protocol_id: int = None
-    function_code: int = None
-    address: int = None
-    registers: list[int] = None
-    raw_packet_recv: str = ""
-    raw_packet_send: str = ""
-    data_type: str = "16-bit Integer"
-    byte_count: int = None
-
-
-@dataclass
-class ModbusRtuResponse(BaseResult):
-    item_type: str = "Modbus"
-    slave: int = None
-    function_code: int = None
-    address: int = None
-    registers: list[int] = None
-    crc: int = None
-    raw_packet_recv: str = ""
-    raw_packet_send: str = ""
-    data_type: str = "16-bit Integer"
-    byte_count: int = None
+    item_type: Mapped[int] = mapped_column(String, default="Modbus")
+    client_type: Mapped[int] = mapped_column(String, default="Modbus RTU")
+    com_port: Mapped[int] = mapped_column(String, default="COM1")
+    baudrate: Mapped[int] = mapped_column(Integer, default=9600)
+    parity: Mapped[int] = mapped_column(String, default="None")
+    stopbits: Mapped[int] = mapped_column(Integer, default=1)
+    bytesize: Mapped[int] = mapped_column(Integer, default=8)
+    timeout: Mapped[int] = mapped_column(Integer, default=3)
+    retries: Mapped[int] = mapped_column(Integer, default=3)
 
 
 @dataclass
 class ModbusRequest(BaseRequest):
-    item_type: str = "Modbus"
-    client_type: str = "Inherit from parent"
-    function: str = "Read Holding Registers"
-    data_type: str = "16-bit Integer"
-    slave: int = 0
-    address: int = 0
-    count: int = 1
-    values: list = None
+    __tablename__ = "modbus_request"
+
+    item_response_handler: str = "ModbusResponse"
+
+    item_type: Mapped[int] = mapped_column(String, default="Modbus")
+    client_type: Mapped[int] = mapped_column(String, default="Inherit from parent")
+    function: Mapped[int] = mapped_column(String, default="Read Holding Registers")
+    data_type: Mapped[int] = mapped_column(String, default="16-bit Integer")
+    slave: Mapped[int] = mapped_column(Integer, default=0)
+    address: Mapped[int] = mapped_column(Integer, default=0)
+    count: Mapped[int] = mapped_column(Integer, default=1)
+    values: Mapped[list] = mapped_column(JSON, default=list, nullable=True)
+
+
+@dataclass
+class ModbusResponse(BaseResult):
+    __tablename__ = "modbus_response"
+
+    request_id: Mapped[int] = mapped_column(Integer, ForeignKey('modbus_request.id'))
+
+    item_type: Mapped[int] = mapped_column(String, default="Modbus")
+    slave: Mapped[int] = mapped_column(Integer, default=None, nullable=True)
+    transaction_id: Mapped[int] = mapped_column(Integer, default=None, nullable=True)
+    protocol_id: Mapped[int] = mapped_column(Integer, default=None, nullable=True)
+    function_code: Mapped[int] = mapped_column(Integer, default=None, nullable=True)
+    address: Mapped[int] = mapped_column(Integer, default=None, nullable=True)
+    registers: Mapped[list] = mapped_column(JSON, default=list, nullable=True)
+    crc: Mapped[int] = mapped_column(Integer, default=None, nullable=True)
+    raw_packet_recv: Mapped[int] = mapped_column(String, default="")
+    raw_packet_send: Mapped[int] = mapped_column(String, default="")
+    data_type: Mapped[int] = mapped_column(String, default="16-bit Integer")
+    byte_count: Mapped[int] = mapped_column(Integer, default=None, nullable=True)

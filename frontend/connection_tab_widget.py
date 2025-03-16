@@ -56,7 +56,7 @@ class ModbusTcpConnectionGrid(BaseConnectionGrid):
             }
             self.repository.update_item(item_uuid=self.item.client.uuid, **client)
         else:
-            self.repository.create_item(item_name=self.item.name,
+            self.repository.create_client_item(item_name=self.item.name,
                                    item_handler="ModbusTcpClient",
                                    parent_uuid=self.item.uuid,
                                    attribute="client")
@@ -120,10 +120,9 @@ class ModbusRtuConnectionGrid(BaseConnectionGrid):
             }
             self.repository.update_item(item_uuid=self.item.client.uuid, **client)
         else:
-            self.repository.create_item(item_name=self.item.name,
-                                   item_handler="ModbusRtuClient",
-                                   parent_uuid=self.item.uuid,
-                                   attribute="client")
+            self.repository.create_client_item(item_name=self.item.name,
+                                               item_handler="ModbusRtuClient",
+                                               parent=self.item)
 
     def update_view(self, load_data: bool = False):
         if load_data and not self.item.client:

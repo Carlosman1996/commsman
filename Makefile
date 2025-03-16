@@ -6,3 +6,11 @@ venv:
 
 run:
 	python -m frontend.main_window
+
+database:
+	# After making changes to your _old_models, generate a migration script:
+	alembic revision --autogenerate -m "Description of changes"
+	# Run the migration to update the database schema:
+	alembic upgrade head
+	# If needed, you can roll back to a previous version:
+	alembic downgrade -1
