@@ -14,7 +14,7 @@ class ProtocolClientManager:
     def get_client_handler(self, item: BaseRequest) -> BaseHandler | str:
         """Get or create a handler for the specified protocol."""
 
-        def find_item_client(item: BaseRequest, base_item: BaseRequest) -> BaseRequest | str:
+        def find_item_client(item, base_item):
             if item.client_type == "No connection":
                 raise Exception(f"Current request does not have client")
             elif item.client_type == "Inherit from parent":
@@ -29,6 +29,8 @@ class ProtocolClientManager:
                 return f"FATAL ERROR - Could not resolve item client: {item.client} - {item}"
 
         item_client = find_item_client(item=item, base_item=item)
+
+        # Client not found:
         if isinstance(item_client, str):
             return item_client
 
@@ -49,7 +51,7 @@ class ProtocolClientManager:
             response = ModbusResponse(
                 name=item.name,
                 client_type=item.client_type,
-                request_id=item.id,
+                request_id=item.item_id,
                 parent_id=parent_id,
                 result="Failed",
                 elapsed_time=0,
