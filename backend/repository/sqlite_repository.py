@@ -1,5 +1,5 @@
-from sqlalchemy import create_engine, Column, String, ForeignKey, JSON
-from sqlalchemy.orm import sessionmaker, relationship, declarative_base
+from sqlalchemy import create_engine, Column, String, ForeignKey, JSON, distinct
+from sqlalchemy.orm import sessionmaker, relationship, declarative_base, contains_eager
 
 from backend.models import *
 from backend.repository.base_repository import BaseRepository
@@ -64,7 +64,7 @@ class SQLiteRepository(BaseRepository):
 
     def update_item(self, item: BaseItem, **kwargs):
         """Actualiza un ítem en la base de datos."""
-        item = self.session.query(item).filter_by(id=item.id).first()
+        item = self.session.query(item.item_handler).filter_by(id=item.id).first()
 
         for key, value in kwargs.items():
             setattr(item, key, value)
@@ -81,7 +81,7 @@ class SQLiteRepository(BaseRepository):
     def get_item(self):
         pass
 
-    def get_item_client(self, item: BaseRequest) -> BaseItem:
+    def get_item_client(self, item: BaseRequest) -> Client:
         base_client = (
             self.session.query(Client)
                 .filter(Client.id == item.client_id)
@@ -96,26 +96,33 @@ class SQLiteRepository(BaseRepository):
             )
         return client
 
-    def get_request(self):
-        item = self.session.query(ModbusRequest).first()
+    def get_item_run_options(self, item: BaseRequest) -> RunOptions:
+        run_options = (
+            self.session.query(RunOptions)
+                .filter(RunOptions.id == item.run_options_id)
+                .first()
+            )
+        return run_options
+
+    def get_item_request(self, item: Item):
         item_handler = self.get_class_handler(item.item_handler)
 
-        item_client = self.get_item_client(item)
-        item_client_handler = self.get_class_handler(item_client.item_handler)
-
         request = (
-            self.session.query(item_handler, RunOptions, item_client_handler)
-                .join(RunOptions, RunOptions.id == item_handler.run_options_id)
-                .join(Client, Client.id == item_handler.client_id)
-                .join(item_client_handler, Client.id == item_client_handler.client_id)
+            self.session.query(item_handler)
                 .filter(item_handler.id == item.id)
-            )
-        return request.first()
+                .first()
+        )
+
+        item_client = self.get_item_client(request)
+        request.client = item_client
+        item_run_options = self.get_item_run_options(request)
+        request.run_options = item_run_options
+        return request
 
 
 if __name__ == "__main__":
     repository_obj = SQLiteRepository()
-    result = repository_obj.get_request()
+
+    result = repository_obj.get_item_request(Item(id=1, item_handler="ModbusRequest"))
+
     print(result)
-    print(len(result))
-    print(result.port)

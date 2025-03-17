@@ -1,15 +1,25 @@
 import time
-from dataclasses import asdict
-from datetime import datetime
+from datetime import timezone, datetime
 
-from backend._old_models.base import BaseResult
-from backend._old_models.collection import CollectionResult
+from backend.models import BaseResult, Collection, CollectionResult
 
 
 class CollectionHandler:
     """Handles execution and real-time updates of requests and collections."""
     def __init__(self, model):
         self.model = model
+
+    @staticmethod
+    def get_collection_result(item: Collection, parent_id: int) -> CollectionResult:
+        return CollectionResult(
+            name=item.name,
+            collection_id=item.id,
+            parent_id=parent_id,
+            result="OK",
+            elapsed_time=0,
+            timestamp=datetime.now(timezone.utc),
+            error_message=""
+        )
 
     def add_request(self, collection: CollectionResult, request: BaseResult):
         """Add a request to a collection and update its status."""

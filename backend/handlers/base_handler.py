@@ -17,5 +17,5 @@ class BaseHandler(ABC):
         """Check if the client is connected."""
         raise NotImplementedError
 
-    def execute_request(self, param):
+    def execute_request(self, **kwargs):
         raise NotImplementedError

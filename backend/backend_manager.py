@@ -5,7 +5,7 @@ from PyQt6.QtCore import QThread, pyqtSignal
 
 from backend.handlers.collection_handler import CollectionHandler
 from backend.repository import *
-from backend.models.base import BaseResult, BaseRequest, BaseItem
+from backend.models.base import BaseResult, BaseRequest, BaseItem, Item
 from backend.models.collection import CollectionResult
 from backend.handlers.protocol_client_manager import ProtocolClientManager
 from backend.repository.sqlite_repository import SQLiteRepository
@@ -33,16 +33,9 @@ class BackendManager(QThread):
         if not self.running:
             return
 
-        start_time = time.time()
-        request_timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
-
         if item.item_type == "Collection":
-            collection_result = CollectionResult(name=item.name,
-                                                 collection_id=item.id,
-                                                 parent_id=getattr(parent_result_item, "id"),
-                                                 result="OK",
-                                                 elapsed_time=0,
-                                                 timestamp=request_timestamp)
+            collection_result = self.collection_handler.get_collection_result(item=item,
+                                                                              parent_id=getattr(parent_result_item, "id", None))
 
             # Update item on repository:
             self.repository.create_item_from_dataclass(collection_result)
@@ -55,27 +48,22 @@ class BackendManager(QThread):
                 self.run_requests(item_child, collection_result)
 
         else:
-            time.sleep(item.run_options.polling_interval)
+            # Get client:
+            protocol_client = self.protocol_client_manager.get_client_handler(item=item)
 
+            # Error
+            if isinstance(protocol_client, str):
+                error_message = f"Error while doing request: {protocol_client}"
+                request_result = self.protocol_client_manager.get_request_failed_result(item=item,
+                                                                                        parent_id=getattr(parent_result_item, "id", None),
+                                                                                        error_message=error_message)
             # Do request:
-            try:
-                protocol_client = self.protocol_client_manager.get_client_handler(item=item)
+            else:
                 protocol_client.connect()
-                request_result = protocol_client.execute_request(**asdict(item))
-            except Exception as e:
-                request_result = self.repository.create_item_dataclass(
-                    item_handler=item.item_response_handler,
-                    name=item.name,
-                    request_id=item.id,
-                    parent_id=getattr(parent_result_item, "id"),
-                    item_type=item.item_type,
-                    result="Failed",
-                    timestamp=request_timestamp,
-                    error_message=f"Error while doing request: {e}"
-                )
+                request_result = protocol_client.execute_request(**asdict(item), parent_result_id=getattr(parent_result_item, "id", None))
 
             # Update item on repository:
-            self.repository.update_item(item=request_result)
+            self.repository.create_item_from_dataclass(item=request_result)
 
             # Update collection:
             if parent_result_item:
@@ -84,6 +72,9 @@ class BackendManager(QThread):
             # Update collection:
             if parent_result_item:
                 self.collection_handler.update_request(parent_result_item, request_result)
+
+            # Wait polling interval:
+            time.sleep(item.run_options.polling_interval)
 
         # Update view:
         self.signal_request_finished.emit()
@@ -111,5 +102,5 @@ class BackendManager(QThread):
 
 if __name__ == "__main__":
     backend_manager_obj = BackendManager()
-    backend_manager_obj.repository.set_selected_item("uuid_1e65f48c-dcef-4def-b0c4-7dc3c129ffb0")
+    backend_manager_obj.repository.set_selected_item(Item(id=7, item_handler="ModbusRequest"))
     backend_manager_obj.run()

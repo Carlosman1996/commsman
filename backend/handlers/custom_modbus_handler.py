@@ -1,6 +1,7 @@
 import struct
 import time
 from abc import abstractmethod
+from datetime import timezone, datetime
 
 from pymodbus import ModbusException
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
@@ -83,9 +84,9 @@ class CustomModbusHandler(BaseHandler):
             case _:
                 raise Exception(f"Function '{function}' not supported")
 
-    def execute_request(self, name: str, data_type: str, function: str, address: int, count: int, slave: int, values: list = None, **kwargs):
+    def execute_request(self, name: str, id: int, parent_result_id: int, data_type: str, function: str, address: int, count: int, slave: int, values: list = None, **kwargs):
         self.framer.reset_packets()
-        self.initialize_response_dataclass(name)
+        self.initialize_response_dataclass(name=name, request_id=id, parent_result_id=parent_result_id)
 
         start_time = time.time()
         request_timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
@@ -128,9 +129,18 @@ class CustomModbusHandler(BaseHandler):
 
         return self.response
 
-    @abstractmethod
-    def initialize_response_dataclass(self, name: str):
-        pass
+    def initialize_response_dataclass(self, name: str, request_id: int, parent_result_id: int) -> ModbusResponse:
+        self.response = ModbusResponse(
+            name=name,
+            client_type=self.client_type,
+            request_id=request_id,
+            parent_id=parent_result_id,
+            result="Pending",
+            timestamp=datetime.now(timezone.utc),
+            elapsed_time=0,
+            error_message=""
+        )
+        return self.response
 
     @abstractmethod
     def process_response_data(self, modbus_response, address: int, values: list[int]):
@@ -175,9 +185,6 @@ class CustomModbusTcpClient(CustomModbusHandler):
                                       retries=retries)
         self.framer = CustomSocketFramer()
         self.client.transaction.framer = self.framer
-
-    def initialize_response_dataclass(self, name: str):
-        self.response = ModbusResponse(name=name)
 
     def process_response_data(self, modbus_response, address: int, values: list[int]):
         self.response.slave = self.framer.last_packet_recv[6]
@@ -227,9 +234,6 @@ class CustomModbusRtuClient(CustomModbusHandler):
                                          retries=retries)
         self.framer = CustomRtuFramer()
         self.client.transaction.framer = self.framer
-
-    def initialize_response_dataclass(self, name: str):
-        self.response = ModbusResponse(name=name)
 
     def process_response_data(self, modbus_response, address: int, values: list[int]):
         self.response.slave = self.framer.last_packet_recv[0]

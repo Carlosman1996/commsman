@@ -45,7 +45,7 @@ class ModbusRequest(BaseRequest):
     slave: Mapped[int] = mapped_column(Integer, default=0)
     address: Mapped[int] = mapped_column(Integer, default=0)
     count: Mapped[int] = mapped_column(Integer, default=1)
-    values: Mapped[list] = mapped_column(JSON, default=list, nullable=True)
+    values: Mapped[list] = mapped_column(JSON, default=None, nullable=True)
 
 
 @dataclass
@@ -60,7 +60,7 @@ class ModbusResponse(BaseResult):
     protocol_id: Mapped[int] = mapped_column(Integer, default=None, nullable=True)
     function_code: Mapped[int] = mapped_column(Integer, default=None, nullable=True)
     address: Mapped[int] = mapped_column(Integer, default=None, nullable=True)
-    registers: Mapped[list] = mapped_column(JSON, default=list, nullable=True)
+    registers: Mapped[list] = mapped_column(JSON, default=None, nullable=True)
     crc: Mapped[int] = mapped_column(Integer, default=None, nullable=True)
     raw_packet_recv: Mapped[int] = mapped_column(String, default="")
     raw_packet_send: Mapped[int] = mapped_column(String, default="")

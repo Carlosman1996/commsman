@@ -1,9 +1,16 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from email.policy import default
 
 from sqlalchemy import Integer, String, ForeignKey, Column, Boolean, JSON, DateTime
-from sqlalchemy.orm import Mapped, MappedAsDataclass, DeclarativeBase, relationship
+from sqlalchemy.orm import Mapped, MappedAsDataclass, DeclarativeBase, relationship, declared_attr
 from sqlalchemy.testing.schema import mapped_column
+
+
+@dataclass
+class Item:
+    id: int
+    item_handler: str
 
 
 class Base(MappedAsDataclass, DeclarativeBase):
@@ -34,13 +41,15 @@ class BaseRequest(BaseItem):
     __abstract__ = True
 
     item_response_handler: str = None
+    client: object = None
+    run_options: object = None
 
     parent_id: Mapped[int] = mapped_column(Integer, ForeignKey('collection.id'), nullable=True, default=None)
     client_id: Mapped[int] = mapped_column(Integer, ForeignKey('client.id'), nullable=True, default=None)
     run_options_id: Mapped[int] = mapped_column(Integer, ForeignKey('run_options.id'), nullable=True, default=None)
 
     position: Mapped[int] = mapped_column(Integer, nullable=True, default=None)
-    client_type: Mapped[int] = mapped_column(String, default="No connection")
+    client_type: Mapped[str] = mapped_column(String, default="No connection")
 
 
 @dataclass
@@ -52,5 +61,6 @@ class BaseResult(BaseItem):
     client_type: Mapped[str] = mapped_column(String)
     result: Mapped[str] = mapped_column(String)
     elapsed_time: Mapped[int] = mapped_column(String)
-    timestamp: Mapped[str] = mapped_column(String)
-    error_message: Mapped[str] = mapped_column(String, nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(String)
+
+    error_message: Mapped[str] = mapped_column(String)

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import fields
 
-from backend.models import DATACLASS_REGISTRY, BaseItem, BaseRequest, BaseResult
+from backend.models import DATACLASS_REGISTRY, BaseItem, BaseRequest, BaseResult, Item
 
 
 class BaseRepository(ABC):
@@ -32,11 +32,11 @@ class BaseRepository(ABC):
         item_dataclass = cls(**kwargs)
         return item_dataclass
 
-    def set_selected_item(self, item: BaseRequest):
+    def set_selected_item(self, item: Item):
         self.selected_item = item
 
     def get_selected_item(self):
-        return self.get_item(self.selected_item)
+        return self.get_item_request(self.selected_item)
 
     @abstractmethod
     def load(self):
@@ -75,7 +75,7 @@ class BaseRepository(ABC):
     #     raise NotImplementedError
 
     @abstractmethod
-    def get_item(self, item: BaseItem):
+    def get_item_request(self, item: Item):
         raise NotImplementedError
 
     # @abstractmethod
@@ -83,5 +83,5 @@ class BaseRepository(ABC):
     #     raise NotImplementedError
 
     @abstractmethod
-    def delete_item(self, item: BaseItem):
+    def delete_item(self, item: Item):
         raise NotImplementedError
