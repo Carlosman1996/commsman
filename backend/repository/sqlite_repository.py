@@ -44,9 +44,9 @@ class SQLiteRepository(BaseRepository):
         base_client_item = DATACLASS_REGISTRY["Client"](name=item_name, client_type=item.client_type)
 
         self.session.add(base_client_item)
-        item.client_id = base_client_item.id
+        item.client_id = base_client_item.item_id
         self.session.add(item)
-        parent.client_id = base_client_item.id
+        parent.client_id = base_client_item.item_id
         self.session.add(item)
 
         self.save()
@@ -56,7 +56,7 @@ class SQLiteRepository(BaseRepository):
         """Crea un nuevo ítem y lo guarda en la base de datos."""
         item = DATACLASS_REGISTRY.get(item_handler)(name=item_name)
         self.session.add(item)
-        parent.run_options_id = item.id
+        parent.run_options_id = item.item_id
         self.session.add(item)
 
         self.save()
@@ -64,7 +64,7 @@ class SQLiteRepository(BaseRepository):
 
     def update_item(self, item: BaseItem, **kwargs):
         """Actualiza un ítem en la base de datos."""
-        item = self.session.query(item.item_handler).filter_by(id=item.id).first()
+        item = self.session.query(item.item_handler).filter_by(id=item.item_id).first()
 
         for key, value in kwargs.items():
             setattr(item, key, value)
@@ -84,14 +84,14 @@ class SQLiteRepository(BaseRepository):
     def get_item_client(self, item: BaseRequest) -> Client:
         base_client = (
             self.session.query(Client)
-                .filter(Client.id == item.client_id)
+                .filter(Client.item_id == item.client_id)
                 .first()
             )
 
         client_handler = self.get_class_handler(base_client.client_type_handler)
         client = (
             self.session.query(client_handler)
-                .filter(client_handler.id == base_client.id)
+                .filter(client_handler.item_id == base_client.item_id)
                 .first()
             )
         return client
@@ -99,17 +99,17 @@ class SQLiteRepository(BaseRepository):
     def get_item_run_options(self, item: BaseRequest) -> RunOptions:
         run_options = (
             self.session.query(RunOptions)
-                .filter(RunOptions.id == item.run_options_id)
+                .filter(RunOptions.item_id == item.run_options_id)
                 .first()
             )
         return run_options
 
-    def get_item_request(self, item: Item):
-        item_handler = self.get_class_handler(item.item_handler)
+    def get_item_request(self, item_handler: str, item_id: int):
+        item_class_handler = self.get_class_handler(item_handler)
 
         request = (
-            self.session.query(item_handler)
-                .filter(item_handler.id == item.id)
+            self.session.query(item_class_handler)
+                .filter(item_class_handler.item_id == item_id)
                 .first()
         )
 
@@ -123,6 +123,6 @@ class SQLiteRepository(BaseRepository):
 if __name__ == "__main__":
     repository_obj = SQLiteRepository()
 
-    result = repository_obj.get_item_request(Item(id=1, item_handler="ModbusRequest"))
+    result = repository_obj.get_item_request(item_id=1, item_handler="ModbusRequest")
 
     print(result)

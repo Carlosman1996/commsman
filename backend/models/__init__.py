@@ -1,4 +1,4 @@
-from backend.models.base import Base, BaseItem, BaseRequest, BaseResult, Item
+from backend.models.base import Base, BaseItem, BaseRequest, BaseResult
 from backend.models.client import Client
 from backend.models.collection import Collection, CollectionResult
 from backend.models.modbus import ModbusTcpClient, ModbusRtuClient, ModbusRequest, ModbusResponse

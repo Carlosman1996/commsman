@@ -5,8 +5,6 @@ from PyQt6.QtCore import QThread, pyqtSignal
 
 from backend.handlers.collection_handler import CollectionHandler
 from backend.repository import *
-from backend.models.base import BaseResult, BaseRequest, BaseItem, Item
-from backend.models.collection import CollectionResult
 from backend.handlers.protocol_client_manager import ProtocolClientManager
 from backend.repository.sqlite_repository import SQLiteRepository
 
@@ -102,5 +100,5 @@ class BackendManager(QThread):
 
 if __name__ == "__main__":
     backend_manager_obj = BackendManager()
-    backend_manager_obj.repository.set_selected_item(Item(id=7, item_handler="ModbusRequest"))
+    backend_manager_obj.repository.set_selected_item({"item_id": 7, "item_handler": "ModbusRequest"})
     backend_manager_obj.run()

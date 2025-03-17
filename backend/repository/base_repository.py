@@ -1,14 +1,14 @@
 from abc import ABC, abstractmethod
 from dataclasses import fields
 
-from backend.models import DATACLASS_REGISTRY, BaseItem, BaseRequest, BaseResult, Item
+from backend.models import DATACLASS_REGISTRY, BaseItem, BaseRequest
 
 
 class BaseRepository(ABC):
     """Abstract repository for storing and retrieving items."""
 
     def __init__(self):
-        self.selected_item = None
+        self.selected_item: dict = {}
 
     @staticmethod
     def get_class_handler(item_handler: str):
@@ -32,11 +32,14 @@ class BaseRepository(ABC):
         item_dataclass = cls(**kwargs)
         return item_dataclass
 
-    def set_selected_item(self, item: Item):
-        self.selected_item = item
+    def set_selected_item(self, item_data: dict):
+        self.selected_item = item_data
 
-    def get_selected_item(self):
-        return self.get_item_request(self.selected_item)
+    def get_selected_item(self) -> BaseRequest:
+        if self.selected_item:
+            return self.get_item_request(**self.selected_item)
+        else:
+            raise ValueError("No item selected")
 
     @abstractmethod
     def load(self):
@@ -75,7 +78,7 @@ class BaseRepository(ABC):
     #     raise NotImplementedError
 
     @abstractmethod
-    def get_item_request(self, item: Item):
+    def get_item_request(self, item_handler: str, item_id: int):
         raise NotImplementedError
 
     # @abstractmethod
@@ -83,5 +86,5 @@ class BaseRepository(ABC):
     #     raise NotImplementedError
 
     @abstractmethod
-    def delete_item(self, item: Item):
+    def delete_item(self, item: BaseItem):
         raise NotImplementedError

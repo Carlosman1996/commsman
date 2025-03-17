@@ -14,7 +14,7 @@ class Collection(BaseRequest):
 class CollectionResult(BaseResult):
     __tablename__ = "collection_result"
 
-    collection_id: Mapped[int] = mapped_column(Integer, ForeignKey('collection.id'))
+    collection_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection.item_id"))
 
     item_type: Mapped[str] = mapped_column(String, default="Collection")
     total_ok: Mapped[int] = mapped_column(Integer, default=0)

@@ -5,7 +5,7 @@ from backend.models.base import *
 class ModbusTcpClient(BaseItem):
     __tablename__ = "modbus_tcp_client"
 
-    client_id: Mapped[int] = mapped_column(Integer, ForeignKey('client.id'))
+    client_id: Mapped[int] = mapped_column(Integer, ForeignKey("client.item_id"))
 
     item_type: Mapped[int] = mapped_column(String, default="Modbus")
     client_type: Mapped[int] = mapped_column(String, default="Modbus TCP")
@@ -19,7 +19,7 @@ class ModbusTcpClient(BaseItem):
 class ModbusRtuClient(BaseItem):
     __tablename__ = "modbus_rtu_client"
 
-    client_id: Mapped[int] = mapped_column(Integer, ForeignKey('client.id'))
+    client_id: Mapped[int] = mapped_column(Integer, ForeignKey("client.item_id"))
 
     item_type: Mapped[int] = mapped_column(String, default="Modbus")
     client_type: Mapped[int] = mapped_column(String, default="Modbus RTU")
@@ -52,7 +52,7 @@ class ModbusRequest(BaseRequest):
 class ModbusResponse(BaseResult):
     __tablename__ = "modbus_response"
 
-    request_id: Mapped[int] = mapped_column(Integer, ForeignKey('modbus_request.id'))
+    request_id: Mapped[int] = mapped_column(Integer, ForeignKey('modbus_request.item_id'))
 
     item_type: Mapped[int] = mapped_column(String, default="Modbus")
     slave: Mapped[int] = mapped_column(Integer, default=None, nullable=True)

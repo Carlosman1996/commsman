@@ -54,7 +54,7 @@ def insert_into_database(item):
         item_dataclass = ModbusTcpClient(
             name=item['name'],
             item_type=item['item_type'],
-            client_id=client.id,
+            client_id=client.item_id,
             client_type=item['client_type'],
             host=item['host'],
             port=item['port'],
@@ -75,7 +75,7 @@ def insert_into_database(item):
         item_dataclass = ModbusRtuClient(
             name=item['name'],
             item_type=item['item_type'],
-            client_id=client.id,
+            client_id=client.item_id,
             client_type=item['client_type'],
             com_port = item["com_port"],
             baudrate = item["baudrate"],
@@ -105,11 +105,11 @@ def insert_into_database(item):
         item_dataclass = Collection(
             name=item['name'],
             item_type=item['item_type'],
-            parent_id=dataclasses_inserted[item.get('parent')].id if item.get('parent') else None,
-            client_id=dataclasses_inserted[item.get('client')].id if item.get('client') else None,
+            parent_id=dataclasses_inserted[item.get('parent')].item_id if item.get('parent') else None,
+            client_id=dataclasses_inserted[item.get('client')].item_id if item.get('client') else None,
             client_type=item['client_type'],
             position=item.get('position'),
-            run_options_id=dataclasses_inserted[item.get('run_options')].id,
+            run_options_id=dataclasses_inserted[item.get('run_options')].item_id,
         )
         session.add(item_dataclass)
         session.commit()
@@ -119,10 +119,10 @@ def insert_into_database(item):
         item_dataclass = ModbusRequest(
             name=item['name'],
             item_type=item['item_type'],
-            parent_id=dataclasses_inserted[item.get('parent')].id if item.get('parent') else None,
-            client_id=dataclasses_inserted[item.get('client')].id if item.get('client') else None,
+            parent_id=dataclasses_inserted[item.get('parent')].item_id if item.get('parent') else None,
+            client_id=dataclasses_inserted[item.get('client')].item_id if item.get('client') else None,
             client_type=item['client_type'],
-            run_options_id=dataclasses_inserted[item.get('run_options')].id,
+            run_options_id=dataclasses_inserted[item.get('run_options')].item_id,
             position=item.get('position'),
             function=item['function'],
             data_type=item['data_type'],

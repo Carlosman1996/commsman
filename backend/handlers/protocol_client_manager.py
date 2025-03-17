@@ -7,18 +7,18 @@ from backend.models import BaseRequest, ModbusResponse
 
 
 class ProtocolClientManager:
-    def __init__(self, model):
-        self.model = model
+    def __init__(self, repository):
+        self.repository = repository
         self.handlers: dict[str, BaseHandler] = {}  # Key: handler ID, Value: handler
 
     def get_client_handler(self, item: BaseRequest) -> BaseHandler | str:
         """Get or create a handler for the specified protocol."""
 
-        def find_item_client(item: BaseRequest, base_item: BaseRequest) -> BaseRequest:
+        def find_item_client(item: BaseRequest, base_item: BaseRequest) -> BaseRequest | str:
             if item.client_type == "No connection":
                 raise Exception(f"Current request does not have client")
             elif item.client_type == "Inherit from parent":
-                parent = self.model.get_item(item.parent)
+                parent = self.repository.get_item(item.parent)
                 return find_item_client(parent, base_item)
             elif item.client:
                 if item.client.item_type == base_item.item_type:

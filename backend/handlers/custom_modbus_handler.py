@@ -84,9 +84,9 @@ class CustomModbusHandler(BaseHandler):
             case _:
                 raise Exception(f"Function '{function}' not supported")
 
-    def execute_request(self, name: str, id: int, parent_result_id: int, data_type: str, function: str, address: int, count: int, slave: int, values: list = None, **kwargs):
+    def execute_request(self, name: str, item_id: int, parent_result_id: int, data_type: str, function: str, address: int, count: int, slave: int, values: list = None, **kwargs):
         self.framer.reset_packets()
-        self.initialize_response_dataclass(name=name, request_id=id, parent_result_id=parent_result_id)
+        self.initialize_response_dataclass(name=name, request_id=item_id, parent_result_id=parent_result_id)
 
         start_time = time.time()
         request_timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
