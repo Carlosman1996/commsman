@@ -2,6 +2,7 @@ import time
 from dataclasses import asdict
 
 from PyQt6.QtCore import QThread, pyqtSignal
+from sqlalchemy.orm.collections import collection
 
 from backend.handlers.collection_handler import CollectionHandler
 from backend.repository import *
@@ -34,15 +35,12 @@ class BackendManager(QThread):
         if item.item_type == "Collection":
             collection_result = self.collection_handler.get_collection_result(item=item,
                                                                               parent_id=getattr(parent_result_item, "id", None))
-
+            print(collection_result)
             # Update item on repository:
             self.repository.create_item_from_dataclass(collection_result)
 
-            if parent_result_item:
-                self.collection_handler.add_collection(parent_result_item, collection_result)
-
-            for item_child_uuid in item.children:
-                item_child = self.repository.get_item(item_child_uuid)
+            for item_child in item.children:
+                item_child = self.repository.get_item_request(**item_child)
                 self.run_requests(item_child, collection_result)
 
         else:
@@ -65,11 +63,7 @@ class BackendManager(QThread):
 
             # Update collection:
             if parent_result_item:
-                self.collection_handler.add_request(parent_result_item, request_result)
-
-            # Update collection:
-            if parent_result_item:
-                self.collection_handler.update_request(parent_result_item, request_result)
+                self.collection_handler.update_collection_result(collection_result=parent_result_item)
 
             # Wait polling interval:
             time.sleep(item.run_options.polling_interval)
@@ -100,5 +94,5 @@ class BackendManager(QThread):
 
 if __name__ == "__main__":
     backend_manager_obj = BackendManager()
-    backend_manager_obj.repository.set_selected_item({"item_id": 7, "item_handler": "ModbusRequest"})
+    backend_manager_obj.repository.set_selected_item({"item_id": 1, "item_handler": "Collection"})
     backend_manager_obj.run()

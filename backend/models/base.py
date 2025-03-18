@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from email.policy import default
 
@@ -28,6 +28,8 @@ class BaseItem(Base):
         self.created_at = datetime.now(timezone.utc)
         self.updated_at = datetime.now(timezone.utc)
         self.modified_by = "Ordillan"
+        self.parent = None
+        self.children = []
 
 
 @dataclass

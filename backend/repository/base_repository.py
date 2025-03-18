@@ -65,25 +65,14 @@ class BaseRepository(ABC):
     def create_run_options_item(self, item_name: str, item_handler: str, parent: BaseItem):
         raise NotImplementedError
 
-    # @abstractmethod
-    # def add_item(self, item: BaseItem, attribute: str = None):
-    #     raise NotImplementedError
-
-    @abstractmethod
-    def update_item(self, item: BaseItem, **kwargs):
-        raise NotImplementedError
-
-    # @abstractmethod
-    # def replace_item(self, item: BaseItem, new_item: BaseItem):
-    #     raise NotImplementedError
-
     @abstractmethod
     def get_item_request(self, item_handler: str, item_id: int):
         raise NotImplementedError
 
-    # @abstractmethod
-    # def get_items(self) -> dict[str, BaseItem]:
-    #     raise NotImplementedError
+    @abstractmethod
+    def get_item_result(self, item_handler: str, item_id: int):
+        raise NotImplementedError
+
 
     @abstractmethod
     def delete_item(self, item: BaseItem):

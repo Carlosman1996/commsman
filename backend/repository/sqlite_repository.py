@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, String, ForeignKey, JSON, distinct
+from sqlalchemy import create_engine, Column, String, ForeignKey, JSON, distinct, union
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base, contains_eager
 
 from backend.models import *
@@ -62,17 +62,6 @@ class SQLiteRepository(BaseRepository):
         self.save()
         return item
 
-    def update_item(self, item: BaseItem, **kwargs):
-        """Actualiza un ítem en la base de datos."""
-        item = self.session.query(item.item_handler).filter_by(id=item.item_id).first()
-
-        for key, value in kwargs.items():
-            setattr(item, key, value)
-
-        self.session.add(item)
-        self.save()
-        return item
-
     def delete_item(self, item: BaseItem):
         """Elimina un ítem y sus referencias de la base de datos."""
         self.session.delete(item)
@@ -88,13 +77,16 @@ class SQLiteRepository(BaseRepository):
                 .first()
             )
 
-        client_handler = self.get_class_handler(base_client.client_type_handler)
-        client = (
-            self.session.query(client_handler)
-                .filter(client_handler.item_id == base_client.item_id)
-                .first()
-            )
-        return client
+        if base_client:
+            client_handler = self.get_class_handler(base_client.client_type_handler)
+            client = (
+                self.session.query(client_handler)
+                    .filter(client_handler.item_id == base_client.item_id)
+                    .first()
+                )
+            return client
+        else:
+            return None
 
     def get_item_run_options(self, item: BaseRequest) -> RunOptions:
         run_options = (
@@ -113,16 +105,87 @@ class SQLiteRepository(BaseRepository):
                 .first()
         )
 
+        # Solve relationships:
         item_client = self.get_item_client(request)
         request.client = item_client
         item_run_options = self.get_item_run_options(request)
         request.run_options = item_run_options
+
+        # Solve parent:
+        parent = (
+            self.session.query(Collection.item_handler, Collection.item_id)
+            .filter(Collection.item_id == request.parent_id)
+            .first()
+        )
+        if parent:
+            request.parent = parent._asdict()
+
+        # Solve children:
+        if item_handler == "Collection":
+            children = []
+            children += (
+                self.session.query(Collection.item_handler, Collection.item_id)
+                    .filter(Collection.parent_id == item_id)
+                    .all()
+            )
+            children += (
+                self.session.query(ModbusRequest.item_handler, ModbusRequest.item_id)
+                    .filter(ModbusRequest.parent_id == item_id)
+                    .all()
+            )
+
+            children = [child._asdict() for child in children]
+        else:
+            children = []
+
+        request.children = children
+
         return request
+
+    def get_item_result(self, item_handler: str, item_id: int):
+        item_class_handler = self.get_class_handler(item_handler)
+
+        result = (
+            self.session.query(item_class_handler)
+                .filter(item_class_handler.item_id == item_id)
+                .first()
+        )
+
+        # Solve parent:
+        parent = (
+            self.session.query(CollectionResult.item_handler, CollectionResult.item_id)
+            .filter(CollectionResult.item_id == result.parent_id)
+            .first()
+        )
+        if parent:
+            result.parent = parent._asdict()
+
+        # Solve children:
+        if item_handler == "CollectionResult":
+            children = []
+            children += (
+                self.session.query(CollectionResult.item_handler, CollectionResult.item_id)
+                    .filter(CollectionResult.parent_id == item_id)
+                    .all()
+            )
+            children += (
+                self.session.query(ModbusResponse.item_handler, ModbusResponse.item_id)
+                    .filter(ModbusResponse.parent_id == item_id)
+                    .all()
+            )
+
+            children = [child._asdict() for child in children]
+        else:
+            children = []
+
+        result.children = children
+
+        return result
 
 
 if __name__ == "__main__":
     repository_obj = SQLiteRepository()
 
-    result = repository_obj.get_item_request(item_id=1, item_handler="ModbusRequest")
+    result = repository_obj.get_item_result(item_id=1, item_handler="CollectionResult")
 
     print(result)
