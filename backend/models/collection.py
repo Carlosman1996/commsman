@@ -14,6 +14,7 @@ class Collection(BaseRequest):
 class CollectionResult(BaseResult):
     __tablename__ = "collection_result"
 
+    # Initialize to None but it is non-nullable:
     collection_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection.item_id"))
 
     item_type: Mapped[str] = mapped_column(String, default="Collection")

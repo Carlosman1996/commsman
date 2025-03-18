@@ -13,7 +13,7 @@ class SQLiteRepository(BaseRepository):
     def __init__(self, database_url: str = DATABASE_URL):
         super().__init__()
 
-        self.engine = create_engine(database_url, echo=True)
+        self.engine = create_engine(database_url, echo=False)
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()

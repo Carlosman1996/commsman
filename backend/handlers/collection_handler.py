@@ -28,10 +28,15 @@ class CollectionHandler:
         total_failed = 0
         total_pending = 0
 
-        for item_child in collection_result.children:
+        if collection_result.children:
+            children = collection_result.children
+        else:
+            children = []
+
+        for item_child in children:
             child = self.repository.get_item_result(**item_child)
 
-            if child.item_handler == "Collection":
+            if child.item_handler == "CollectionResult":
                 # Recursively count results for sub-collections
                 ok, failed, pending = self.count_results(child)
                 total_ok += ok
@@ -67,5 +72,5 @@ class CollectionHandler:
 
         # Propagate status update to parent
         if collection_result.parent_id:
-            collection_parent = self.repository.get_item_result(item_handler="Collection", item_id=collection_result.parent_id)
+            collection_parent = self.repository.get_item_result(item_handler="CollectionResult", item_id=collection_result.parent_id)
             self.update_collection_result(collection_parent)

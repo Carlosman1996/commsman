@@ -34,8 +34,7 @@ class BackendManager(QThread):
 
         if item.item_type == "Collection":
             collection_result = self.collection_handler.get_collection_result(item=item,
-                                                                              parent_id=getattr(parent_result_item, "id", None))
-            print(collection_result)
+                                                                              parent_id=getattr(parent_result_item, "item_id", None))
             # Update item on repository:
             self.repository.create_item_from_dataclass(collection_result)
 
@@ -51,12 +50,12 @@ class BackendManager(QThread):
             if isinstance(protocol_client, str):
                 error_message = f"Error while doing request: {protocol_client}"
                 request_result = self.protocol_client_manager.get_request_failed_result(item=item,
-                                                                                        parent_id=getattr(parent_result_item, "id", None),
+                                                                                        parent_id=getattr(parent_result_item, "item_id", None),
                                                                                         error_message=error_message)
             # Do request:
             else:
                 protocol_client.connect()
-                request_result = protocol_client.execute_request(**asdict(item), parent_result_id=getattr(parent_result_item, "id", None))
+                request_result = protocol_client.execute_request(**asdict(item), parent_result_id=getattr(parent_result_item, "item_id", None))
 
             # Update item on repository:
             self.repository.create_item_from_dataclass(item=request_result)
