@@ -54,6 +54,73 @@ class CustomStandardItemModel(QStandardItemModel):
         self.view_items = {}
         self.load_model()
 
+    def create_view_item(self, item) -> CustomStandardItem:
+        view_item = CustomStandardItem(item.name, item.item_type)
+        item_data = {
+            "item_id": item.item_id,
+            "item_type": item.item_type,
+            "item_handler": item.item_handler,
+        }
+        view_item.setData(item_data, role=Qt.ItemDataRole.UserRole)
+        self.view_items[f"{item.item_handler}_{item.item_id}"] = view_item  # Save reference
+        return view_item
+
+    def load_model(self):
+        """Loads all elements from repository into a QStandardItemModel, considering the 'position' key."""
+        self.view_items = {}
+        self.clear()
+        self.setHorizontalHeaderLabels(["Project"])
+
+        model_items = self.repository.get_items_request()
+
+        # Step 1: Organize items by parent_id
+        items_by_parent = {}
+        for item in model_items:
+            parent_id = item.parent_id
+            if parent_id not in items_by_parent:
+                items_by_parent[parent_id] = []
+            items_by_parent[parent_id].append(item)
+
+        # Step 2: Sort items at each level based on 'position'
+        for parent_id in items_by_parent:
+            items_by_parent[parent_id].sort(key=lambda x: x.position or 0)  # Default to 0 if position is None
+
+        # Step 3: Create QStandardItem objects for each item
+        root_level_item = self.invisibleRootItem()
+        for item in model_items:
+            self.create_view_item(item)
+
+        # Step 4: Attach items to parents, maintaining order
+        for parent_id, child_items in items_by_parent.items():
+            if parent_id:  # Attach to a parent
+                parent_view_item = self.view_items.get(f"Collection_{parent_id}")
+                if parent_view_item:
+                    for child in child_items:
+                        parent_view_item.appendRow(self.view_items[f"{child.item_handler}_{child.item_id}"])
+            else:  # Root-level items
+                for child in child_items:
+                    root_level_item.appendRow(self.view_items[f"{child.item_handler}_{child.item_id}"])
+
+    def recalculate_positions(self):
+        """Recalculates and updates the 'position' of each item based on its order in the QStandardItemModel."""
+
+        def update_positions_recursive(parent_item):
+            """Recursively updates positions of child items under the given parent."""
+            for index in range(parent_item.rowCount()):
+                child_item = parent_item.child(index)
+                item_data = child_item.data(Qt.ItemDataRole.UserRole)  # Retrieve the unique identifier
+
+                # Update position based on index within the parent
+                self.repository.update_item(item_handler=item_data["item_handler"],
+                                            item_id=item_data["item_id"],
+                                            position=index)
+
+                # Recursively update children
+                update_positions_recursive(child_item)
+
+        root_item = self.invisibleRootItem()
+        update_positions_recursive(root_item)
+
     def move_to_destination(self, source_index, destination_index):
         """Move an item to the exact drop location with restrictions."""
         if not source_index.isValid():
@@ -129,40 +196,7 @@ class CustomStandardItemModel(QStandardItemModel):
         else:
             self.signal_move_item.emit(source_item)
 
-    def create_view_item(self, item) -> CustomStandardItem:
-        view_item = CustomStandardItem(item.name, item.item_type)
-        item_data = {
-            "item_id": item.item_id,
-            "item_type": item.item_type,
-            "item_handler": item.item_handler,
-        }
-        view_item.setData(item_data, role=Qt.ItemDataRole.UserRole)
-        self.view_items[f"{item.item_handler}_{item.item_id}"] = view_item  # Save reference
-        return view_item
-
-    def load_model(self):
-        """Loads all elements from repository into a QStandardItemModel."""
-        self.view_items = {}
-        self.clear()
-        self.setHorizontalHeaderLabels(["Project"])
-
-        model_items = self.repository.get_items_request()
-
-        # TODO: load model taking into account position
-        # TODO: move elements must change its position
-
-        # Step 1: Create QStandardItem objects for each item
-        self.view_items = {}
-        root_level_item = self.invisibleRootItem()
-        for item in model_items:
-            self.create_view_item(item)
-
-        # Step 2: Resolve parent-child relationships
-        for item in model_items:
-            if item.parent_id:  # If parent exists, attach
-                self.view_items[f"Collection_{item.parent_id}"].appendRow(self.view_items[f"{item.item_handler}_{item.item_id}"])
-            else:  # If no parent, add to root level
-                root_level_item.appendRow(self.view_items[f"{item.item_handler}_{item.item_id}"])
+        self.recalculate_positions()
 
     def add_item(self, item):
         view_item = self.create_view_item(item)
@@ -172,12 +206,16 @@ class CustomStandardItemModel(QStandardItemModel):
         else:
             root_level_item.appendRow(view_item)
 
+        self.recalculate_positions()
+
     def delete_item(self, item_handler: str, item_id: int):
         view_item = self.view_items[f"{item_handler}_{item_id}"]
         root_level_item = self.invisibleRootItem()
         parent_item = view_item.parent() or root_level_item
         parent_item.removeRow(view_item.row())
         self.view_items.pop(f"{item_handler}_{item_id}")  # Delete reference
+
+        self.recalculate_positions()
 
 
 class HierarchicalFilterProxyModel(QSortFilterProxyModel):
