@@ -2,6 +2,16 @@
 
 ## Priority
 
+TODO: strange errors while moving requests inside a parent. Also, some requests are changing its parent.
+
+TODO: test add items
+
+TODO: collection results are not showing all structure.
+
+TODO: real time updates in running collections: now, sql operations collide.
+
+TODO: increase SQLite performance: moving elements is a slow operation.
+
 TODO: show history in requests
 
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
@@ -15,8 +25,6 @@ TODO: migrate QT to PYSIDE
 TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
-
-TODO: increase SQLite performance: moving elements is a slow operation.
 
 TODO: add foreign keys and relationships - cascade deletes: https://www.codearmo.com/python-tutorial/sql-alchemy-foreign-keys-and-relationships#google_vignette
 
