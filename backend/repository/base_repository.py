@@ -17,21 +17,6 @@ class BaseRepository(ABC):
             raise ValueError(f"Unknown item handler: {item_handler}")
         return cls
 
-    def item_dict_to_dataclass(self, item_dict: dict):
-        cls = self.get_class_handler(item_dict.get("item_handler"))
-
-        # Ignore extra elemetns:
-        valid_fields = {f.name for f in fields(cls)}
-        filtered_dict = {k: v for k, v in item_dict.items() if k in valid_fields}
-
-        item = cls(**filtered_dict)  # Instantiate the dataclass
-        return item
-
-    def create_item_dataclass(self, item_handler: str, **kwargs):
-        cls = self.get_class_handler(item_handler)
-        item_dataclass = cls(**kwargs)
-        return item_dataclass
-
     def set_selected_item(self, item_data: dict):
         self.selected_item = item_data
 
@@ -66,6 +51,10 @@ class BaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def get_item(self, item_handler: str, item_id: int):
+        raise NotImplementedError
+
+    @abstractmethod
     def get_item_request(self, item_handler: str, item_id: int):
         raise NotImplementedError
 
@@ -73,6 +62,9 @@ class BaseRepository(ABC):
     def get_item_result(self, item_handler: str, item_id: int):
         raise NotImplementedError
 
+    @abstractmethod
+    def update_item(self, item_handler: str, item_id: int, **kwargs):
+        raise NotImplementedError
 
     @abstractmethod
     def delete_item(self, item_handler: str, item_id: int):

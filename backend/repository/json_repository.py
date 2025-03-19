@@ -20,6 +20,16 @@ class JsonRepository(BaseRepository):
         self.selected_item = None
         self.load()
 
+    def item_dict_to_dataclass(self, item_dict: dict):
+        cls = self.get_class_handler(item_dict.get("item_handler"))
+
+        # Ignore extra elemetns:
+        valid_fields = {f.name for f in fields(cls)}
+        filtered_dict = {k: v for k, v in item_dict.items() if k in valid_fields}
+
+        item = cls(**filtered_dict)  # Instantiate the dataclass
+        return item
+
     def load(self):
         # Open and read the JSON file
         with open(self.json_file_path, 'r') as file:

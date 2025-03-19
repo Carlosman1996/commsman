@@ -40,9 +40,9 @@ class BaseRequest(BaseItem):
     client: object = None
     run_options: object = None
 
-    parent_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection.item_id"), nullable=True, default=None)
-    client_id: Mapped[int] = mapped_column(Integer, ForeignKey("client.item_id"), nullable=True, default=None)
-    run_options_id: Mapped[int] = mapped_column(Integer, ForeignKey("run_options.item_id"), nullable=True, default=None)
+    parent_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection.item_id", ondelete="CASCADE"), nullable=True, default=None)
+    client_id: Mapped[int] = mapped_column(Integer, ForeignKey("client.item_id"), nullable=True, default=None)  # TODO: delete if request is removed
+    run_options_id: Mapped[int] = mapped_column(Integer, ForeignKey("run_options.item_id"), nullable=True, default=None)  # TODO: delete if request is removed
 
     position: Mapped[int] = mapped_column(Integer, nullable=True, default=None)
     client_type: Mapped[str] = mapped_column(String, default="No connection")
@@ -52,7 +52,7 @@ class BaseRequest(BaseItem):
 class BaseResult(BaseItem):
     __abstract__ = True
 
-    parent_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection_result.item_id"), nullable=True)
+    parent_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection_result.item_id", ondelete="CASCADE"), nullable=True)
 
     client_type: Mapped[str] = mapped_column(String)
     result: Mapped[str] = mapped_column(String)

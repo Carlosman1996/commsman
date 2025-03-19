@@ -1,5 +1,5 @@
-from sqlalchemy import create_engine, Column, String, ForeignKey, JSON, distinct, union
-from sqlalchemy.orm import sessionmaker, relationship, declarative_base, contains_eager
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 from backend.models import *
 from backend.repository.base_repository import BaseRepository
@@ -13,10 +13,15 @@ class SQLiteRepository(BaseRepository):
     def __init__(self, database_url: str = DATABASE_URL):
         super().__init__()
 
-        self.engine = create_engine(database_url, echo=False)
-        Base.metadata.create_all(self.engine)
+        self.engine = create_engine(database_url)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
+
+        @event.listens_for(self.engine, "connect")
+        def enable_foreign_keys(dbapi_connection, connection_record):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON;")
+            cursor.close()
 
     def load(self):
         pass
@@ -62,7 +67,7 @@ class SQLiteRepository(BaseRepository):
         self.save()
         return item
 
-    def delete_item(self, item_handler: str, item_id: int):
+    def get_item(self, item_handler: str, item_id: int):
         item_class_handler = self.get_class_handler(item_handler)
 
         item = (
@@ -70,11 +75,21 @@ class SQLiteRepository(BaseRepository):
                 .filter(item_class_handler.item_id == item_id)
                 .first()
         )
+        return item
+
+    def delete_item(self, item_handler: str, item_id: int):
+        item = self.get_item(item_handler, item_id)
         self.session.delete(item)
         self.save()
 
-    def get_item(self):
-        pass
+    def update_item(self, item_handler: str, item_id: int, **kwargs):
+        item = self.get_item(item_handler, item_id)
+
+        for key, value in kwargs.items():
+            setattr(item, key, value)
+
+        self.session.add(item)
+        self.save()
 
     def get_item_client(self, item: BaseRequest) -> Client:
         base_client = (
@@ -115,13 +130,7 @@ class SQLiteRepository(BaseRepository):
         return requests
 
     def get_item_request(self, item_handler: str, item_id: int):
-        item_class_handler = self.get_class_handler(item_handler)
-
-        request = (
-            self.session.query(item_class_handler)
-                .filter(item_class_handler.item_id == item_id)
-                .first()
-        )
+        request = self.get_item(item_handler, item_id)
 
         # Solve relationships:
         item_client = self.get_item_client(request)
@@ -161,13 +170,7 @@ class SQLiteRepository(BaseRepository):
         return request
 
     def get_item_result(self, item_handler: str, item_id: int):
-        item_class_handler = self.get_class_handler(item_handler)
-
-        result = (
-            self.session.query(item_class_handler)
-                .filter(item_class_handler.item_id == item_id)
-                .first()
-        )
+        result = self.get_item(item_handler, item_id)
 
         # Solve parent:
         parent = (
