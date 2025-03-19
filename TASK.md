@@ -2,8 +2,6 @@
 
 ## Priority
 
-TODO: move pickle to SQLITE. Also, save results history per request and collection.
-
 TODO: show history in requests
 
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
@@ -17,6 +15,8 @@ TODO: migrate QT to PYSIDE
 TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
+
+TODO: increase SQLite performance: moving elements is a slow operation.
 
 TODO: add foreign keys and relationships - cascade deletes: https://www.codearmo.com/python-tutorial/sql-alchemy-foreign-keys-and-relationships#google_vignette
 

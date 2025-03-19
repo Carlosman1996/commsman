@@ -42,6 +42,7 @@ class ItemCreationDialog(QDialog):
         # Add buttons/icons for each type
         self.buttons = {}
         self.item_type = "Collection"  # Preselect Folder by default
+        self.item_handler = None
         if parent_item:
             item_types = ["Collection", "Modbus"]
         else:
@@ -95,6 +96,7 @@ class ItemCreationDialog(QDialog):
     def select_item(self, item_type):
         """Set the selected item type and update styles."""
         self.item_type = item_type
+        self.item_handler = ITEMS[item_type]["item_handler"]
         for item, button in self.buttons.items():
             if item == item_type:
                 button.setStyleSheet("background-color: lightblue;")

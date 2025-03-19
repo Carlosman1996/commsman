@@ -46,9 +46,11 @@ class SQLiteRepository(BaseRepository):
     def create_client_item(self, item_name: str, item_handler: str, parent: BaseItem):
         """Crea un nuevo ítem y lo guarda en la base de datos."""
         item = DATACLASS_REGISTRY.get(item_handler)(name=item_name)
-        base_client_item = DATACLASS_REGISTRY["Client"](name=item_name, client_type=item.client_type)
+        base_client_item = DATACLASS_REGISTRY["Client"](name=item_name, item_type=item.item_type, client_type_handler=item.item_handler)
 
         self.session.add(base_client_item)
+        self.save()
+
         item.client_id = base_client_item.item_id
         self.session.add(item)
         parent.client_id = base_client_item.item_id
@@ -102,7 +104,7 @@ class SQLiteRepository(BaseRepository):
             client_handler = self.get_class_handler(base_client.client_type_handler)
             client = (
                 self.session.query(client_handler)
-                    .filter(client_handler.item_id == base_client.item_id)
+                    .filter(client_handler.client_id == base_client.item_id)
                     .first()
                 )
             return client
@@ -116,6 +118,19 @@ class SQLiteRepository(BaseRepository):
                 .first()
             )
         return run_options
+
+    def get_item_last_result(self, item: BaseRequest) -> BaseResult:
+        item_class_handler = self.get_class_handler(item.item_response_handler)
+        last_result = (
+            self.session.query(item_class_handler)
+                .filter(item_class_handler.request_id == item.item_id)
+                .order_by(item_class_handler.timestamp.desc())
+                .first()
+            )
+
+        if last_result:
+            last_result = self.get_item_result(item_handler=last_result.item_handler, item_id=last_result.item_id)
+        return last_result
 
     def get_items_request(self):
         requests = []
@@ -137,6 +152,8 @@ class SQLiteRepository(BaseRepository):
         request.client = item_client
         item_run_options = self.get_item_run_options(request)
         request.run_options = item_run_options
+        item_last_result = self.get_item_last_result(request)
+        request.last_result = item_last_result
 
         # Solve parent:
         parent = (

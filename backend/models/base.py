@@ -39,6 +39,7 @@ class BaseRequest(BaseItem):
     item_response_handler: str = None
     client: object = None
     run_options: object = None
+    last_result: object = None
 
     parent_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection.item_id", ondelete="CASCADE"), nullable=True, default=None)
     client_id: Mapped[int] = mapped_column(Integer, ForeignKey("client.item_id"), nullable=True, default=None)  # TODO: delete if request is removed
@@ -52,7 +53,8 @@ class BaseRequest(BaseItem):
 class BaseResult(BaseItem):
     __abstract__ = True
 
-    parent_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection_result.item_id", ondelete="CASCADE"), nullable=True)
+    parent_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection_result.item_id"), nullable=True)
+    request_id: Mapped[int] = mapped_column(Integer)
 
     client_type: Mapped[str] = mapped_column(String)
     result: Mapped[str] = mapped_column(String)

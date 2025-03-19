@@ -47,11 +47,13 @@ class RunOptionsTabWidget(BaseRequest):
                 "polling_interval": int(self.polling_interval_label.text()),
                 "delayed_start": int(self.delayed_start.text()),
             }
-            self.repository.update_item(item_uuid=self.item.run_options.uuid, **run_options)
+            self.repository.update_item(item_handler=self.item.run_options.item_handler, item_id=self.item.run_options.item_id, **run_options)
         else:
-            self.repository.create_run_options_item(item_name=self.item.name,
-                                                    item_handler="RunOptions",
-                                                    parent=self.item)
+            self.repository.create_client_item(
+                item_name=self.item.name,
+                item_handler="RunOptions",
+                parent=self.item,
+            )
 
     def update_view(self, load_data: bool = False):
         if load_data and not self.item.run_options:

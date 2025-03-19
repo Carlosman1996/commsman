@@ -76,9 +76,9 @@ class MainWindow(QMainWindow):
         item = self.repository.get_selected_item()
 
         if item is not None:
-            if item.item_type == "Modbus":
+            if item.item_handler == "ModbusRequest":
                 self.detail_section = ModbusDetail(self.backend)
-            elif item.item_type == "Collection":
+            elif item.item_handler == "Collection":
                 self.detail_section = CollectionDetail(self.backend)
             else:
                 self.detail_section = QLabel("Not implemented yet")

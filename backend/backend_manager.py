@@ -32,7 +32,7 @@ class BackendManager(QThread):
         if not self.running:
             return
 
-        if item.item_type == "Collection":
+        if item.item_handler == "Collection":
             collection_result = self.collection_handler.get_collection_result(item=item,
                                                                               parent_id=getattr(parent_result_item, "item_id", None))
             # Update item on repository:
@@ -68,7 +68,7 @@ class BackendManager(QThread):
             time.sleep(item.run_options.polling_interval)
 
         # Update view:
-        self.signal_request_finished.emit()
+        # TODO: self.signal_request_finished.emit()
 
     def run(self):
         self.running = True

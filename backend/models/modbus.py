@@ -5,7 +5,7 @@ from backend.models.base import *
 class ModbusTcpClient(BaseItem):
     __tablename__ = "modbus_tcp_client"
 
-    client_id: Mapped[int] = mapped_column(Integer, ForeignKey("client.item_id"))
+    client_id: Mapped[int] = mapped_column(Integer, ForeignKey("client.item_id"), default=None)
 
     item_type: Mapped[int] = mapped_column(String, default="Modbus")
     client_type: Mapped[int] = mapped_column(String, default="Modbus TCP")
@@ -19,7 +19,7 @@ class ModbusTcpClient(BaseItem):
 class ModbusRtuClient(BaseItem):
     __tablename__ = "modbus_rtu_client"
 
-    client_id: Mapped[int] = mapped_column(Integer, ForeignKey("client.item_id"))
+    client_id: Mapped[int] = mapped_column(Integer, ForeignKey("client.item_id"), default=None)
 
     item_type: Mapped[int] = mapped_column(String, default="Modbus")
     client_type: Mapped[int] = mapped_column(String, default="Modbus RTU")
@@ -53,7 +53,7 @@ class ModbusResponse(BaseResult):
     __tablename__ = "modbus_response"
 
     # Initialize to None but it is non-nullable:
-    request_id: Mapped[int] = mapped_column(Integer, ForeignKey("modbus_request.item_id", ondelete="CASCADE"), default=None)
+    request_id: Mapped[int] = mapped_column(Integer, ForeignKey("modbus_request.item_id"))
 
     item_type: Mapped[int] = mapped_column(String, default="Modbus")
     slave: Mapped[int] = mapped_column(Integer, default=None, nullable=True)

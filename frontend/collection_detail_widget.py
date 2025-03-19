@@ -91,10 +91,10 @@ class CollectionResultTreeView(QTreeView):
             parent.appendRow([folder_item, status_item])
 
         # Iterate through children (both collections and requests)
-        for child_uuid in collection_result.children:
-            child = self.repository.get_item(child_uuid)
+        for child in collection_result.children:
+            child = self.repository.get_item_result(**child)
 
-            if child.item_type == "Collection":
+            if child.item_handler == "Collection":
                 # Handle sub-collection
                 self.populate_model(child, folder_item)
             else:
@@ -161,42 +161,6 @@ class CollectionResultWidget(BaseResult):
             return
 
         self.results_tree.update_model(result, load_data)
-
-    def update_view_table(self):
-        result = self.item.last_result
-        if result is None:
-            return
-
-        table_values = []
-
-        def add_row(item):
-            table_values.append([])
-
-            item_parent = QTableWidgetItem(str(item.parent))
-            table_values[-1].append(item_parent)
-            item_type = QTableWidgetItem(str(item.item_type))
-            table_values[-1].append(item_type)
-            item_name = QTableWidgetItem(str(item.name))
-            table_values[-1].append(item_name)
-            item_result = QTableWidgetItem(str(item.result))
-            table_values[-1].append(item_result)
-            item_timestamp = QTableWidgetItem(str(item.timestamp))
-            table_values[-1].append(item_timestamp)
-
-        def set_collection_items(collection):
-            for request in collection.requests:
-                add_row(request)
-            for subcollection in collection.collections:
-                add_row(subcollection)
-                set_collection_items(subcollection)
-
-        set_collection_items(self.item.last_result)
-
-        self.values_table.clear()
-        self.values_table.setRowCount(len(table_values))
-        for index_row, row in enumerate(table_values):
-            for index_column, item in enumerate(row):
-                self.values_table.setItem(index_row, index_column, item)
 
 
 class CollectionDetail(BaseDetail):

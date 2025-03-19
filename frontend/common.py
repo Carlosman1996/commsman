@@ -8,6 +8,9 @@ ITEMS = {
         "item_handler": "Collection"
     },
     "Modbus": {
+        "item_handler": "ModbusRequest"
+    },
+    "ModbusRequest": {
         "icon": f"{FRONTEND_PATH}/icons/modbus.png",
         "icon_simple": f"{FRONTEND_PATH}/icons/modbus_simple.png",
         "item_handler": "ModbusRequest"
@@ -15,7 +18,7 @@ ITEMS = {
 }
 
 
-def get_model_value(item: object, key: str, replace_if_none: str = "-"):
+def get_model_value(item: object, key: str, replace_if_none: str | int = "-"):
     if hasattr(item, key):
         value = getattr(item, key)
     else:

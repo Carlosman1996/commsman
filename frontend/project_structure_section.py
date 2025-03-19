@@ -36,10 +36,10 @@ class Button(QPushButton):
 
 
 class CustomStandardItem(QStandardItem):
-    def __init__(self, item_name, item_type):
+    def __init__(self, item_name, item_handler):
         super().__init__(item_name)
 
-        self.setIcon(QIcon(ITEMS[item_type]["icon_simple"]))
+        self.setIcon(QIcon(ITEMS[item_handler]["icon_simple"]))
         self.setEditable(True)
 
 
@@ -55,10 +55,9 @@ class CustomStandardItemModel(QStandardItemModel):
         self.load_model()
 
     def create_view_item(self, item) -> CustomStandardItem:
-        view_item = CustomStandardItem(item.name, item.item_type)
+        view_item = CustomStandardItem(item.name, item.item_handler)
         item_data = {
             "item_id": item.item_id,
-            "item_type": item.item_type,
             "item_handler": item.item_handler,
         }
         view_item.setData(item_data, role=Qt.ItemDataRole.UserRole)
@@ -180,7 +179,7 @@ class CustomStandardItemModel(QStandardItemModel):
             if destination_row > destination_item.rowCount():
                 destination_item.insertRow(destination_item.rowCount(), source_row_data)
             else:
-                destination_item.insertRow(destination_row, source_row_data)
+                destination_item.insertRow(destination_row - 1, source_row_data)
         elif destination_item == self.invisibleRootItem() and (item_data["item_handler"] == "Collection"):
             self.invisibleRootItem().appendRow(source_item)
         else:
@@ -483,7 +482,7 @@ class ProjectStructureSection(QWidget):
                 parent_data = None
 
             item = self.repository.create_item_from_handler(item_name=dialog.item_name,
-                                                            item_handler=ITEMS[dialog.item_type]["item_handler"],
+                                                            item_handler=dialog.item_handler,
                                                             parent_id=parent_data.get("item_id"))
             self.view_model.add_item(item=item)
 

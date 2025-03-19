@@ -14,7 +14,7 @@ class CollectionHandler:
         return CollectionResult(
             name=item.name,
             client_type=item.client_type,
-            collection_id=item.item_id,
+            request_id=item.item_id,
             parent_id=parent_id,
             result="OK",
             elapsed_time=0,

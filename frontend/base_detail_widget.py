@@ -121,7 +121,7 @@ class BaseDetail(BaseResult):
         header_widget.setLayout(header_layout)
         self.request_layout.addWidget(header_widget)
         # Title:
-        self.title_label = IconTextWidget(self.item.name, QIcon(ITEMS[self.item.item_type]["icon"]), QSize(75, 50))
+        self.title_label = IconTextWidget(self.item.name, QIcon(ITEMS[self.item.item_handler]["icon"]), QSize(75, 50))
         header_layout.addWidget(self.title_label)
         # Execute request:
         self.execute_button = ExecuteButton(self.backend.running)

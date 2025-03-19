@@ -20,11 +20,11 @@ class BaseRepository(ABC):
     def set_selected_item(self, item_data: dict):
         self.selected_item = item_data
 
-    def get_selected_item(self) -> BaseRequest:
+    def get_selected_item(self) -> BaseRequest | None:
         if self.selected_item:
             return self.get_item_request(**self.selected_item)
         else:
-            raise ValueError("No item selected")
+            return None
 
     @abstractmethod
     def load(self):
