@@ -50,7 +50,7 @@ class BaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create_item_from_handler(self, item_name: str, item_handler: str, parent: BaseItem):
+    def create_item_from_handler(self, item_name: str, item_handler: str, parent: int):
         raise NotImplementedError
 
     @abstractmethod
@@ -75,5 +75,5 @@ class BaseRepository(ABC):
 
 
     @abstractmethod
-    def delete_item(self, item: BaseItem):
+    def delete_item(self, item_handler: str, item_id: int):
         raise NotImplementedError

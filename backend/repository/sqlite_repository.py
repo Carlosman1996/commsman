@@ -25,9 +25,9 @@ class SQLiteRepository(BaseRepository):
         """Guarda los cambios en la base de datos."""
         self.session.commit()
 
-    def create_item_from_handler(self, item_name: str, item_handler: str, parent: BaseItem = None):
+    def create_item_from_handler(self, item_name: str, item_handler: str, parent_id: int = None):
         """Crea un nuevo ítem y lo guarda en la base de datos."""
-        item = DATACLASS_REGISTRY.get(item_handler)(name=item_name, parent_id=getattr(parent, "id"))
+        item = DATACLASS_REGISTRY.get(item_handler)(name=item_name, parent_id=parent_id)
         self.session.add(item)
         self.save()
         return item
@@ -62,8 +62,14 @@ class SQLiteRepository(BaseRepository):
         self.save()
         return item
 
-    def delete_item(self, item: BaseItem):
-        """Elimina un ítem y sus referencias de la base de datos."""
+    def delete_item(self, item_handler: str, item_id: int):
+        item_class_handler = self.get_class_handler(item_handler)
+
+        item = (
+            self.session.query(item_class_handler)
+                .filter(item_class_handler.item_id == item_id)
+                .first()
+        )
         self.session.delete(item)
         self.save()
 
@@ -95,6 +101,18 @@ class SQLiteRepository(BaseRepository):
                 .first()
             )
         return run_options
+
+    def get_items_request(self):
+        requests = []
+        requests += (
+            self.session.query(Collection)
+                .all()
+        )
+        requests += (
+            self.session.query(ModbusRequest)
+                .all()
+        )
+        return requests
 
     def get_item_request(self, item_handler: str, item_id: int):
         item_class_handler = self.get_class_handler(item_handler)

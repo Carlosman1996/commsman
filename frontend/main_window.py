@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
         # Right section:
         self.detail_section = self.set_detail_section()
 
-        # Add sections to splitter
+        # Add sections to splitter_uuid
         self.main_window_sections_splitter.addWidget(self.project_structure_section)
         self.main_window_sections_splitter.addWidget(self.detail_section)
 
@@ -71,8 +71,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
     def set_detail_section(self):
-        item_uuid = self.project_structure_section.get_selected_item_uuid()
-        self.repository.set_selected_item(item_uuid)
+        item_data = self.project_structure_section.get_selected_item_data()
+        self.repository.set_selected_item(item_data)
         item = self.repository.get_selected_item()
 
         if item is not None:

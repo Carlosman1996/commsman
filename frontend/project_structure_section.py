@@ -60,7 +60,7 @@ class CustomStandardItemModel(QStandardItemModel):
             return
 
         source_item = self.itemFromIndex(source_index)
-        item_uuid = source_item.data(Qt.ItemDataRole.UserRole)
+        item_id = source_item.data(Qt.ItemDataRole.UserRole)
         source_parent = source_item.parent() or self.invisibleRootItem()
         source_row = source_item.row()
 
@@ -68,13 +68,13 @@ class CustomStandardItemModel(QStandardItemModel):
             destination_item = self.itemFromIndex(destination_index)
             destination_parent = destination_item.parent() or self.invisibleRootItem()
             destination_row = destination_index.row()
-            parent_uuid = destination_item.data(Qt.ItemDataRole.UserRole)
+            parent_id = destination_item.data(Qt.ItemDataRole.UserRole)
         else:
             # Dropping to the root
             destination_item = self.invisibleRootItem()
             destination_parent = self.invisibleRootItem()
             destination_row = self.rowCount()
-            parent_uuid = None
+            parent_id = None
 
         # Restriction 1: No collection items cannot be moved to the root
         if source_item.data(Qt.ItemDataRole.UserRole + 1) != "Collection" and destination_item == self.invisibleRootItem():
@@ -122,7 +122,7 @@ class CustomStandardItemModel(QStandardItemModel):
         self.layoutChanged.emit()
 
         # Update backend repository
-        self.repository.update_item(item_uuid=item_uuid, parent=parent_uuid)
+        self.repository.update_item(item_id=item_id, parent=parent_id)
 
         if destination_item != self.invisibleRootItem():
             self.signal_move_item.emit(destination_item)
@@ -131,9 +131,9 @@ class CustomStandardItemModel(QStandardItemModel):
 
     def create_view_item(self, item) -> CustomStandardItem:
         view_item = CustomStandardItem(item.name, item.item_type)
-        view_item.setData(item.uuid, role=Qt.ItemDataRole.UserRole)  # Store UUID for reference
+        view_item.setData(item.item_id, role=Qt.ItemDataRole.UserRole)  # Store item reference
         view_item.setData(item.item_type, role=Qt.ItemDataRole.UserRole + 1)  # Store type
-        self.view_items[item.uuid] = view_item  # Save reference
+        self.view_items[f"{item.item_type}_{item.item_id}"] = view_item  # Save reference
         return view_item
 
     def load_model(self):
@@ -142,38 +142,38 @@ class CustomStandardItemModel(QStandardItemModel):
         self.clear()
         self.setHorizontalHeaderLabels(["Project"])
 
-        model_items = self.repository.get_items()
+        model_items = self.repository.get_items_request()
+
+        # TODO: load model taking into account position
+        # TODO: move elements must change its position
 
         # Step 1: Create QStandardItem objects for each item
         self.view_items = {}
         root_level_item = self.invisibleRootItem()
-        for item in model_items.values():
-            if item.item_handler == "Collection" or item.item_handler == "ModbusRequest":
-                self.create_view_item(item)
+        for item in model_items:
+            self.create_view_item(item)
 
         # Step 2: Resolve parent-child relationships
-        for item in model_items.values():
-            if item.uuid in self.view_items:
-                if item.parent and item.parent in self.view_items:  # If parent exists, attach
-                    self.view_items[item.parent].appendRow(self.view_items[item.uuid])
-                else:  # If no parent, add to root level
-                    root_level_item.appendRow(self.view_items[item.uuid])
+        for item in model_items:
+            if item.parent_id:  # If parent exists, attach
+                self.view_items[f"Collection_{item.parent_id}"].appendRow(self.view_items[f"{item.item_type}_{item.item_id}"])
+            else:  # If no parent, add to root level
+                root_level_item.appendRow(self.view_items[f"{item.item_type}_{item.item_id}"])
 
-    def add_item(self, item_uuid: str):
-        item = self.repository.get_item(item_uuid)
+    def add_item(self, item):
         view_item = self.create_view_item(item)
         root_level_item = self.invisibleRootItem()
-        if item.parent:
-            self.view_items[item.parent].appendRow(view_item)
+        if item.parent_id:
+            self.view_items[f"Collection_{item.parent_id}"].appendRow(view_item)
         else:
-            root_level_item.appendRow(self.view_items[item.uuid])
+            root_level_item.appendRow(view_item)
 
-    def delete_item(self, item_uuid: str):
-        view_item = self.view_items[item_uuid]
+    def delete_item(self, item_type: str, item_id: int):
+        view_item = self.view_items[f"{item_type}_{item_id}"]
         root_level_item = self.invisibleRootItem()
         parent_item = view_item.parent() or root_level_item
         parent_item.removeRow(view_item.row())
-        self.view_items.pop(item_uuid)  # Delete reference
+        self.view_items.pop(item_id)  # Delete reference
 
 
 class HierarchicalFilterProxyModel(QSortFilterProxyModel):
@@ -418,7 +418,7 @@ class ProjectStructureSection(QWidget):
             return self.view_model.itemFromIndex(model_index)
         return None
 
-    def get_selected_item_uuid(self) -> str | None:
+    def get_selected_item_data(self) -> str | None:
         item = self.get_selected_item()
         if item:
             return item.data(Qt.ItemDataRole.UserRole)
@@ -443,7 +443,7 @@ class ProjectStructureSection(QWidget):
             item = self.repository.create_item_from_handler(item_name=dialog.item_name,
                                                             item_handler=ITEMS[dialog.item_type]["item_handler"],
                                                             parent=parent_item)
-            self.view_model.add_item(item_uuid=item.uuid)
+            self.view_model.add_item(item=item)
 
             self.expand_tree_view_item(selected_item)
 
@@ -455,8 +455,9 @@ class ProjectStructureSection(QWidget):
             self.add_button.hide()
 
     def edit_item(self, item):
-        item_uuid = item.data(Qt.ItemDataRole.UserRole)
-        self.repository.update_item(item_uuid=item_uuid, name=item.text())
+        item_id = item.data(Qt.ItemDataRole.UserRole)
+        # TODO: update item in sqlite repository
+        self.repository.update_item(item_id=item_id, name=item.text())
 
     def move_item(self, item):
         self.proxy_model.setSourceModel(None)
@@ -477,9 +478,10 @@ class ProjectStructureSection(QWidget):
                                          QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
                 selected_item = self.get_item_from_selected_index(indexes[0])
-                item_uuid = selected_item.data(Qt.ItemDataRole.UserRole)
-                self.repository.delete_item(item_uuid=item_uuid)
-                self.view_model.delete_item(item_uuid=item_uuid)
+                item_id = selected_item.data(Qt.ItemDataRole.UserRole)
+                item_type = selected_item.data(Qt.ItemDataRole.UserRole + 1)
+                self.repository.delete_item(item_handler=ITEMS[item_type]["item_handler"], item_id=item_id)
+                self.view_model.delete_item(item_type=item_type, item_id=item_id)
                 self.set_add_button_visibility()
 
     def export_selected_item(self, index):
@@ -502,3 +504,13 @@ class ProjectStructureSection(QWidget):
             with open(file_path, "w") as file:
                 json.dump(data, file, indent=4)
             QMessageBox.information(None, "Export Successful", f"Data exported to {file_path}")
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+
+    backend = BackendManager()
+    window = ProjectStructureSection(backend.repository)
+    window.show()
+
+    app.exec()
