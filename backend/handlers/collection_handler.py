@@ -1,6 +1,8 @@
 import time
 from datetime import timezone, datetime
 
+import tzlocal
+
 from backend.models import BaseResult, Collection, CollectionResult
 
 
@@ -18,7 +20,7 @@ class CollectionHandler:
             parent_id=parent_id,
             result="OK",
             elapsed_time=0,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(tzlocal.get_localzone()),
             error_message=""
         )
 
@@ -74,7 +76,7 @@ class CollectionHandler:
             collection_result.result = "OK"
 
         # Calculate elapsed time
-        collection_result.elapsed_time = (datetime.now(timezone.utc) - collection_result.timestamp).total_seconds()
+        collection_result.elapsed_time = (datetime.now(tzlocal.get_localzone()) - collection_result.timestamp).total_seconds()
 
         # Update repository
         self.repository.update_item_from_dataclass(item=collection_result)

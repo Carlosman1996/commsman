@@ -83,8 +83,9 @@ class BaseResult(QWidget):
 
         self.backend.signal_request_finished.connect(self.reload_data)
 
-    def reload_data(self, result):
-        self.update_view(result=result)
+    def reload_data(self, item_id, result):
+        if self.item.item_id == item_id:
+            self.update_view(result=result)
 
     @abstractmethod
     def update_view(self, load_data: bool = False, result: object = None):

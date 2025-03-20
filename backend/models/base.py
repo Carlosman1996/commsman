@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
+import tzlocal
 from sqlalchemy import Integer, String, ForeignKey, Column, Boolean, JSON, DateTime
 from sqlalchemy.orm import Mapped, MappedAsDataclass, DeclarativeBase
 from sqlalchemy.testing.schema import mapped_column
@@ -19,13 +20,13 @@ class BaseItem(Base):
     item_handler: Mapped[str] = mapped_column(String, init=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, init=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, onupdate=datetime.now(timezone.utc), init=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, onupdate=datetime.now(tzlocal.get_localzone()), init=False)
     modified_by: Mapped[str] = mapped_column(String, init=False)
 
     def __post_init__(self):
         self.item_handler = self.__class__.__name__
-        self.created_at = datetime.now(timezone.utc)
-        self.updated_at = datetime.now(timezone.utc)
+        self.created_at = datetime.now(tzlocal.get_localzone())
+        self.updated_at = datetime.now(tzlocal.get_localzone())
         self.modified_by = "Ordillan"
         self.parent = None
         self.children = []

@@ -2,9 +2,9 @@
 
 ## Priority
 
-TODO: real time updates in running collections: now, sql operations collide.
+TODO: increase SQLite performance: moving elements is a slow operation. UI updates must not reload items.
 
-TODO: increase SQLite performance: moving elements is a slow operation.
+TODO: create a base requests table to have all item ids aligned. It helps to remove item_handler + id for item identification.
 
 TODO: show history in requests
 
@@ -25,9 +25,6 @@ TODO: add foreign keys and relationships - cascade deletes: https://www.codearmo
 TODO: collections must have table view option and show history
 
 TODO: Protect SQLite by encrypting
-
-TODO: model must be inside backend layer. Also, backend must wrap all pyqt signals in an independent method, as a "connector"
-between back and front.
 
 TODO: raise exception if requests have children. It must be a check in post_init dataclass
 
@@ -73,7 +70,7 @@ TODO: allow to export results
 
 TODO: MQTT
 
-TODO: add_widget method of custmo qgridlayout must save by key, so accessing its elements can be easier and more clear than an index.
+TODO: add_widget method of custom qgridlayout must save by key, so accessing its elements can be easier and more clear than an index.
 
 TODO: repository layer with relationships, not joins.
 

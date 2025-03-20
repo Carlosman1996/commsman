@@ -2,6 +2,7 @@ import struct
 import time
 from abc import abstractmethod
 from datetime import timezone, datetime
+import tzlocal
 
 from pymodbus import ModbusException
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
@@ -89,8 +90,6 @@ class CustomModbusHandler(BaseHandler):
         self.initialize_response_dataclass(name=name, request_id=item_id, parent_result_id=parent_result_id)
 
         start_time = time.time()
-        request_timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
-        self.response.timestamp = request_timestamp
         self.response.result = "Failed"
         self.response.client_type = self.client_type
 
@@ -136,7 +135,7 @@ class CustomModbusHandler(BaseHandler):
             request_id=request_id,
             parent_id=parent_result_id,
             result="Pending",
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(tzlocal.get_localzone()),
             elapsed_time=0,
             error_message=""
         )

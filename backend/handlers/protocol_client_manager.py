@@ -1,6 +1,8 @@
 from dataclasses import asdict
 from datetime import timezone, datetime
 
+import tzlocal
+
 from backend.handlers.base_handler import BaseHandler
 from backend.handlers.custom_modbus_handler import CustomModbusTcpClient, CustomModbusRtuClient
 from backend.models import BaseRequest, ModbusResponse
@@ -55,7 +57,7 @@ class ProtocolClientManager:
                 parent_id=parent_id,
                 result="Failed",
                 elapsed_time=0,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(tzlocal.get_localzone()),
                 error_message=error_message
             )
         else:

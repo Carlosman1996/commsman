@@ -12,7 +12,7 @@ from backend.repository.sqlite_repository import SQLiteRepository
 
 class BackendManager(QThread):
 
-    signal_request_finished = pyqtSignal(object)
+    signal_request_finished = pyqtSignal(int, object)
     signal_finish = pyqtSignal()
 
     def __init__(self, repository: BaseRepository = None):
@@ -70,7 +70,7 @@ class BackendManager(QThread):
         # Update view:
         if not main_parent_result_item:
             main_parent_result_item = result
-        self.signal_request_finished.emit(main_parent_result_item)
+        self.signal_request_finished.emit(main_parent_result_item.request_id, main_parent_result_item)
 
         # Iterate over children in case of collections:
         if item.item_handler == "Collection":
@@ -83,7 +83,7 @@ class BackendManager(QThread):
         self.running = True
 
         selected_item = self.repository.get_selected_item()
-        self.signal_request_finished.emit(None)
+        self.signal_request_finished.emit(selected_item.item_id, None)
 
         # Get requests tree:
         requests_tree = self.repository.get_items_request_tree(selected_item)[0]
@@ -96,7 +96,7 @@ class BackendManager(QThread):
         self.protocol_client_manager.close_all_handlers()
 
         # Update view:
-        self.signal_request_finished.emit(result)
+        self.signal_request_finished.emit(selected_item.item_id, result)
         self.signal_finish.emit()
         self.running = False
 
