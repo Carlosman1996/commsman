@@ -54,7 +54,8 @@ class ModbusTcpConnectionGrid(BaseConnectionGrid):
                 "timeout": int(self.timeout_spinbox.text()),
                 "retries": int(self.retries_spinbox.text()),
             }
-            self.repository.update_item(item_handler=self.item.client.item_handler, item_id=self.item.client.item_id, **client)
+            self.repository.update_item_from_handler(item_handler=self.item.client.item_handler,
+                                                     item_id=self.item.client.item_id, **client)
         else:
             self.repository.create_client_item(
                 item_name=self.item.name,
@@ -119,7 +120,8 @@ class ModbusRtuConnectionGrid(BaseConnectionGrid):
                 "timeout": int(self.timeout_spinbox.text()),
                 "retries": int(self.retries_spinbox.text()),
             }
-            self.repository.update_item(item_handler=self.item.client.item_handler, item_id=self.item.client.item_id, **client)
+            self.repository.update_item_from_handler(item_handler=self.item.client.item_handler,
+                                                     item_id=self.item.client.item_id, **client)
         else:
             self.repository.create_client_item(
                 item_name=self.item.name,
@@ -180,7 +182,8 @@ class ConnectionTabWidget(BaseRequest):
         if self.item.client_type == new_connection_type:
             self.current_connection_grid.update_item()
         else:
-            self.repository.update_item(item_handler=self.item.item_handler, item_id=self.item.item_id, client_id=None, client_type=new_connection_type)
+            self.repository.update_item_from_handler(item_handler=self.item.item_handler, item_id=self.item.item_id,
+                                                     client_id=None, client_type=new_connection_type)
 
     def update_view(self, load_data: bool = False):
         """Switch between GridLayouts when QComboBox changes value."""

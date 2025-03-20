@@ -219,13 +219,13 @@ class CustomRtuFramer(FramerRTU):
 
 
 class CustomModbusRtuClient(CustomModbusHandler):
-    def __init__(self, port: str, baudrate: int, parity: str, stopbits: int, bytesize: int, timeout: int, retries: int, client_type: str, **kwargs):
+    def __init__(self, com_port: str, baudrate: int, parity: str, stopbits: int, bytesize: int, timeout: int, retries: int, client_type: str, **kwargs):
         super().__init__(client_type)
         parity = "N" if parity == "None" else parity
         parity = "E" if parity == "Even" else parity
         parity = "O" if parity == "Odd" else parity
 
-        self.client = ModbusSerialClient(port=port,
+        self.client = ModbusSerialClient(port=com_port,
                                          baudrate=baudrate,
                                          parity=parity,
                                          stopbits=stopbits,

@@ -1,9 +1,8 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from email.policy import default
 
 from sqlalchemy import Integer, String, ForeignKey, Column, Boolean, JSON, DateTime
-from sqlalchemy.orm import Mapped, MappedAsDataclass, DeclarativeBase, relationship, declared_attr
+from sqlalchemy.orm import Mapped, MappedAsDataclass, DeclarativeBase
 from sqlalchemy.testing.schema import mapped_column
 
 

@@ -47,7 +47,8 @@ class RunOptionsTabWidget(BaseRequest):
                 "polling_interval": int(self.polling_interval_label.text()),
                 "delayed_start": int(self.delayed_start.text()),
             }
-            self.repository.update_item(item_handler=self.item.run_options.item_handler, item_id=self.item.run_options.item_id, **run_options)
+            self.repository.update_item_from_handler(item_handler=self.item.run_options.item_handler,
+                                                     item_id=self.item.run_options.item_id, **run_options)
         else:
             self.repository.create_run_options_item(
                 item_name=self.item.name,

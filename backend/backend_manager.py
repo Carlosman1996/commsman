@@ -1,8 +1,8 @@
+import copy
 import time
 from dataclasses import asdict
 
-from PyQt6.QtCore import QThread, pyqtSignal
-from sqlalchemy.orm.collections import collection
+from PyQt6.QtCore import QThread, pyqtSignal, QTimer
 
 from backend.handlers.collection_handler import CollectionHandler
 from backend.repository import *
@@ -12,7 +12,7 @@ from backend.repository.sqlite_repository import SQLiteRepository
 
 class BackendManager(QThread):
 
-    signal_request_finished = pyqtSignal()
+    signal_request_finished = pyqtSignal(object)
     signal_finish = pyqtSignal()
 
     def __init__(self, repository: BaseRepository = None):
@@ -27,20 +27,20 @@ class BackendManager(QThread):
 
         self.signal_finish.connect(self.stop)
 
-    def run_requests(self, item, parent_result_item=None):
+    def run_requests(self, item, parent_result_item=None, main_parent_result_item=None):
         # Stop signal:
         if not self.running:
             return
 
         if item.item_handler == "Collection":
-            collection_result = self.collection_handler.get_collection_result(item=item,
-                                                                              parent_id=getattr(parent_result_item, "item_id", None))
+            result = self.collection_handler.get_collection_result(item=item,
+                                                                   parent_id=getattr(parent_result_item, "item_id", None))
             # Update item on repository:
-            self.repository.create_item_from_dataclass(collection_result)
+            self.repository.add_item_from_dataclass(result)
 
-            for item_child in item.children:
-                item_child = self.repository.get_item_request(**item_child)
-                self.run_requests(item_child, collection_result)
+            # Update collections tree:
+            if parent_result_item:
+                self.collection_handler.add_collection(parent_result_item, result)
 
         else:
             # Get client:
@@ -49,41 +49,54 @@ class BackendManager(QThread):
             # Error
             if isinstance(protocol_client, str):
                 error_message = f"Error while doing request: {protocol_client}"
-                request_result = self.protocol_client_manager.get_request_failed_result(item=item,
-                                                                                        parent_id=getattr(parent_result_item, "item_id", None),
-                                                                                        error_message=error_message)
+                result = self.protocol_client_manager.get_request_failed_result(item=item,
+                                                                                parent_id=getattr(parent_result_item, "item_id", None),
+                                                                                error_message=error_message)
             # Do request:
             else:
                 protocol_client.connect()
-                request_result = protocol_client.execute_request(**asdict(item), parent_result_id=getattr(parent_result_item, "item_id", None))
+                result = protocol_client.execute_request(**asdict(item), parent_result_id=getattr(parent_result_item, "item_id", None))
 
             # Update item on repository:
-            self.repository.create_item_from_dataclass(item=request_result)
+            self.repository.add_item_from_dataclass(item=result)
 
-            # Update collection:
+            # Update collections tree:
             if parent_result_item:
-                self.collection_handler.update_collection_result(collection_result=parent_result_item)
+                self.collection_handler.add_request(parent_result_item, result)
 
             # Wait polling interval:
             time.sleep(item.run_options.polling_interval)
 
         # Update view:
-        # TODO: self.signal_request_finished.emit()
+        if not main_parent_result_item:
+            main_parent_result_item = result
+        self.signal_request_finished.emit(main_parent_result_item)
+
+        # Iterate over children in case of collections:
+        if item.item_handler == "Collection":
+            for item_child in item.children:
+                self.run_requests(item_child, result, main_parent_result_item)
+
+        return result
 
     def run(self):
         self.running = True
 
         selected_item = self.repository.get_selected_item()
+        self.signal_request_finished.emit(None)
+
+        # Get requests tree:
+        requests_tree = self.repository.get_items_request_tree(selected_item)[0]
 
         # Delayed start:
         time.sleep(selected_item.run_options.delayed_start)
 
-        self.run_requests(selected_item)
+        result = self.run_requests(requests_tree)
 
         self.protocol_client_manager.close_all_handlers()
 
         # Update view:
-        self.signal_request_finished.emit()
+        self.signal_request_finished.emit(result)
         self.signal_finish.emit()
         self.running = False
 

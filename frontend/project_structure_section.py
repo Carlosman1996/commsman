@@ -70,35 +70,29 @@ class CustomStandardItemModel(QStandardItemModel):
         self.clear()
         self.setHorizontalHeaderLabels(["Project"])
 
-        model_items = self.repository.get_items_request()
+        db_items = self.repository.get_items_request_tree()
 
-        # Step 1: Organize items by parent_id
-        items_by_parent = {}
-        for item in model_items:
-            parent_id = item.parent_id
-            if parent_id not in items_by_parent:
-                items_by_parent[parent_id] = []
-            items_by_parent[parent_id].append(item)
+        # Step 1: Create QStandardItem objects for each item
+        def get_items(db_items):
+            for db_item in db_items:
+                item = self.create_view_item(db_item)
+                self.view_items[f"{db_item.item_handler}_{db_item.item_id}"] = item
+                get_items(db_item.children)
+        # Get items::
+        get_items(db_items)
 
-        # Step 2: Sort items at each level based on 'position'
-        for parent_id in items_by_parent:
-            items_by_parent[parent_id].sort(key=lambda x: x.position or 0)  # Default to 0 if position is None
-
-        # Step 3: Create QStandardItem objects for each item
+        # Step 2: Attach items to parents, maintaining order
         root_level_item = self.invisibleRootItem()
-        for item in model_items:
-            self.create_view_item(item)
-
-        # Step 4: Attach items to parents, maintaining order
-        for parent_id, child_items in items_by_parent.items():
-            if parent_id:  # Attach to a parent
-                parent_view_item = self.view_items.get(f"Collection_{parent_id}")
-                if parent_view_item:
-                    for child in child_items:
-                        parent_view_item.appendRow(self.view_items[f"{child.item_handler}_{child.item_id}"])
-            else:  # Root-level items
-                for child in child_items:
-                    root_level_item.appendRow(self.view_items[f"{child.item_handler}_{child.item_id}"])
+        def set_model(db_items):
+            for db_item in db_items:
+                if db_item.parent_id:  # Attach to a parent
+                    parent_view_item = self.view_items.get(f"Collection_{db_item.parent_id}")
+                    parent_view_item.appendRow(self.view_items[f"{db_item.item_handler}_{db_item.item_id}"])
+                else:  # Root-level items
+                    root_level_item.appendRow(self.view_items[f"{db_item.item_handler}_{db_item.item_id}"])
+                set_model(db_item.children)
+        # Set model:
+        set_model(db_items)
 
     def recalculate_positions(self):
         """Recalculates and updates the 'position' of each item based on its order in the QStandardItemModel."""
@@ -110,9 +104,8 @@ class CustomStandardItemModel(QStandardItemModel):
                 item_data = child_item.data(Qt.ItemDataRole.UserRole)  # Retrieve the unique identifier
 
                 # Update position based on index within the parent
-                self.repository.update_item(item_handler=item_data["item_handler"],
-                                            item_id=item_data["item_id"],
-                                            position=index)
+                self.repository.update_item_from_handler(item_handler=item_data["item_handler"],
+                                                         item_id=item_data["item_id"], position=index)
 
                 # Recursively update children
                 update_positions_recursive(child_item)
@@ -176,10 +169,12 @@ class CustomStandardItemModel(QStandardItemModel):
             return
 
         if destination_item != self.invisibleRootItem() and (destination_data.get("item_handler") == "Collection"):
-            if destination_row > destination_item.rowCount():
+            if destination_parent != source_parent:
+                destination_item.insertRow(0, source_row_data)
+            elif destination_row > destination_item.rowCount():
                 destination_item.insertRow(destination_item.rowCount(), source_row_data)
             else:
-                destination_item.insertRow(destination_row - 1, source_row_data)
+                destination_item.insertRow(destination_row, source_row_data)
             parent_data = destination_data
         elif destination_item == self.invisibleRootItem() and (item_data["item_handler"] == "Collection"):
             self.invisibleRootItem().appendRow(source_item)
@@ -192,7 +187,8 @@ class CustomStandardItemModel(QStandardItemModel):
         self.layoutChanged.emit()
 
         # Update backend repository
-        self.repository.update_item(item_handler=item_data["item_handler"], item_id=item_data["item_id"], parent_id=parent_data.get("item_id"))
+        self.repository.update_item_from_handler(item_handler=item_data["item_handler"], item_id=item_data["item_id"],
+                                                 parent_id=parent_data.get("item_id"))
 
         if destination_item != self.invisibleRootItem():
             self.signal_move_item.emit(destination_item)
@@ -483,7 +479,7 @@ class ProjectStructureSection(QWidget):
             if selected_item and selected_item != self.view_model.invisibleRootItem():
                 parent_data = selected_item.data(Qt.ItemDataRole.UserRole)
             else:
-                parent_data = None
+                parent_data = {}
 
             item = self.repository.create_item_from_handler(item_name=dialog.item_name,
                                                             item_handler=dialog.item_handler,
@@ -502,7 +498,8 @@ class ProjectStructureSection(QWidget):
 
     def edit_item(self, item):
         item_data = item.data(Qt.ItemDataRole.UserRole)
-        self.repository.update_item(item_handler=item_data["item_handler"], item_id=item_data["item_id"], name=item.text())
+        self.repository.update_item_from_handler(item_handler=item_data["item_handler"], item_id=item_data["item_id"],
+                                                 name=item.text())
 
     def move_item(self, item):
         self.proxy_model.setSourceModel(None)

@@ -2,8 +2,6 @@
 
 ## Priority
 
-TODO: collection results are not showing all structure.
-
 TODO: real time updates in running collections: now, sql operations collide.
 
 TODO: increase SQLite performance: moving elements is a slow operation.

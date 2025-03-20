@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base, Session
 
 from backend.models import *
 from backend.repository.base_repository import BaseRepository
@@ -34,15 +34,34 @@ class SQLiteRepository(BaseRepository):
         """Guarda los cambios en la base de datos."""
         self.session.commit()
 
+    def delete_item(self, item_handler: str, item_id: int):
+        item = self.get_item(item_handler, item_id, session=self.session)
+        self.session.delete(item)
+        self.save()
+
+    def update_item_from_handler(self, item_handler: str, item_id: int, **kwargs):
+        item = self.get_item(item_handler, item_id, session=self.session)
+        for key, value in kwargs.items():
+            setattr(item, key, value)
+
+        self.db_add(item)
+        self.save()
+
+    def update_item_from_dataclass(self, item: BaseItem, **kwargs):
+        for key, value in kwargs.items():
+            setattr(item, key, value)
+
+        self.db_add(item)
+        self.save()
+
+    def add_item_from_dataclass(self, item: BaseItem):
+        """Crea un nuevo ítem y lo guarda en la base de datos."""
+        self.db_add(item)
+        self.save()
+
     def create_item_from_handler(self, item_name: str, item_handler: str, parent_id: int = None):
         """Crea un nuevo ítem y lo guarda en la base de datos."""
         item = DATACLASS_REGISTRY.get(item_handler)(name=item_name, parent_id=parent_id)
-        self.db_add(item)
-        self.save()
-        return item
-
-    def create_item_from_dataclass(self, item: BaseItem):
-        """Crea un nuevo ítem y lo guarda en la base de datos."""
         self.db_add(item)
         self.save()
         return item
@@ -72,29 +91,18 @@ class SQLiteRepository(BaseRepository):
         self.save()
         return item
 
-    def get_item(self, item_handler: str, item_id: int):
+    def get_item(self, item_handler: str, item_id: int, session: Session = None):
+        if not session:
+            session = self.session
+
         item_class_handler = self.get_class_handler(item_handler)
 
         item = (
-            self.session.query(item_class_handler)
+            session.query(item_class_handler)
                 .filter(item_class_handler.item_id == item_id)
                 .first()
         )
         return item
-
-    def delete_item(self, item_handler: str, item_id: int):
-        item = self.get_item(item_handler, item_id)
-        self.session.delete(item)
-        self.save()
-
-    def update_item(self, item_handler: str, item_id: int, **kwargs):
-        item = self.get_item(item_handler, item_id)
-
-        for key, value in kwargs.items():
-            setattr(item, key, value)
-
-        self.db_add(item)
-        self.save()
 
     def get_item_client(self, item: BaseRequest) -> Client:
         base_client = (
@@ -122,7 +130,13 @@ class SQLiteRepository(BaseRepository):
             )
         return run_options
 
-    def get_item_last_result(self, item: BaseRequest) -> BaseResult:
+    def get_item_last_result_tree(self, item: BaseRequest) -> BaseResult:
+        def get_result_with_children(item_handler, item_id):
+            result_item = self.get_item_result(item_handler=item_handler, item_id=item_id)
+            for index, child_data in enumerate(result_item.children):
+                result_item.children[index] = get_result_with_children(**child_data)
+            return result_item
+
         item_class_handler = self.get_class_handler(item.item_response_handler)
         last_result = (
             self.session.query(item_class_handler)
@@ -132,20 +146,35 @@ class SQLiteRepository(BaseRepository):
             )
 
         if last_result:
-            last_result = self.get_item_result(item_handler=last_result.item_handler, item_id=last_result.item_id)
+            last_result = get_result_with_children(last_result.item_handler, last_result.item_id)
         return last_result
 
-    def get_items_request(self):
-        requests = []
-        requests += (
-            self.session.query(Collection)
+    def get_items_request_tree(self, item: BaseItem = None) -> list[Collection]:
+        def get_item_with_children(item_handler, item_id):
+            _item = self.get_item_request(item_handler=item_handler, item_id=item_id)
+            # Replace item dict by dataclass:
+            for _index, _child_data in enumerate(_item.children):
+                _item.children[_index] = get_item_with_children(**_child_data)
+            # Sort items at each level based on 'position':
+            _item.children.sort(key=lambda x: x.position or 0)
+            return _item
+
+        if item is None:
+            items = (
+                self.session.query(Collection)
+                .filter(Collection.parent_id == None)
                 .all()
-        )
-        requests += (
-            self.session.query(ModbusRequest)
-                .all()
-        )
-        return requests
+            )
+        else:
+            items = [item]
+
+        if items:
+            for index, item in enumerate(items):
+                items[index] = get_item_with_children(item.item_handler, item.item_id)
+            # Sort items at each level based on 'position':
+            items.sort(key=lambda x: x.position or 0)
+
+        return items
 
     def get_item_request(self, item_handler: str, item_id: int):
         request = self.get_item(item_handler, item_id)
@@ -155,7 +184,7 @@ class SQLiteRepository(BaseRepository):
         request.client = item_client
         item_run_options = self.get_item_run_options(request)
         request.run_options = item_run_options
-        item_last_result = self.get_item_last_result(request)
+        item_last_result = self.get_item_last_result_tree(request)
         request.last_result = item_last_result
 
         # Solve parent:
@@ -227,6 +256,5 @@ class SQLiteRepository(BaseRepository):
 if __name__ == "__main__":
     repository_obj = SQLiteRepository()
 
-    result = repository_obj.get_item_result(item_id=1, item_handler="CollectionResult")
-
+    result = repository_obj.get_items_request_tree()
     print(result)

@@ -92,9 +92,7 @@ class CollectionResultTreeView(QTreeView):
 
         # Iterate through children (both collections and requests)
         for child in collection_result.children:
-            child = self.repository.get_item_result(**child)
-
-            if child.item_handler == "Collection":
+            if child.item_handler == "CollectionResult":
                 # Handle sub-collection
                 self.populate_model(child, folder_item)
             else:
@@ -155,8 +153,9 @@ class CollectionResultWidget(BaseResult):
         # Set initial state and connect signals:
         self.update_view(load_data=True)
 
-    def update_view(self, load_data=False):
-        result = self.item.last_result
+    def update_view(self, load_data=False, result=None):
+        if load_data:
+            result = self.item.last_result
         if result is None:
             return
 

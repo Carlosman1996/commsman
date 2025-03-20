@@ -22,6 +22,17 @@ class CollectionHandler:
             error_message=""
         )
 
+    def add_request(self, collection_result: CollectionResult, request: BaseResult):
+        """Add a request to a collection and update its status."""
+        collection_result.children.append(request)  # Add to the children list
+        self.update_collection_result(collection_result)
+
+    def add_collection(self, parent: CollectionResult, collection_result: CollectionResult):
+        """Add a collection and update its status."""
+        collection_result.parent = parent
+        parent.children.append(collection_result)  # Add to the children list
+        self.update_collection_result(parent)
+
     def count_results(self, collection_result: CollectionResult):
         """Count OK, Failed, and Pending requests in a collection and its collections."""
         total_ok = 0
@@ -34,21 +45,19 @@ class CollectionHandler:
             children = []
 
         for item_child in children:
-            child = self.repository.get_item_result(**item_child)
-
-            if child.item_handler == "CollectionResult":
+            if item_child.item_handler == "CollectionResult":
                 # Recursively count results for sub-collections
-                ok, failed, pending = self.count_results(child)
+                ok, failed, pending = self.count_results(item_child)
                 total_ok += ok
                 total_failed += failed
                 total_pending += pending
             else:
                 # Count results for requests
-                if child.result == "OK":
+                if item_child.result == "OK":
                     total_ok += 1
-                elif child.result == "Failed":
+                elif item_child.result == "Failed":
                     total_failed += 1
-                elif child.result == "Pending":
+                elif item_child.result == "Pending":
                     total_pending += 1
 
         return total_ok, total_failed, total_pending
@@ -65,12 +74,11 @@ class CollectionHandler:
             collection_result.result = "OK"
 
         # Calculate elapsed time
-        collection_result.elapsed_time = (datetime.now(timezone.utc) - datetime.fromisoformat(collection_result.timestamp)).total_seconds()
+        collection_result.elapsed_time = (datetime.now(timezone.utc) - collection_result.timestamp).total_seconds()
 
         # Update repository
-        self.repository.create_item_from_dataclass(item=collection_result)
+        self.repository.update_item_from_dataclass(item=collection_result)
 
         # Propagate status update to parent
-        if collection_result.parent_id:
-            collection_parent = self.repository.get_item_result(item_handler="CollectionResult", item_id=collection_result.parent_id)
-            self.update_collection_result(collection_parent)
+        if collection_result.parent:
+            self.update_collection_result(collection_result.parent)

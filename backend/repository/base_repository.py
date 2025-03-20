@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from dataclasses import fields
 
 from backend.models import DATACLASS_REGISTRY, BaseItem, BaseRequest
 
@@ -8,7 +7,7 @@ class BaseRepository(ABC):
     """Abstract repository for storing and retrieving items."""
 
     def __init__(self):
-        self.selected_item: dict = {}
+        self.selected_item: BaseRequest | None = None
 
     @staticmethod
     def get_class_handler(item_handler: str):
@@ -39,7 +38,7 @@ class BaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create_item_from_dataclass(self, item: BaseItem):
+    def add_item_from_dataclass(self, item: BaseItem):
         raise NotImplementedError
 
     @abstractmethod
@@ -63,7 +62,11 @@ class BaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def update_item(self, item_handler: str, item_id: int, **kwargs):
+    def update_item_from_handler(self, item_handler: str, item_id: int, **kwargs):
+        raise NotImplementedError
+
+    @abstractmethod
+    def update_item_from_dataclass(self, item: BaseItem, **kwargs):
         raise NotImplementedError
 
     @abstractmethod

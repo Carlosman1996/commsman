@@ -58,11 +58,11 @@ class BaseRequest(QWidget):
 
     def update_sequence(self):
         self.update_item()
-        self.reload_data()
+        self.reload_data()   # TODO: remove to improve performance
         self.update_view()
 
     def reload_data(self):
-        self.item = self.repository.get_selected_item()
+        self.item = self.repository.get_selected_item()   # TODO: remove to improve performance
 
     @abstractmethod
     def update_item(self):
@@ -83,12 +83,11 @@ class BaseResult(QWidget):
 
         self.backend.signal_request_finished.connect(self.reload_data)
 
-    def reload_data(self):
-        self.item = self.repository.get_selected_item()
-        self.update_view()
+    def reload_data(self, result):
+        self.update_view(result=result)
 
     @abstractmethod
-    def update_view(self):
+    def update_view(self, load_data: bool = False, result: object = None):
         raise NotImplementedError
 
 
@@ -158,7 +157,7 @@ class BaseDetail(BaseResult):
         self.setLayout(main_layout)
 
         # Set initial state and connect signals:
-        self.update_view()
+        self.update_view(load_data=True)
 
         self.execute_button.clicked.connect(self.execute)
 
@@ -176,14 +175,15 @@ class BaseDetail(BaseResult):
     def on_finished(self):
         self.execute_button.set_run()
 
-    def update_view(self):
-        result = self.item.last_result
+    def update_view(self, load_data=False, result=None):
+        if load_data:
+            result = self.item.last_result
         if result is None:
             self.result_splitter_section.setVisible(False)
             return
         else:
             self.result_splitter_section.setVisible(True)
 
-        self.frame_result.setText(get_model_value(self.item.last_result, "result"))
-        self.frame_elapsed_time.setText(convert_time(get_model_value(self.item.last_result, "elapsed_time", 0)))
-        self.frame_timestamp.setText(get_model_value(self.item.last_result, "timestamp"))
+        self.frame_result.setText(get_model_value(result, "result"))
+        self.frame_elapsed_time.setText(convert_time(get_model_value(result, "elapsed_time", 0)))
+        self.frame_timestamp.setText(get_model_value(result, "timestamp"))

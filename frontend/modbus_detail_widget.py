@@ -121,7 +121,8 @@ class ModbusRequestTabWidget(BaseRequest):
             "data_type": self.data_type_combo.currentText(),
             "values": self.values_table.get_values(),
         }
-        self.repository.update_item(item_handler=self.item.item_handler, item_id=self.item.item_id, **update_data)
+        self.repository.update_item_from_handler(item_handler=self.item.item_handler, item_id=self.item.item_id,
+                                                 **update_data)
 
     def update_view(self):
         selected_function = self.function_combo.currentText()
@@ -279,7 +280,7 @@ class ModbusResponseWidget(BaseResult):
         self.tabs.addTab(raw_data_tab, "Raw Data")
 
         # Set initial state and connect signals:
-        self.update_view()
+        self.update_view(load_data=True)
 
         self.data_type_combo.currentTextChanged.connect(self.update_table)
 
@@ -309,8 +310,9 @@ class ModbusResponseWidget(BaseResult):
             "byte_count": get_value("byte_count"),
         }
 
-    def update_view(self):
-        result = self.item.last_result
+    def update_view(self, load_data=False, result=None):
+        if load_data:
+            result = self.item.last_result
         if result is None or result.result == "Pending":
             return
 
