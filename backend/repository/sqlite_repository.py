@@ -26,6 +26,10 @@ class SQLiteRepository(BaseRepository):
     def load(self):
         pass
 
+    def db_add(self, item):
+        self.session.add(item)
+        self.session.flush()
+
     def save(self):
         """Guarda los cambios en la base de datos."""
         self.session.commit()
@@ -33,13 +37,13 @@ class SQLiteRepository(BaseRepository):
     def create_item_from_handler(self, item_name: str, item_handler: str, parent_id: int = None):
         """Crea un nuevo ítem y lo guarda en la base de datos."""
         item = DATACLASS_REGISTRY.get(item_handler)(name=item_name, parent_id=parent_id)
-        self.session.add(item)
+        self.db_add(item)
         self.save()
         return item
 
     def create_item_from_dataclass(self, item: BaseItem):
         """Crea un nuevo ítem y lo guarda en la base de datos."""
-        self.session.add(item)
+        self.db_add(item)
         self.save()
         return item
 
@@ -48,13 +52,11 @@ class SQLiteRepository(BaseRepository):
         item = DATACLASS_REGISTRY.get(item_handler)(name=item_name)
         base_client_item = DATACLASS_REGISTRY["Client"](name=item_name, item_type=item.item_type, client_type_handler=item.item_handler)
 
-        self.session.add(base_client_item)
-        self.save()
-
+        self.db_add(base_client_item)
         item.client_id = base_client_item.item_id
-        self.session.add(item)
+        self.db_add(item)
         parent.client_id = base_client_item.item_id
-        self.session.add(item)
+        self.db_add(item)
 
         self.save()
         return item
@@ -62,9 +64,10 @@ class SQLiteRepository(BaseRepository):
     def create_run_options_item(self, item_name: str, item_handler: str, parent: BaseItem):
         """Crea un nuevo ítem y lo guarda en la base de datos."""
         item = DATACLASS_REGISTRY.get(item_handler)(name=item_name)
-        self.session.add(item)
+        self.db_add(item)
+
         parent.run_options_id = item.item_id
-        self.session.add(item)
+        self.db_add(item)
 
         self.save()
         return item
@@ -90,7 +93,7 @@ class SQLiteRepository(BaseRepository):
         for key, value in kwargs.items():
             setattr(item, key, value)
 
-        self.session.add(item)
+        self.db_add(item)
         self.save()
 
     def get_item_client(self, item: BaseRequest) -> Client:

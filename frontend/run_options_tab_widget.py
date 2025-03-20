@@ -49,7 +49,7 @@ class RunOptionsTabWidget(BaseRequest):
             }
             self.repository.update_item(item_handler=self.item.run_options.item_handler, item_id=self.item.run_options.item_id, **run_options)
         else:
-            self.repository.create_client_item(
+            self.repository.create_run_options_item(
                 item_name=self.item.name,
                 item_handler="RunOptions",
                 parent=self.item,

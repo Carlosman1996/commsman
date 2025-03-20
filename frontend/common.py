@@ -8,6 +8,8 @@ ITEMS = {
         "item_handler": "Collection"
     },
     "Modbus": {
+        "icon": f"{FRONTEND_PATH}/icons/modbus.png",
+        "icon_simple": f"{FRONTEND_PATH}/icons/modbus_simple.png",
         "item_handler": "ModbusRequest"
     },
     "ModbusRequest": {

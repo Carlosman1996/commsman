@@ -96,7 +96,6 @@ class ItemCreationDialog(QDialog):
     def select_item(self, item_type):
         """Set the selected item type and update styles."""
         self.item_type = item_type
-        self.item_handler = ITEMS[item_type]["item_handler"]
         for item, button in self.buttons.items():
             if item == item_type:
                 button.setStyleSheet("background-color: lightblue;")
@@ -115,6 +114,7 @@ class ItemCreationDialog(QDialog):
             self.show_error("Error", "You must select an item type.")
             return
         self.item_name = name
+        self.item_handler = ITEMS[self.item_type]["item_handler"]
         super().accept()
 
     def show_error(self, title, message):

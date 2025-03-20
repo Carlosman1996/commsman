@@ -2,10 +2,6 @@
 
 ## Priority
 
-TODO: strange errors while moving requests inside a parent. Also, some requests are changing its parent.
-
-TODO: test add items
-
 TODO: collection results are not showing all structure.
 
 TODO: real time updates in running collections: now, sql operations collide.

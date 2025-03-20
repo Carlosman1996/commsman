@@ -134,13 +134,13 @@ class CustomStandardItemModel(QStandardItemModel):
             destination_item = self.itemFromIndex(destination_index)
             destination_parent = destination_item.parent() or self.invisibleRootItem()
             destination_row = destination_index.row()
-            parent_data = destination_item.data(Qt.ItemDataRole.UserRole)
+            destination_data = destination_item.data(Qt.ItemDataRole.UserRole)
         else:
             # Dropping to the root
             destination_item = self.invisibleRootItem()
             destination_parent = self.invisibleRootItem()
             destination_row = self.rowCount()
-            parent_data = None
+            destination_data = None
 
         # Restriction 1: No collection items cannot be moved to the root
         if item_data["item_handler"] != "Collection" and destination_item == self.invisibleRootItem():
@@ -175,15 +175,19 @@ class CustomStandardItemModel(QStandardItemModel):
             self.layoutChanged.emit()
             return
 
-        if destination_item != self.invisibleRootItem() and (parent_data.get("item_handler") == "Collection"):
+        if destination_item != self.invisibleRootItem() and (destination_data.get("item_handler") == "Collection"):
             if destination_row > destination_item.rowCount():
                 destination_item.insertRow(destination_item.rowCount(), source_row_data)
             else:
                 destination_item.insertRow(destination_row - 1, source_row_data)
+            parent_data = destination_data
         elif destination_item == self.invisibleRootItem() and (item_data["item_handler"] == "Collection"):
             self.invisibleRootItem().appendRow(source_item)
+            parent_data = {}
         else:
             destination_parent.insertRow(destination_row, source_row_data)
+            parent_item = destination_item.parent()
+            parent_data = parent_item.data(Qt.ItemDataRole.UserRole)
 
         self.layoutChanged.emit()
 
