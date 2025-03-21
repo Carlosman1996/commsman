@@ -45,7 +45,6 @@ def insert_into_database(item):
     if item.get('item_handler') in ["ModbusTcpClient"]:
         client = Client(
             name=item['name'],
-            item_type=item['item_type'],
             client_type_handler=item['item_handler']
         )
         session.add(client)
@@ -66,7 +65,6 @@ def insert_into_database(item):
     if item.get('item_handler') in ["ModbusRtuClient"]:
         client = Client(
             name=item['name'],
-            item_type=item['item_type'],
             client_type_handler=item['item_handler']
         )
         session.add(client)
@@ -102,7 +100,15 @@ def insert_into_database(item):
 
     # Migrate Collections
     if item.get('item_handler') in ["Collection"]:
+        request = Request(
+            name=item['name'],
+            request_type_handler=item['item_handler']
+        )
+        session.add(request)
+        session.commit()
+
         item_dataclass = Collection(
+            item_id=request.item_id,
             name=item['name'],
             item_type=item['item_type'],
             parent_id=dataclasses_inserted[item.get('parent')].item_id if item.get('parent') else None,
@@ -116,7 +122,15 @@ def insert_into_database(item):
 
     # Migrate Modbus Requests
     if item.get('item_handler') in ["ModbusRequest"]:
+        request = Request(
+            name=item['name'],
+            request_type_handler=item['item_handler']
+        )
+        session.add(request)
+        session.commit()
+
         item_dataclass = ModbusRequest(
+            item_id=request.item_id,
             name=item['name'],
             item_type=item['item_type'],
             parent_id=dataclasses_inserted[item.get('parent')].item_id if item.get('parent') else None,

@@ -20,7 +20,7 @@ class ProtocolClientManager:
             if item.client_type == "No connection":
                 return "Current request does not have client"
             elif item.client_type == "Inherit from parent":
-                parent = self.repository.get_item_request(**item.parent)
+                parent = self.repository.get_item_request(item.parent_id)
                 return find_item_client(parent, base_item)
             elif item.client:
                 if item.client.item_type == base_item.item_type:

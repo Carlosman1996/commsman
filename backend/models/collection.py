@@ -7,6 +7,8 @@ class Collection(BaseRequest):
 
     item_response_handler: str = "CollectionResult"
 
+    item_id: Mapped[int] = mapped_column(Integer, ForeignKey("request.item_id", ondelete="CASCADE"), primary_key=True)
+
     item_type: Mapped[str] = mapped_column(String, default="Collection")
 
 

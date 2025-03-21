@@ -53,7 +53,8 @@ class ModbusTcpConnectionGrid(BaseConnectionGrid):
             }
             self.item.client = self.repository.update_item_from_handler(
                 item_handler=self.item.client.item_handler,
-                item_id=self.item.client.item_id, **client
+                item_id=self.item.client.item_id,
+                **client
             )
         else:
             self.item.client = self.repository.create_client_item(

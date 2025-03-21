@@ -71,8 +71,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
     def set_detail_section(self):
-        item_data = self.project_structure_section.get_selected_item_data()
-        self.repository.set_selected_item(item_data)
+        item_id = self.project_structure_section.get_selected_item_data()
+        self.repository.set_selected_item(item_id)
         item = self.repository.get_selected_item()
 
         if item is not None:

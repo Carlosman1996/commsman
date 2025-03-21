@@ -61,7 +61,7 @@ class CustomStandardItemModel(QStandardItemModel):
             "item_handler": item.item_handler,
         }
         view_item.setData(item_data, role=Qt.ItemDataRole.UserRole)
-        self.view_items[f"{item.item_handler}_{item.item_id}"] = view_item  # Save reference
+        self.view_items[item.item_id] = view_item  # Save reference
         return view_item
 
     def load_model(self):
@@ -76,7 +76,7 @@ class CustomStandardItemModel(QStandardItemModel):
         def get_items(db_items):
             for db_item in db_items:
                 item = self.create_view_item(db_item)
-                self.view_items[f"{db_item.item_handler}_{db_item.item_id}"] = item
+                self.view_items[db_item.item_id] = item
                 get_items(db_item.children)
         # Get items::
         get_items(db_items)
@@ -86,10 +86,10 @@ class CustomStandardItemModel(QStandardItemModel):
         def set_model(db_items):
             for db_item in db_items:
                 if db_item.parent_id:  # Attach to a parent
-                    parent_view_item = self.view_items.get(f"Collection_{db_item.parent_id}")
-                    parent_view_item.appendRow(self.view_items[f"{db_item.item_handler}_{db_item.item_id}"])
+                    parent_view_item = self.view_items.get(db_item.parent_id)
+                    parent_view_item.appendRow(self.view_items[db_item.item_id])
                 else:  # Root-level items
-                    root_level_item.appendRow(self.view_items[f"{db_item.item_handler}_{db_item.item_id}"])
+                    root_level_item.appendRow(self.view_items[db_item.item_id])
                 set_model(db_item.children)
         # Set model:
         set_model(db_items)
@@ -105,7 +105,8 @@ class CustomStandardItemModel(QStandardItemModel):
 
                 # Update position based on index within the parent
                 self.repository.update_item_from_handler(item_handler=item_data["item_handler"],
-                                                         item_id=item_data["item_id"], position=index)
+                                                         item_id=item_data["item_id"],
+                                                         position=index)
 
                 # Recursively update children
                 update_positions_recursive(child_item)
@@ -187,7 +188,8 @@ class CustomStandardItemModel(QStandardItemModel):
         self.layoutChanged.emit()
 
         # Update backend repository
-        self.repository.update_item_from_handler(item_handler=item_data["item_handler"], item_id=item_data["item_id"],
+        self.repository.update_item_from_handler(item_handler=item_data["item_handler"],
+                                                 item_id=item_data["item_id"],
                                                  parent_id=parent_data.get("item_id"))
 
         if destination_item != self.invisibleRootItem():
@@ -201,18 +203,18 @@ class CustomStandardItemModel(QStandardItemModel):
         view_item = self.create_view_item(item)
         root_level_item = self.invisibleRootItem()
         if item.parent_id:
-            self.view_items[f"Collection_{item.parent_id}"].appendRow(view_item)
+            self.view_items[item.parent_id].appendRow(view_item)
         else:
             root_level_item.appendRow(view_item)
 
         self.recalculate_positions()
 
-    def delete_item(self, item_handler: str, item_id: int):
-        view_item = self.view_items[f"{item_handler}_{item_id}"]
+    def delete_item(self, item_id: int):
+        view_item = self.view_items[item_id]
         root_level_item = self.invisibleRootItem()
         parent_item = view_item.parent() or root_level_item
         parent_item.removeRow(view_item.row())
-        self.view_items.pop(f"{item_handler}_{item_id}")  # Delete reference
+        self.view_items.pop(item_id)  # Delete reference
 
         self.recalculate_positions()
 
@@ -462,7 +464,7 @@ class ProjectStructureSection(QWidget):
     def get_selected_item_data(self) -> str | None:
         item = self.get_selected_item()
         if item:
-            return item.data(Qt.ItemDataRole.UserRole)
+            return item.data(Qt.ItemDataRole.UserRole)["item_id"]
         return None
 
     def get_item_from_selected_index(self, index):
@@ -481,9 +483,9 @@ class ProjectStructureSection(QWidget):
             else:
                 parent_data = {}
 
-            item = self.repository.create_item_from_handler(item_name=dialog.item_name,
-                                                            item_handler=dialog.item_handler,
-                                                            parent_id=parent_data.get("item_id"))
+            item = self.repository.create_item_request_from_handler(item_name=dialog.item_name,
+                                                                    item_handler=dialog.item_handler,
+                                                                    parent_id=parent_data.get("item_id"))
             self.view_model.add_item(item=item)
 
             self.expand_tree_view_item(selected_item)
@@ -498,7 +500,8 @@ class ProjectStructureSection(QWidget):
 
     def edit_item(self, item):
         item_data = item.data(Qt.ItemDataRole.UserRole)
-        self.repository.update_item_from_handler(item_handler=item_data["item_handler"], item_id=item_data["item_id"],
+        self.repository.update_item_from_handler(item_handler=item_data["item_handler"],
+                                                 item_id=item_data["item_id"],
                                                  name=item.text())
 
     def move_item(self, item):
@@ -521,8 +524,8 @@ class ProjectStructureSection(QWidget):
             if reply == QMessageBox.StandardButton.Yes:
                 selected_item = self.get_item_from_selected_index(indexes[0])
                 item_data = selected_item.data(Qt.ItemDataRole.UserRole)
-                self.repository.delete_item(item_handler=item_data["item_handler"], item_id=item_data["item_id"])
-                self.view_model.delete_item(item_handler=item_data["item_handler"], item_id=item_data["item_id"])
+                self.repository.delete_item(item_id=item_data["item_id"])
+                self.view_model.delete_item(item_id=item_data["item_id"])
                 self.set_add_button_visibility()
 
     def export_selected_item(self, index):

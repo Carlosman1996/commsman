@@ -36,7 +36,7 @@ class BackendManager(QThread):
             result = self.collection_handler.get_collection_result(item=item,
                                                                    parent_id=getattr(parent_result_item, "item_id", None))
             # Update item on repository:
-            self.repository.add_item_from_dataclass(result)
+            self.repository.create_item_result_from_dataclass(item=result)
 
             # Update collections tree:
             if parent_result_item:
@@ -58,7 +58,7 @@ class BackendManager(QThread):
                 result = protocol_client.execute_request(**asdict(item), parent_result_id=getattr(parent_result_item, "item_id", None))
 
             # Update item on repository:
-            self.repository.add_item_from_dataclass(item=result)
+            self.repository.create_item_result_from_dataclass(item=result)
 
             # Update collections tree:
             if parent_result_item:
@@ -106,5 +106,5 @@ class BackendManager(QThread):
 
 if __name__ == "__main__":
     backend_manager_obj = BackendManager()
-    backend_manager_obj.repository.set_selected_item({"item_id": 1, "item_handler": "Collection"})
+    backend_manager_obj.repository.set_selected_item(item_id=1)
     backend_manager_obj.run()

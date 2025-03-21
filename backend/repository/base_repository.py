@@ -7,7 +7,7 @@ class BaseRepository(ABC):
     """Abstract repository for storing and retrieving items."""
 
     def __init__(self):
-        self.selected_item: BaseRequest | None = None
+        self.selected_item: int | None = None
 
     @staticmethod
     def get_class_handler(item_handler: str):
@@ -16,12 +16,12 @@ class BaseRepository(ABC):
             raise ValueError(f"Unknown item handler: {item_handler}")
         return cls
 
-    def set_selected_item(self, item_data: dict):
-        self.selected_item = item_data
+    def set_selected_item(self, item_id: int):
+        self.selected_item = item_id
 
     def get_selected_item(self) -> BaseRequest | None:
         if self.selected_item:
-            return self.get_item_request(**self.selected_item)
+            return self.get_item_request(item_id=self.selected_item)
         else:
             return None
 
@@ -34,11 +34,11 @@ class BaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create_item_from_handler(self, item_name: str, item_handler: str, parent: int):
+    def create_item_request_from_handler(self, item_name: str, item_handler: str, parent: int):
         raise NotImplementedError
 
     @abstractmethod
-    def add_item_from_dataclass(self, item: BaseItem):
+    def create_item_result_from_dataclass(self, item: BaseItem):
         raise NotImplementedError
 
     @abstractmethod
@@ -50,19 +50,19 @@ class BaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_item(self, item_handler: str, item_id: int):
+    def get_item_request(self, item_id: int):
         raise NotImplementedError
 
     @abstractmethod
-    def get_item_request(self, item_handler: str, item_id: int):
+    def get_item_last_result_tree(self, item_id: int):
         raise NotImplementedError
 
     @abstractmethod
-    def get_item_result(self, item_handler: str, item_id: int):
+    def get_items_request_tree(self, item_id: int):
         raise NotImplementedError
 
     @abstractmethod
-    def update_item_from_handler(self, item_handler: str, item_id: int, **kwargs):
+    def update_item_from_handler(self, item_id: int, **kwargs):
         raise NotImplementedError
 
     @abstractmethod
@@ -70,5 +70,5 @@ class BaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def delete_item(self, item_handler: str, item_id: int):
+    def delete_item(self, item_id: int):
         raise NotImplementedError

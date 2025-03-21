@@ -1,5 +1,4 @@
-import time
-from datetime import timezone, datetime
+from datetime import datetime
 
 import tzlocal
 

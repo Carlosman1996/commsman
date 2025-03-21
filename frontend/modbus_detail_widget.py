@@ -118,7 +118,8 @@ class ModbusRequestTabWidget(BaseRequest):
             "data_type": self.data_type_combo.currentText(),
             "values": self.values_table.get_values(),
         }
-        self.repository.update_item_from_handler(item_handler=self.item.item_handler, item_id=self.item.item_id,
+        self.repository.update_item_from_handler(item_handler=self.item.item_handler,
+                                                 item_id=self.item.item_id,
                                                  **update_data)
 
     def update_view(self):

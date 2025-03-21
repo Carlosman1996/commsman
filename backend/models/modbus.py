@@ -38,6 +38,8 @@ class ModbusRequest(BaseRequest):
 
     item_response_handler: str = "ModbusResponse"
 
+    item_id: Mapped[int] = mapped_column(Integer, ForeignKey("request.item_id", ondelete="CASCADE"), primary_key=True)
+
     item_type: Mapped[int] = mapped_column(String, default="Modbus")
     client_type: Mapped[int] = mapped_column(String, default="Inherit from parent")
     function: Mapped[int] = mapped_column(String, default="Read Holding Registers")

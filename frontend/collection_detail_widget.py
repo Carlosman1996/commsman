@@ -27,7 +27,7 @@ class CollectionRequestWidget(BaseRequest):
         # Set tabs:
         detail_tabs = QTabWidget()
 
-        if hasattr(self.item, "parent") and self.item.parent:
+        if self.item.parent_id:
             self.connection_widget = ConnectionTabWidget(repository, ["Inherit from parent"] + self.CLIENT_TYPES)
         else:
             self.connection_widget = ConnectionTabWidget(repository, self.CLIENT_TYPES)
