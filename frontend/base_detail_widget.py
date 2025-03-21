@@ -123,7 +123,8 @@ class BaseDetail(BaseResult):
         self.title_label = IconTextWidget(self.item.name, QIcon(ITEMS[self.item.item_handler]["icon"]), QSize(75, 50))
         header_layout.addWidget(self.title_label)
         # Execute request:
-        self.execute_button = ExecuteButton(self.backend.running)
+        backend_running = self.item.item_id in self.backend.running_threads
+        self.execute_button = ExecuteButton(backend_running)
         header_layout.addWidget(self.execute_button)
         # All items at left side:
         header_layout.addStretch(1)
@@ -160,16 +161,17 @@ class BaseDetail(BaseResult):
         self.update_view(load_data=True)
 
         self.execute_button.clicked.connect(self.execute)
+        self.backend.signal_finish.connect(self.on_finished)
 
     def execute(self):
         if self.execute_button.run:
             self.execute_button.set_stop()
 
             # Create and start the backend_manager thread
-            self.backend.signal_finish.connect(self.on_finished)
-            self.backend.start()
+            self.backend.start(item_id=self.item.item_id)
         else:
-            self.backend.signal_finish.emit()
+            # Stop the backend_manager thread
+            self.backend.stop(item_id=self.item.item_id)
             self.execute_button.set_run()
 
     def on_finished(self):

@@ -1,110 +1,64 @@
-import copy
-import time
-from dataclasses import asdict
+import sys
 
-from PyQt6.QtCore import QThread, pyqtSignal, QTimer
+from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt6.QtWidgets import QApplication
 
-from backend.handlers.collection_handler import CollectionHandler
-from backend.repository import *
-from backend.handlers.protocol_client_manager import ProtocolClientManager
+from backend.repository import BaseRepository
 from backend.repository.sqlite_repository import SQLiteRepository
+from backend.runner import Runner
 
 
-class BackendManager(QThread):
+class BackendManager(QObject):
+    """ Manages multiple backend worker threads """
 
-    signal_request_finished = pyqtSignal(int, object)
+    signal_request_finished = pyqtSignal(int, object)  # Signal emitted when request finishes
     signal_finish = pyqtSignal()
 
     def __init__(self, repository: BaseRepository = None):
         super().__init__()
-        if repository:
-            self.repository = repository
-        else:
-            self.repository = SQLiteRepository()
-        self.running = False
-        self.collection_handler = CollectionHandler(self.repository)
-        self.protocol_client_manager = ProtocolClientManager(self.repository)
+        self.repository = repository if repository else SQLiteRepository()
+        self.running_threads = {}  # Track active threads
 
-        self.signal_finish.connect(self.stop)
+    def start(self, item_id):
+        """ Starts a new thread for a given item_id """
+        if item_id in self.running_threads:
+            raise ValueError(f"Item ID {item_id} is already running.")
 
-    def run_requests(self, item, parent_result_item=None, main_parent_result_item=None):
-        # Stop signal:
-        if not self.running:
-            return
+        print(f"Starting process for Item ID {item_id}")
 
-        if item.item_handler == "Collection":
-            result = self.collection_handler.get_collection_result(item=item,
-                                                                   parent_id=getattr(parent_result_item, "item_id", None))
-            # Update item on repository:
-            self.repository.create_item_result_from_dataclass(item=result)
+        thread = Runner(repository=self.repository, item_id=item_id)
+        thread.finished.connect(lambda: self.remove_thread(item_id))
+        thread.signal_request_finished.connect(self.signal_request_finished.emit)  # Propagate to UI
+        self.running_threads[item_id] = thread
+        thread.start()
 
-            # Update collections tree:
-            if parent_result_item:
-                self.collection_handler.add_collection(parent_result_item, result)
+    def stop(self, item_id):
+        """Stops a specific worker thread gracefully."""
+        def stop_thread(item_id):
+            self.running_threads[item_id].stop()  # Set running flag to False
+            self.running_threads[item_id].wait()  # Wait for completion
+            self.remove_thread(item_id)
+            print(f"Stopped process for Item ID {item_id}")
 
-        else:
-            # Get client:
-            protocol_client = self.protocol_client_manager.get_client_handler(item=item)
+        if item_id in self.running_threads:
+            stop_thread(item_id)
+        if item_id == 0:
+            for item_id in self.running_threads.keys():
+                stop_thread(item_id)
 
-            # Error
-            if isinstance(protocol_client, str):
-                error_message = f"Error while doing request: {protocol_client}"
-                result = self.protocol_client_manager.get_request_failed_result(item=item,
-                                                                                parent_id=getattr(parent_result_item, "item_id", None),
-                                                                                error_message=error_message)
-            # Do request:
-            else:
-                protocol_client.connect()
-                result = protocol_client.execute_request(**asdict(item), parent_result_id=getattr(parent_result_item, "item_id", None))
-
-            # Update item on repository:
-            self.repository.create_item_result_from_dataclass(item=result)
-
-            # Update collections tree:
-            if parent_result_item:
-                self.collection_handler.add_request(parent_result_item, result)
-
-            # Wait polling interval:
-            time.sleep(item.run_options.polling_interval)
-
-        # Update view:
-        if not main_parent_result_item:
-            main_parent_result_item = result
-        self.signal_request_finished.emit(main_parent_result_item.request_id, main_parent_result_item)
-
-        # Iterate over children in case of collections:
-        if item.item_handler == "Collection":
-            for item_child in item.children:
-                self.run_requests(item_child, result, main_parent_result_item)
-
-        return result
-
-    def run(self):
-        self.running = True
-
-        selected_item = self.repository.get_selected_item()
-        self.signal_request_finished.emit(selected_item.item_id, None)
-
-        # Get requests tree:
-        requests_tree = self.repository.get_items_request_tree(selected_item)[0]
-
-        # Delayed start:
-        time.sleep(selected_item.run_options.delayed_start)
-
-        result = self.run_requests(requests_tree)
-
-        self.protocol_client_manager.close_all_handlers()
-
-        # Update view:
-        self.signal_request_finished.emit(selected_item.item_id, result)
+    def remove_thread(self, item_id):
+        """Removes the finished thread from the tracking dictionary."""
+        if item_id in self.running_threads:
+            del self.running_threads[item_id]
         self.signal_finish.emit()
-        self.running = False
-
-    def stop(self):
-        self.running = False
 
 
 if __name__ == "__main__":
-    backend_manager_obj = BackendManager()
-    backend_manager_obj.repository.set_selected_item(item_id=1)
-    backend_manager_obj.run()
+    app = QApplication(sys.argv)  # ✅ Create QApplication before using QThread
+
+    backend_manager = BackendManager()
+    backend_manager.repository.set_selected_item(item_id=1)
+    backend_manager.start(item_id=1)  # Start first request
+    backend_manager.start(item_id=2)  # Start another request (independent)
+
+    sys.exit(app.exec())  # ✅ Ensures Qt event loop runs

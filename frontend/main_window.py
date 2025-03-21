@@ -92,13 +92,8 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, *args, **kwargs):
         """Override the close event to perform custom actions."""
-        # Close all handlers before exit:
-        self.backend.protocol_client_manager.close_all_handlers()
-
         # Wait until backend stops:
-        self.backend.signal_finish.emit()
-        while self.backend.running:
-            time.sleep(0.5)
+        self.backend.stop(0)
 
         super().closeEvent(*args, **kwargs)
 
