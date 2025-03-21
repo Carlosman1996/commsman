@@ -165,6 +165,8 @@ class SQLiteRepository(BaseRepository):
             result_item = self._get_item_result(item_handler=item_handler, item_id=item_id)
             for index, child_data in enumerate(result_item.children):
                 result_item.children[index] = get_result_with_children(**child_data)
+            # Sort items at each level based on 'position':
+            result_item.children.sort(key=lambda x: x.timestamp)
             return result_item
 
         with self.session_scope() as session:

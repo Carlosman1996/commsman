@@ -2,10 +2,6 @@
 
 ## Priority
 
-TODO: create a base requests table to have all item ids aligned. It helps to remove item_handler + id for item identification.
-
-TODO: results tree is not sorted
-
 TODO: show history in requests
 
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
