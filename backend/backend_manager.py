@@ -43,13 +43,13 @@ class BackendManager(QObject):
         if item_id in self.running_threads:
             stop_thread(item_id)
         if item_id == 0:
-            for item_id in self.running_threads.keys():
-                stop_thread(item_id)
+            items_id = list(self.running_threads.keys())
+            [stop_thread(item_id) for item_id in items_id]
 
     def remove_thread(self, item_id):
         """Removes the finished thread from the tracking dictionary."""
         if item_id in self.running_threads:
-            del self.running_threads[item_id]
+            self.running_threads.pop(item_id)
         self.signal_finish.emit()
 
 

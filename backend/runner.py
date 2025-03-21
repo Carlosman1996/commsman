@@ -19,7 +19,8 @@ class Runner(QThread):
         super().__init__()
         self.item_id = item_id
         self.repository = repository
-        self.collection_handler = CollectionHandler(self.repository)
+        self.update_items_queue = []
+        self.collection_handler = CollectionHandler(self.update_items_queue)
         self.protocol_client_manager = ProtocolClientManager(self.repository)
         self.running = True  # Control flag for stopping
 
@@ -34,7 +35,6 @@ class Runner(QThread):
                 item=item,
                 parent_id=getattr(parent_result_item, "item_id", None)
             )
-            self.repository.create_item_result_from_dataclass(item=result)
 
             # Update collections tree:
             if parent_result_item:
@@ -58,9 +58,6 @@ class Runner(QThread):
                     parent_result_id=getattr(parent_result_item, "item_id", None)
                 )
 
-            # Update item on repository:
-            self.repository.create_item_result_from_dataclass(item=result)
-
             # Update collections tree:
             if parent_result_item:
                 self.collection_handler.add_request(parent_result_item, result)
@@ -71,7 +68,13 @@ class Runner(QThread):
         # Update view:
         if not main_result:
             main_result = result
-        self.signal_request_finished.emit(main_result.request_id, main_result)
+
+        # Save in database:
+        self.update_items_queue.append(result)
+        while self.update_items_queue:
+            result = self.update_items_queue.pop(0)
+            self.signal_request_finished.emit(result.request_id, result)
+            self.repository.add_item_from_dataclass(item=result)
 
         # Iterate over children in case of collections:
         if item.item_handler == "Collection":

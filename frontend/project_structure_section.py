@@ -380,7 +380,7 @@ class ProjectStructureSection(QWidget):
     def __init__(self, repository):
         super().__init__()
 
-        self.setMinimumWidth(300)
+        self.setMinimumWidth(250)
 
         # Buttons:
         self.add_button = Button("Add")

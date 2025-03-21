@@ -38,7 +38,7 @@ class BaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create_item_result_from_dataclass(self, item: BaseItem):
+    def add_item_from_dataclass(self, item: BaseItem):
         raise NotImplementedError
 
     @abstractmethod
@@ -63,10 +63,6 @@ class BaseRepository(ABC):
 
     @abstractmethod
     def update_item_from_handler(self, item_id: int, **kwargs):
-        raise NotImplementedError
-
-    @abstractmethod
-    def update_item_from_dataclass(self, item: BaseItem, **kwargs):
         raise NotImplementedError
 
     @abstractmethod

@@ -61,14 +61,7 @@ class SQLiteRepository(BaseRepository):
             session.add(item)
             return item
 
-    def update_item_from_dataclass(self, item: BaseItem, **kwargs):
-        with self.session_scope() as session:
-            for key, value in kwargs.items():
-                setattr(item, key, value)
-            session.add(item)
-            return item
-
-    def create_item_result_from_dataclass(self, item: BaseItem):
+    def add_item_from_dataclass(self, item: BaseItem):
         """Crea un nuevo ítem y lo guarda en la base de datos."""
         with self.session_scope() as session:
             session.add(item)

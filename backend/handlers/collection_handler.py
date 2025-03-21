@@ -7,8 +7,8 @@ from backend.models import BaseResult, Collection, CollectionResult
 
 class CollectionHandler:
     """Handles execution and real-time updates of requests and collections."""
-    def __init__(self, repository):
-        self.repository = repository
+    def __init__(self, update_items_queue: list):
+        self.update_items_queue = update_items_queue
 
     @staticmethod
     def get_collection_result(item: Collection, parent_id: int) -> CollectionResult:
@@ -78,7 +78,7 @@ class CollectionHandler:
         collection_result.elapsed_time = (datetime.now(tzlocal.get_localzone()) - collection_result.timestamp).total_seconds()
 
         # Update repository
-        self.repository.update_item_from_dataclass(item=collection_result)
+        self.update_items_queue.append(collection_result)
 
         # Propagate status update to parent
         if collection_result.parent:

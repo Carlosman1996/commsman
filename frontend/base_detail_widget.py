@@ -1,24 +1,27 @@
 from abc import abstractmethod
 
-from PyQt6.QtCore import Qt, QSize, pyqtSignal
+from PyQt6.QtCore import Qt, QSize, pyqtSignal, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy, QFrame, QGridLayout, \
-    QLabel, QGroupBox
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy, QLabel
 
 from frontend.common import ITEMS, get_model_value, convert_time, convert_timestamp
 from frontend.components.components import IconTextWidget, CustomGridLayout, InfoBox
 
 
 class ExecuteButton(QPushButton):
-    def __init__(self, backend_running: bool):
+    def __init__(self, backend_running: bool, blocked: bool):
         super().__init__("Run")
+        self.setFixedWidth(100)
         self.run = True
-        if backend_running:
+        if backend_running and blocked:
+            self.set_blocked()
+        elif backend_running:
             self.set_stop()
         else:
             self.set_run()
 
     def set_stop(self):
+        self.setEnabled(True)
         self.run = False
         self.setText("Stop")
         self.setStyleSheet("""
@@ -33,6 +36,7 @@ class ExecuteButton(QPushButton):
         """)
 
     def set_run(self):
+        self.setEnabled(True)
         self.run = True
         self.setText("Run")
         self.setStyleSheet("""
@@ -46,6 +50,21 @@ class ExecuteButton(QPushButton):
                 color: white;
             }
         """)
+
+    def set_blocked(self):
+        self.setEnabled(False)
+        self.setText("Blocked")
+        self.setStyleSheet("""
+            QPushButton {
+                background-color: orange;
+                color: white;
+            }
+            QPushButton:hover {
+                background-color: orange;
+                color: white;
+            }
+        """)
+
 
 
 class BaseRequest(QWidget):
@@ -123,8 +142,9 @@ class BaseDetail(BaseResult):
         self.title_label = IconTextWidget(self.item.name, QIcon(ITEMS[self.item.item_handler]["icon"]), QSize(75, 50))
         header_layout.addWidget(self.title_label)
         # Execute request:
-        backend_running = self.item.item_id in self.backend.running_threads
-        self.execute_button = ExecuteButton(backend_running)
+        backend_running = bool(self.backend.running_threads)
+        backend_running_other_item = bool(backend_running and self.item.item_id not in self.backend.running_threads)
+        self.execute_button = ExecuteButton(backend_running=backend_running, blocked=backend_running_other_item)
         header_layout.addWidget(self.execute_button)
         # All items at left side:
         header_layout.addStretch(1)
