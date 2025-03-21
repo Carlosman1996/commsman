@@ -58,11 +58,10 @@ class BaseRequest(QWidget):
 
     def update_sequence(self):
         self.update_item()
-        self.reload_data()   # TODO: remove to improve performance
         self.update_view()
 
     def reload_data(self):
-        self.item = self.repository.get_selected_item()   # TODO: remove to improve performance
+        self.item = self.repository.get_selected_item()
 
     @abstractmethod
     def update_item(self):

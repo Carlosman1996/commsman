@@ -45,27 +45,30 @@ class SQLiteRepository(BaseRepository):
 
     def delete_item(self, item_handler: str, item_id: int):
         with self.session_scope() as session:
-            item = self.get_item(item_handler, item_id, session)
+            item = self.get_item(item_handler, item_id)
             session.delete(item)
             session.add(item)
 
     def update_item_from_handler(self, item_handler: str, item_id: int, **kwargs):
         with self.session_scope() as session:
-            item = self.get_item(item_handler, item_id, session)
+            item = self.get_item(item_handler, item_id)
             for key, value in kwargs.items():
                 setattr(item, key, value)
             session.add(item)
+            return item
 
     def update_item_from_dataclass(self, item: BaseItem, **kwargs):
         with self.session_scope() as session:
             for key, value in kwargs.items():
                 setattr(item, key, value)
             session.add(item)
+            return item
 
     def add_item_from_dataclass(self, item: BaseItem):
         """Crea un nuevo ítem y lo guarda en la base de datos."""
         with self.session_scope() as session:
             session.add(item)
+            return item
 
     def create_item_from_handler(self, item_name: str, item_handler: str, parent_id: int = None):
         """Crea un nuevo ítem y lo guarda en la base de datos."""

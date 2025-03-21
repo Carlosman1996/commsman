@@ -70,9 +70,6 @@ class ModbusRequestTabWidget(BaseRequest):
     def __init__(self, repository):
         super().__init__(repository)
 
-        self.repository = repository
-        self.item = self.repository.get_selected_item()
-
         self.grid_layout = CustomGridLayout()
 
         self.function_combo = CustomComboBox()
@@ -178,9 +175,6 @@ class ModbusResponseWidget(BaseResult):
 
     def __init__(self, backend):
         super().__init__(backend)
-
-        self.repository = backend.repository
-        self.item = self.repository.get_selected_item()
 
         # Main layout
         main_layout = QVBoxLayout()

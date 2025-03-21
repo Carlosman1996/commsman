@@ -27,8 +27,7 @@ class CollectionRequestWidget(BaseRequest):
         # Set tabs:
         detail_tabs = QTabWidget()
 
-        item = repository.get_selected_item()
-        if hasattr(item, "parent") and item.parent:
+        if hasattr(self.item, "parent") and self.item.parent:
             self.connection_widget = ConnectionTabWidget(repository, ["Inherit from parent"] + self.CLIENT_TYPES)
         else:
             self.connection_widget = ConnectionTabWidget(repository, self.CLIENT_TYPES)
@@ -40,10 +39,8 @@ class CollectionRequestWidget(BaseRequest):
 
 
 class CollectionResultTreeView(QTreeView):
-    def __init__(self, repository):
+    def __init__(self):
         super().__init__()
-
-        self.repository = repository
 
         self.setStyleSheet("""
             QTreeView::item:selected {
@@ -145,7 +142,7 @@ class CollectionResultWidget(BaseResult):
         self.results_tab.setLayout(self.results_layout)
 
         # Tree view in results tab
-        self.results_tree = CollectionResultTreeView(self.repository)
+        self.results_tree = CollectionResultTreeView()
         self.results_layout.addWidget(self.results_tree)
 
         self.tabs.addTab(self.results_tab, "Results")

@@ -2,8 +2,6 @@
 
 ## Priority
 
-TODO: increase SQLite performance: moving elements is a slow operation. UI updates must not reload items.
-
 TODO: create a base requests table to have all item ids aligned. It helps to remove item_handler + id for item identification.
 
 TODO: show history in requests
@@ -19,6 +17,14 @@ TODO: migrate QT to PYSIDE
 TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
+
+TODO: increase SQLite performance:
+- Moving elements is a slow operation.
+- UI updates must not reload items.
+- Update operations must have background process.
+- Test UI on low performance computer - Docker with low resources.
+
+TODO: decimal numbers on polling interval and delay
 
 TODO: add foreign keys and relationships - cascade deletes: https://www.codearmo.com/python-tutorial/sql-alchemy-foreign-keys-and-relationships#google_vignette
 
