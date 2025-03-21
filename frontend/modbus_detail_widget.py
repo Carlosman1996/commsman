@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QLabel,
                              QTableWidgetItem)
 
 from frontend.base_detail_widget import BaseDetail, BaseResult, BaseRequest
-from frontend.common import convert_time, get_model_value
+from frontend.common import convert_time, get_model_value, convert_timestamp
 from frontend.components.components import CustomGridLayout, CustomTable, CustomComboBox
 from frontend.connection_tab_widget import ConnectionTabWidget
 from frontend.run_options_tab_widget import RunOptionsTabWidget
@@ -289,7 +289,7 @@ class ModbusResponseWidget(BaseResult):
             "parent": get_value("parent"),
             "result": get_value("result"),
             "elapsed_time": convert_time(get_value("elapsed_time", 0)),
-            "timestamp": get_value("timestamp"),
+            "timestamp": convert_timestamp(get_value("timestamp")),
             "error_message": get_value("error_message", ""),
             "client_type": get_value("client_type"),
             "slave": get_value("slave"),

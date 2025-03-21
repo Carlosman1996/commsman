@@ -1,3 +1,7 @@
+from datetime import datetime
+
+import tzlocal
+
 from utils.common import FRONTEND_PATH
 
 
@@ -32,6 +36,18 @@ def get_model_value(item: object, key: str, replace_if_none: str | int = "-"):
         return value
     else:
         return str(value)
+
+
+def convert_timestamp(timestamp_str: str):
+    # Parse the input timestamp
+    dt = datetime.fromisoformat(timestamp_str.rstrip("Z"))  # Remove 'Z' if present
+
+    # Convert to local timezone using tzlocal
+    local_tz = tzlocal.get_localzone()
+    dt = dt.astimezone(local_tz)
+
+    # Format to show at least seconds
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def convert_time(seconds: str | float) -> str:

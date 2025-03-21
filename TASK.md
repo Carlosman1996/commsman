@@ -2,11 +2,11 @@
 
 ## Priority
 
+TODO: running an object and change to another must show it is not being runned. Show running instances in notification bar and link to home page which must have all of them.
+
 TODO: show history in requests
 
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
-
-TODO: running an object and change to another must show it is not being runned. Show running instances in notification bar and link to home page which must have all of them.
 
 TODO: HOME page with running instances.
 
@@ -15,6 +15,8 @@ TODO: migrate QT to PYSIDE
 TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
+
+TODO: delete client and run_options items when a request is removed
 
 TODO: increase SQLite performance:
 - Moving elements is a slow operation.

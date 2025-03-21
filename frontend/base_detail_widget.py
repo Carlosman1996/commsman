@@ -5,7 +5,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy, QFrame, QGridLayout, \
     QLabel, QGroupBox
 
-from frontend.common import ITEMS, get_model_value, convert_time
+from frontend.common import ITEMS, get_model_value, convert_time, convert_timestamp
 from frontend.components.components import IconTextWidget, CustomGridLayout, InfoBox
 
 
@@ -186,4 +186,4 @@ class BaseDetail(BaseResult):
 
         self.frame_result.setText(get_model_value(result, "result"))
         self.frame_elapsed_time.setText(convert_time(get_model_value(result, "elapsed_time", 0)))
-        self.frame_timestamp.setText(get_model_value(result, "timestamp"))
+        self.frame_timestamp.setText(convert_timestamp(get_model_value(result, "timestamp")))
