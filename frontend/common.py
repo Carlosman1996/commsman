@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import tzlocal
+from PyQt6.QtGui import QIcon
 
 from utils.common import FRONTEND_PATH
 
@@ -38,16 +39,30 @@ def get_model_value(item: object, key: str, replace_if_none: str | int = "-"):
         return str(value)
 
 
-def convert_timestamp(timestamp_str: str):
-    # Parse the input timestamp
-    dt = datetime.fromisoformat(timestamp_str.rstrip("Z"))  # Remove 'Z' if present
+def get_icon(text):
+    if text == "Pending":
+        return QIcon.fromTheme("go-next")  # Green check icon
+    elif text == "OK":
+        return QIcon.fromTheme("dialog-ok")  # Green check icon
+    elif text == "Failed":
+        return QIcon.fromTheme("dialog-error")  # Red X icon
+    else:
+        raise NotImplementedError
+
+
+def convert_timestamp(timestamp: str | datetime):
+    if isinstance(timestamp, str):
+        # Parse the input timestamp
+        dt = datetime.fromisoformat(timestamp.rstrip("Z"))  # Remove 'Z' if present
+    else:
+        dt = timestamp
 
     # Convert to local timezone using tzlocal
     local_tz = tzlocal.get_localzone()
     dt = dt.astimezone(local_tz)
 
     # Format to show at least seconds
-    return dt.strftime("%Y-%m-%d %H:%M:%S")
+    return dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
 
 def convert_time(seconds: str | float) -> str:

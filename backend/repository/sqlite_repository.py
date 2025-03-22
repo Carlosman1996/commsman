@@ -176,6 +176,22 @@ class SQLiteRepository(BaseRepository):
                                                        item_id=last_result.item_id)
             return last_result
 
+    def get_item_results_history(self, item: BaseRequest) -> BaseResult:
+        with self.session_scope() as session:
+            item_class_handler = self.get_class_handler(item.item_response_handler)
+            results_history = (
+                session.query(item_class_handler)
+                    .filter(item_class_handler.request_id == item.item_id)
+                    .order_by(item_class_handler.timestamp.desc())
+                    .limit(10)
+                    .all()
+                )
+
+            if results_history is None:
+                results_history = []
+
+            return results_history
+
     def get_items_request_tree(self, item: BaseItem = None) -> list[Collection]:
         def get_item_with_children(item_id):
             _item = self.get_item_request(item_id=item_id)
@@ -215,6 +231,8 @@ class SQLiteRepository(BaseRepository):
             request.run_options = item_run_options
             item_last_result = self.get_item_last_result_tree(request)
             request.last_result = item_last_result
+            item_results_history = self.get_item_results_history(request)
+            request.results_history = item_results_history
 
             # Solve children:
             if request.item_handler == "Collection":
@@ -268,5 +286,5 @@ class SQLiteRepository(BaseRepository):
 if __name__ == "__main__":
     repository_obj = SQLiteRepository()
 
-    result = repository_obj.get_items_request_tree()
+    result = repository_obj.get_item_request(1)
     print(result)

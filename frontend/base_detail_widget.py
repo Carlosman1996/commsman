@@ -5,7 +5,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy, QLabel
 
 from frontend.common import ITEMS, get_model_value, convert_time, convert_timestamp
-from frontend.components.components import IconTextWidget, CustomGridLayout, InfoBox
+from frontend.components.components import IconTextWidget, CustomGridLayout, InfoBox, CustomTable
 
 
 class ExecuteButton(QPushButton):
@@ -102,6 +102,7 @@ class BaseResult(QWidget):
         self.backend.signal_request_finished.connect(self.reload_data)
 
     def reload_data(self, item_id, result):
+        print(result)
         if self.item.item_id == item_id:
             self.update_view(result=result)
 

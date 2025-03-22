@@ -40,6 +40,7 @@ class BaseRequest(BaseItem):
     client: object = None
     run_options: object = None
     last_result: object = None
+    results_history: list = None
 
     parent_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection.item_id", ondelete="CASCADE"), nullable=True, default=None)
     client_id: Mapped[int] = mapped_column(Integer, ForeignKey("client.item_id"), nullable=True, default=None)  # TODO: delete if request is removed

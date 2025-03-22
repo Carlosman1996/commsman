@@ -8,8 +8,9 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
 
 from backend.backend_manager import BackendManager
 from frontend.base_detail_widget import BaseDetail, BaseResult, BaseRequest
-from frontend.common import convert_time
+from frontend.common import convert_time, get_icon
 from frontend.connection_tab_widget import ConnectionTabWidget
+from frontend.history_tab_widget import HistoryTabWidget
 from frontend.run_options_tab_widget import RunOptionsTabWidget
 
 
@@ -97,12 +98,7 @@ class CollectionResultTreeView(QTreeView):
                 request_item = QStandardItem(child.name)
                 text = self.get_request_status(child)
                 status_item = QStandardItem(text)
-                if child.result == "Pending":
-                    status_item.setIcon(QIcon.fromTheme("go-next"))  # Green check icon
-                elif child.result == "OK":
-                    status_item.setIcon(QIcon.fromTheme("dialog-ok"))  # Green check icon
-                else:
-                    status_item.setIcon(QIcon.fromTheme("dialog-error"))  # Red X icon
+                status_item.setIcon(get_icon(child.result))
                 folder_item.appendRow([request_item, status_item])
 
     def get_collection_status(self, collection_result):
@@ -147,16 +143,20 @@ class CollectionResultWidget(BaseResult):
 
         self.tabs.addTab(self.results_tab, "Results")
 
+        # History
+        self.history_tab = HistoryTabWidget(backend)
+        self.tabs.addTab(self.history_tab, "History")
+
         # Set initial state and connect signals:
         self.update_view(load_data=True)
 
     def update_view(self, load_data=False, result=None):
-        if load_data:
-            result = self.item.last_result
-        if result is None:
+        if not load_data:
+            self.item.last_result = result
+        if self.item.last_result is None:
             return
 
-        self.results_tree.update_model(result, load_data)
+        self.results_tree.update_model(self.item.last_result, load_data)
 
 
 class CollectionDetail(BaseDetail):

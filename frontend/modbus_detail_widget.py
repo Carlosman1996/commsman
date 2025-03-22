@@ -10,6 +10,7 @@ from frontend.base_detail_widget import BaseDetail, BaseResult, BaseRequest
 from frontend.common import convert_time, get_model_value, convert_timestamp
 from frontend.components.components import CustomGridLayout, CustomTable, CustomComboBox
 from frontend.connection_tab_widget import ConnectionTabWidget
+from frontend.history_tab_widget import HistoryTabWidget
 from frontend.run_options_tab_widget import RunOptionsTabWidget
 
 
@@ -268,11 +269,14 @@ class ModbusResponseWidget(BaseResult):
         raw_data_layout = QVBoxLayout()
         raw_data_tab.setLayout(raw_data_layout)
 
-        # Raw data display
         self.raw_data_edit = QTextEdit()
         self.raw_data_edit.setReadOnly(True)
         raw_data_layout.addWidget(self.raw_data_edit)
         self.tabs.addTab(raw_data_tab, "Raw Data")
+
+        # History
+        self.history_tab = HistoryTabWidget(backend)
+        self.tabs.addTab(self.history_tab, "History")
 
         # Set initial state and connect signals:
         self.update_view(load_data=True)
@@ -306,9 +310,9 @@ class ModbusResponseWidget(BaseResult):
         }
 
     def update_view(self, load_data=False, result=None):
-        if load_data:
-            result = self.item.last_result
-        if result is None or result.result == "Pending":
+        if not load_data:
+            self.item.last_result = result
+        if self.item.last_result is None or self.item.last_result.result == "Pending":
             return
 
         response = self.get_response_data()

@@ -73,15 +73,13 @@ class Runner(QThread):
         self.update_items_queue.append(result)
         while self.update_items_queue:
             result = self.update_items_queue.pop(0)
-            self.signal_request_finished.emit(result.request_id, result)
             self.repository.add_item_from_dataclass(item=result)
+            self.signal_request_finished.emit(result.request_id, result)
 
         # Iterate over children in case of collections:
         if item.item_handler == "Collection":
             for child in item.children:
                 self.run_requests(child, result, main_result)
-
-        return main_result
 
     def run(self):
         """Main execution function."""
@@ -95,13 +93,9 @@ class Runner(QThread):
         # Delayed start:
         time.sleep(selected_item.run_options.delayed_start)
 
-        result = self.run_requests(item=requests_tree)
+        self.run_requests(item=requests_tree)
 
         self.protocol_client_manager.close_all_handlers()
-
-        # Update view:
-        self.signal_request_finished.emit(selected_item.item_id, result)
-
         return
 
     def stop(self):

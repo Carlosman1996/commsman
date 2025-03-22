@@ -152,10 +152,12 @@ class CustomGridLayout(QGridLayout):
 
 
 class CustomTable(QTableWidget):
-    def __init__(self, headers):
+    def __init__(self, headers, editable=True, stretch=True):
         super().__init__()
 
-        self.headers = headers
+        self.headers = [f" {header} " for header in headers]
+        self.editable = editable
+        self.stretch = stretch
         self.set_style()
 
     def set_style(self):
@@ -163,7 +165,6 @@ class CustomTable(QTableWidget):
         self.setColumnCount(len(self.headers))
         self.setHorizontalHeaderLabels(self.headers)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.setStyleSheet("""
             QTableWidget {
                 border: none; /* Remove any outer border */
@@ -179,6 +180,16 @@ class CustomTable(QTableWidget):
                 background-color: #EFEFEF;
             }
         """)
+
+        if not self.editable:
+            self.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        if self.stretch:
+            self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        else:
+            self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+
+    def hide_vertical_header(self):
+        self.verticalHeader().setVisible(False)
 
     def clear(self):
         super().clear()
@@ -201,12 +212,12 @@ class CustomTable(QTableWidget):
         row_height = self.rowHeight(0) if self.rowCount() > 0 else 30  # Default if no rows
 
         # Limit height to max_visible_rows
-        visible_rows = self.rowCount() + 1
+        visible_rows = self.rowCount()
 
         # Total height = header + visible rows + padding
-        total_height = header_height + (row_height * visible_rows) + 4
+        total_height = header_height + (row_height * visible_rows) + 8
 
-        self.setMaximumHeight(total_height)
+        self.setFixedHeight(total_height)
 
     def set_items(self, items):
         if isinstance(items, list):

@@ -4,6 +4,8 @@
 
 TODO: show history in requests
 
+TODO: control the maximum number of results to save
+
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
 
 TODO: HOME page with running instances.
@@ -13,6 +15,8 @@ TODO: migrate QT to PYSIDE
 TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
+
+TODO: clear results button
 
 TODO: running an object and change to another must show it is not being runned. Show running instances in notification bar and link to home page which must have all of them.
 
