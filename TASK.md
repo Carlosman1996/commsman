@@ -2,8 +2,6 @@
 
 ## Priority
 
-TODO: show history in requests
-
 TODO: control the maximum number of results to save
 
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
@@ -15,6 +13,8 @@ TODO: migrate QT to PYSIDE
 TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
+
+TODO: decouple backend from PYQT/SIDE
 
 TODO: clear results button
 

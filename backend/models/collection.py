@@ -17,7 +17,7 @@ class CollectionResult(BaseResult):
     __tablename__ = "collection_result"
 
     # Initialize to None but it is non-nullable:
-    request_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection.item_id"))
+    request_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection.item_id", ondelete="SET NULL"))  # Do not delete on cascade because parent result will show incorrect results
 
     item_type: Mapped[str] = mapped_column(String, default="Collection")
     total_ok: Mapped[int] = mapped_column(Integer, default=0)

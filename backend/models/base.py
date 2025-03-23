@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 import tzlocal
-from sqlalchemy import Integer, String, ForeignKey, Column, Boolean, JSON, DateTime
+import uuid
+from sqlalchemy import Integer, String, ForeignKey, Column, Boolean, JSON, DateTime, UniqueConstraint
 from sqlalchemy.orm import Mapped, MappedAsDataclass, DeclarativeBase
 from sqlalchemy.testing.schema import mapped_column
 
@@ -54,7 +55,7 @@ class BaseRequest(BaseItem):
 class BaseResult(BaseItem):
     __abstract__ = True
 
-    parent_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection_result.item_id"), nullable=True)
+    parent_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection_result.item_id", ondelete="SET NULL"), nullable=True)
     request_id: Mapped[int] = mapped_column(Integer)
 
     client_type: Mapped[str] = mapped_column(String)

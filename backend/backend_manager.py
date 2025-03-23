@@ -1,8 +1,10 @@
 import sys
+from functools import partial
 
 from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtWidgets import QApplication
 
+from backend.background_task_manager import BackgroundTaskManager
 from backend.repository import BaseRepository
 from backend.repository.sqlite_repository import SQLiteRepository
 from backend.runner import Runner
@@ -18,6 +20,11 @@ class BackendManager(QObject):
         super().__init__()
         self.repository = repository if repository else SQLiteRepository()
         self.running_threads = {}  # Track active threads
+
+        # Setup background task manager:
+        self.background_task_manager = BackgroundTaskManager()
+        self.background_task_manager.add_periodic_task(self.repository.delete_old_results, 600)
+        self.background_task_manager.start()
 
     def start(self, item_id):
         """ Starts a new thread for a given item_id """

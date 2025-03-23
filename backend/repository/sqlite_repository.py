@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker, declarative_base, Session
+from sqlalchemy import create_engine, event, func, desc, over
+from sqlalchemy.orm import sessionmaker, declarative_base, Session, aliased
 
 from backend.models import *
 from backend.repository.base_repository import BaseRepository
@@ -45,13 +45,80 @@ class SQLiteRepository(BaseRepository):
 
     def delete_item(self, item_id: int):
         with self.session_scope() as session:
-            item = (
+            request = (
                 session.query(Request)
                     .filter(Request.item_id == item_id)
                     .first()
             )
-            session.delete(item)
-            session.add(item)
+
+            item = self._get_item_request(item_id=request.item_id)
+
+            session.delete(request)
+
+            if item.client_id:
+                client = (
+                    session.query(Client)
+                        .filter(Client.item_id == item.client_id)
+                        .first()
+                )
+                session.delete(client)
+            if item.run_options_id:
+                run_options = (
+                    session.query(RunOptions)
+                        .filter(RunOptions.item_id == item.run_options_id)
+                        .first()
+                )
+                session.delete(run_options)
+
+    def delete_old_results(self, maintain_last_results: int = 10000):
+        with self.session_scope() as session:
+            def delete_by_table(table_handler):
+                # Define a window function to partition by `request_id` and order by `timestamp` desc
+                window = over(
+                    func.row_number(),
+                    partition_by=table_handler.request_id,
+                    order_by=desc(table_handler.timestamp)
+                ).label("row_number")
+
+                # Create a subquery to assign row numbers to each row within its `request_id` partition
+                subquery = (
+                    session.query(
+                        table_handler,
+                        window
+                    )
+                    .subquery()
+                )
+
+                # Map the subquery back to the Result model
+                table_handler_with_row_number = aliased(table_handler, subquery)
+
+                # Filter the subquery to get only the top 10,000 rows per `request_id`
+                query = (
+                    session.query(
+                        table_handler_with_row_number.item_id
+                    )
+                    .filter(subquery.c.row_number <= maintain_last_results)
+                    .filter(table_handler_with_row_number.parent_id == None)
+                    .order_by(table_handler_with_row_number.request_id, desc(table_handler_with_row_number.timestamp))
+                )
+
+                # Execute the query and fetch results
+                results = query.all()
+                keep_ids = list(map(lambda item_id: item_id[0], results))
+
+                # Delete old results:
+                if keep_ids:
+                    # Delete all rows from the `results` table where `item_id` is not in the `items_to_keep` list
+                    delete_query = (
+                        session.query(table_handler)
+                        .filter(table_handler.item_id <= min(keep_ids))
+                    )
+
+                    # Execute the delete query
+                    delete_query.delete(synchronize_session=False)
+
+            delete_by_table(CollectionResult)
+            delete_by_table(ModbusResponse)
 
     def update_item_from_handler(self, item_id: int, **kwargs):
         with self.session_scope() as session:
@@ -286,5 +353,4 @@ class SQLiteRepository(BaseRepository):
 if __name__ == "__main__":
     repository_obj = SQLiteRepository()
 
-    result = repository_obj.get_item_request(1)
-    print(result)
+    result = repository_obj.delete_old_results(10)

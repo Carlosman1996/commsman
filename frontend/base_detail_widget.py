@@ -102,7 +102,6 @@ class BaseResult(QWidget):
         self.backend.signal_request_finished.connect(self.reload_data)
 
     def reload_data(self, item_id, result):
-        print(result)
         if self.item.item_id == item_id:
             self.update_view(result=result)
 
@@ -142,16 +141,17 @@ class BaseDetail(BaseResult):
         # Title:
         self.title_label = IconTextWidget(self.item.name, QIcon(ITEMS[self.item.item_handler]["icon"]), QSize(75, 50))
         header_layout.addWidget(self.title_label)
+        # Execute button at right side:
+        header_layout.addStretch(1)
         # Execute request:
         backend_running = bool(self.backend.running_threads)
         backend_running_other_item = bool(backend_running and self.item.item_id not in self.backend.running_threads)
         self.execute_button = ExecuteButton(backend_running=backend_running, blocked=backend_running_other_item)
         header_layout.addWidget(self.execute_button)
-        # All items at left side:
-        header_layout.addStretch(1)
 
         # Request side layout:
         self.result_splitter_section = QWidget()
+        self.result_splitter_section.setMinimumWidth(500)
         splitter.addWidget(self.result_splitter_section)
         self.result_layout = QVBoxLayout()
         self.result_splitter_section.setLayout(self.result_layout)
@@ -170,10 +170,6 @@ class BaseDetail(BaseResult):
         header_layout.addWidget(self.frame_timestamp)
         # All items at left side:
         header_layout.addStretch(1)
-
-        # Set stretch factors
-        splitter.setStretchFactor(0, 0)  # Index 0 (will not expand)
-        splitter.setStretchFactor(1, 1)  # Index 1 (will expand)
 
         main_layout.addWidget(splitter)
         self.setLayout(main_layout)

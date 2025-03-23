@@ -15,10 +15,9 @@ class HistoryTabWidget(BaseResult):
         self.setLayout(self.main_layout)
 
         # Define table:
-        self.table = CustomTable(headers=["Execution ID", "Result", "Elapsed Time", "Timestamp"],
+        self.table = CustomTable(headers=["Result", "Elapsed Time", "Timestamp"],
                                  editable=False,
                                  stretch=False)
-        self.table.hide_vertical_header()
 
         self.main_layout.addWidget(self.table)
         self.main_layout.addStretch()
@@ -41,13 +40,11 @@ class HistoryTabWidget(BaseResult):
         self.table.setRowCount(len(results_history))
         row = 0
         for result in results_history:
-            execution_id_widget = QTableWidgetItem(str(result.item_id))
-            self.table.setItem(row, 0, execution_id_widget)
             result_widget = QTableWidgetItem(str(result.result))
             result_widget.setIcon(get_icon(result.result))
-            self.table.setItem(row, 1, result_widget)
+            self.table.setItem(row, 0, result_widget)
             elapsed_time_widget = QTableWidgetItem(convert_time(result.elapsed_time))
-            self.table.setItem(row, 2, elapsed_time_widget)
+            self.table.setItem(row, 1, elapsed_time_widget)
             timestamp_widget = QTableWidgetItem(convert_timestamp(result.timestamp))
-            self.table.setItem(row, 3, timestamp_widget)
+            self.table.setItem(row, 2, timestamp_widget)
             row += 1
