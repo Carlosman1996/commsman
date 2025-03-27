@@ -17,12 +17,12 @@ class Runner(QThread):
 
     def __init__(self, repository, item_id):
         super().__init__()
-        self.item_id = item_id
         self.repository = repository
         self.update_items_queue = []
         self.collection_handler = CollectionHandler(self.update_items_queue)
         self.protocol_client_manager = ProtocolClientManager(self.repository)
         self.running = True  # Control flag for stopping
+        self.item = self.repository.get_selected_item()
 
     def run_requests(self, item, parent_result_item=None, main_result=None):
         """ Recursively processes requests """
@@ -63,7 +63,7 @@ class Runner(QThread):
                 self.collection_handler.add_request(parent_result_item, result)
 
             # Wait polling interval:
-            time.sleep(item.run_options.polling_interval)
+            time.sleep(self.item.run_options.polling_interval + 0.05)
 
         # Update view:
         if not main_result:
@@ -83,17 +83,20 @@ class Runner(QThread):
 
     def run(self):
         """Main execution function."""
-        selected_item = self.repository.get_selected_item()
-
-        self.signal_request_finished.emit(selected_item.item_id, None)
-
         # Get requests tree:
-        requests_tree = self.repository.get_items_request_tree(selected_item)[0]
+        requests_tree = self.repository.get_items_request_tree(self.item)[0]
 
         # Delayed start:
-        time.sleep(selected_item.run_options.delayed_start)
+        if self.item.run_options.delayed_start > 1:
+            self.signal_request_finished.emit(self.item.item_id, None)
 
-        self.run_requests(item=requests_tree)
+        time.sleep(self.item.run_options.delayed_start)
+
+        if self.item.run_options.continuous_monitoring:
+            while self.running:
+                self.run_requests(item=requests_tree)
+        else:
+            self.run_requests(item=requests_tree)
 
         self.protocol_client_manager.close_all_handlers()
         return

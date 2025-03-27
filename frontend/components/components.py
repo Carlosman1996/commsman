@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QLineEdit, QSpinBox, QComboBox, QPushButton,
                              QTabWidget, QTextEdit, QGridLayout,
                              QHBoxLayout, QTableWidget, QAbstractItemView, QHeaderView, QGroupBox,
-                             QTableWidgetItem, QSplitter, QMessageBox, QFrame, QSizePolicy)
+                             QTableWidgetItem, QSplitter, QMessageBox, QFrame, QSizePolicy, QCheckBox)
 
 
 class IconTextWidget(QWidget):
@@ -92,6 +92,8 @@ class CustomGridLayout(QGridLayout):
             widget.clicked.connect(self.signal_update_item)
         elif isinstance(widget, QTextEdit) or isinstance(widget, QLineEdit):
             widget.textChanged.connect(self.signal_update_item)
+        elif isinstance(widget, QCheckBox):
+            widget.stateChanged.connect(self.signal_update_item)
         elif isinstance(widget, QLabel):
             pass
         else:

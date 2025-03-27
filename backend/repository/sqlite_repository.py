@@ -120,9 +120,9 @@ class SQLiteRepository(BaseRepository):
             delete_by_table(CollectionResult)
             delete_by_table(ModbusResponse)
 
-    def update_item_from_handler(self, item_id: int, **kwargs):
+    def update_item_from_handler(self, item_handler: str, item_id: int, **kwargs):
         with self.session_scope() as session:
-            item = self._get_item_request(item_id)
+            item = self._get_item(item_handler=item_handler, item_id=item_id)
             for key, value in kwargs.items():
                 setattr(item, key, value)
             session.add(item)

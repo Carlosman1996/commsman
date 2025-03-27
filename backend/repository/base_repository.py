@@ -62,7 +62,7 @@ class BaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def update_item_from_handler(self, item_id: int, **kwargs):
+    def update_item_from_handler(self, item_id: int, item_handler: str, **kwargs):
         raise NotImplementedError
 
     @abstractmethod

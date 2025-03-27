@@ -9,3 +9,4 @@ class RunOptions(BaseItem):
     polling: Mapped[bool] = mapped_column(Boolean, default=False)
     polling_interval: Mapped[int] = mapped_column(Integer, default=1)
     delayed_start: Mapped[int] = mapped_column(Integer, default=0)
+    continuous_monitoring: Mapped[bool] = mapped_column(Boolean, default=False)

@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import (QWidget, QLabel,
+from PyQt6.QtWidgets import (QCheckBox, QWidget, QLabel,
                              QLineEdit, QSpinBox, QVBoxLayout)
 
 from frontend.base_detail_widget import BaseRequest
@@ -23,9 +23,12 @@ class RunOptionsTabWidget(BaseRequest):
         self.delayed_start = QSpinBox()
         self.delayed_start.setRange(0, 999999)
 
+        self.continuous_monitoring = QCheckBox()
+
         # self.grid_layout.add_widget(QLabel("Polling:"), self.polling_label)
         self.grid_layout.add_widget(QLabel("Polling interval:"), self.polling_interval_label)
         self.grid_layout.add_widget(QLabel("Delayed start:"), self.delayed_start)
+        self.grid_layout.add_widget(QLabel("Continuous monitoring:"), self.continuous_monitoring)
 
         # Add the grid layout to the main layout
         main_layout.addLayout(self.grid_layout)
@@ -43,6 +46,7 @@ class RunOptionsTabWidget(BaseRequest):
                 "name": self.item.name,
                 "polling_interval": int(self.polling_interval_label.text()),
                 "delayed_start": int(self.delayed_start.text()),
+                "continuous_monitoring": bool(self.continuous_monitoring.isChecked()),
             }
             self.item.run_options = self.repository.update_item_from_handler(
                 item_handler=self.item.run_options.item_handler,
@@ -62,3 +66,4 @@ class RunOptionsTabWidget(BaseRequest):
 
         self.polling_interval_label.setValue(self.item.run_options.polling_interval)
         self.delayed_start.setValue(self.item.run_options.delayed_start)
+        self.continuous_monitoring.setChecked(self.item.run_options.continuous_monitoring)
