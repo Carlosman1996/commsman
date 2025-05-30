@@ -63,7 +63,10 @@ class Runner(QThread):
                 self.collection_handler.add_request(parent_result_item, result)
 
             # Wait polling interval:
-            time.sleep(self.item.run_options.polling_interval + 0.05)
+            if self.item.run_options.polling_interval < 0.01:
+                time.sleep(0.01)
+            else:
+                time.sleep(self.item.run_options.polling_interval + 0.05)
 
         # Update view:
         if not main_result:
