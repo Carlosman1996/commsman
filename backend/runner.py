@@ -2,9 +2,12 @@ import copy
 import time
 import threading
 from dataclasses import asdict
+from datetime import datetime
 
+import tzlocal
 from PyQt6.QtCore import QThread, pyqtSignal, QObject
 from backend.handlers.collection_handler import CollectionHandler
+from backend.models.execution_session import ExecutionSession
 from backend.repository import *
 from backend.handlers.protocol_client_manager import ProtocolClientManager
 from backend.repository.sqlite_repository import SQLiteRepository
@@ -12,8 +15,6 @@ from backend.repository.sqlite_repository import SQLiteRepository
 
 class Runner(QThread):
     """ Worker that runs the requests in a separate Python thread inside a QThread """
-
-    signal_request_finished = pyqtSignal(int, object)
 
     def __init__(self, repository, item_id):
         super().__init__()
@@ -23,6 +24,13 @@ class Runner(QThread):
         self.protocol_client_manager = ProtocolClientManager(self.repository)
         self.running = True  # Control flag for stopping
         self.item = self.repository.get_selected_item()
+        self.execution_session = None
+
+    def create_execution_session(self):
+        self.execution_session = ExecutionSession(
+            name=self.item.name,
+        )
+        self.repository.add_item_from_dataclass(item=self.execution_session)
 
     def run_requests(self, item, parent_result_item=None, main_result=None):
         """ Recursively processes requests """
@@ -33,7 +41,8 @@ class Runner(QThread):
         if item.item_handler == "Collection":
             result = self.collection_handler.get_collection_result(
                 item=item,
-                parent_id=getattr(parent_result_item, "item_id", None)
+                parent_id=getattr(parent_result_item, "item_id", None),
+                execution_session_id=self.execution_session.item_id
             )
 
             # Update collections tree:
@@ -48,6 +57,7 @@ class Runner(QThread):
                 result = self.protocol_client_manager.get_request_failed_result(
                     item=item,
                     parent_id=getattr(parent_result_item, "item_id", None),
+                    execution_session_id = self.execution_session.item_id,
                     error_message=f"Error: {protocol_client}"
                 )
             # Do request:
@@ -55,29 +65,39 @@ class Runner(QThread):
                 protocol_client.connect()
                 result = protocol_client.execute_request(
                     **asdict(item),
-                    parent_result_id=getattr(parent_result_item, "item_id", None)
+                    parent_result_id=getattr(parent_result_item, "item_id", None),
+                    execution_session_id = self.execution_session.item_id,
                 )
+
+            # Update session:
+            if result.result == "OK":
+                self.execution_session.total_ok += 1
+            else:
+                self.execution_session.total_failed += 1
 
             # Update collections tree:
             if parent_result_item:
                 self.collection_handler.add_request(parent_result_item, result)
 
             # Wait polling interval:
-            if self.item.run_options.polling_interval < 0.01:
-                time.sleep(0.01)
+            if self.item.run_options.polling_interval < 0.1:
+                time.sleep(0.1)
             else:
-                time.sleep(self.item.run_options.polling_interval + 0.05)
+                time.sleep(self.item.run_options.polling_interval)
 
         # Update view:
         if not main_result:
             main_result = result
 
+        # Update session:
+        self.execution_session.elapsed_time = (datetime.now(tzlocal.get_localzone()) - self.execution_session.timestamp).total_seconds()
+
         # Save in database:
+        self.update_items_queue.append(self.execution_session)
         self.update_items_queue.append(result)
         while self.update_items_queue:
             result = self.update_items_queue.pop(0)
             self.repository.add_item_from_dataclass(item=result)
-            self.signal_request_finished.emit(result.request_id, result)
 
         # Iterate over children in case of collections:
         if item.item_handler == "Collection":
@@ -86,12 +106,10 @@ class Runner(QThread):
 
     def run(self):
         """Main execution function."""
+        self.create_execution_session()
+
         # Get requests tree:
         requests_tree = self.repository.get_items_request_tree(self.item)[0]
-
-        # Delayed start:
-        if self.item.run_options.delayed_start > 1:
-            self.signal_request_finished.emit(self.item.item_id, None)
 
         time.sleep(self.item.run_options.delayed_start)
 

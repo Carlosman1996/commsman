@@ -54,7 +54,7 @@ class BaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_item_last_result_tree(self, item_id: int):
+    def get_item_last_result_tree(self, item_id: BaseItem):
         raise NotImplementedError
 
     @abstractmethod

@@ -13,7 +13,6 @@ from backend.runner import Runner
 class BackendManager(QObject):
     """ Manages multiple backend worker threads """
 
-    signal_request_finished = pyqtSignal(int, object)  # Signal emitted when request finishes
     signal_finish = pyqtSignal()
 
     def __init__(self, repository: BaseRepository = None):
@@ -35,7 +34,6 @@ class BackendManager(QObject):
 
         thread = Runner(repository=self.repository, item_id=item_id)
         thread.finished.connect(lambda: self.remove_thread(item_id))
-        thread.signal_request_finished.connect(self.signal_request_finished.emit)  # Propagate to UI
         self.running_threads[item_id] = thread
         thread.start()
 
@@ -66,6 +64,6 @@ if __name__ == "__main__":
     backend_manager = BackendManager()
     backend_manager.repository.set_selected_item(item_id=1)
     backend_manager.start(item_id=1)  # Start first request
-    backend_manager.start(item_id=2)  # Start another request (independent)
+    # backend_manager.start(item_id=2)  # Start another request (independent)
 
     sys.exit(app.exec())  # ✅ Ensures Qt event loop runs

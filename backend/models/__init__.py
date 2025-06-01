@@ -1,4 +1,5 @@
 from backend.models.base import Base, BaseItem, BaseRequest, BaseResult
+from backend.models.execution_session import ExecutionSession
 from backend.models.request import Request
 from backend.models.client import Client
 from backend.models.collection import Collection, CollectionResult

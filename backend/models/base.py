@@ -55,6 +55,7 @@ class BaseRequest(BaseItem):
 class BaseResult(BaseItem):
     __abstract__ = True
 
+    execution_session_id: Mapped[int] = mapped_column(Integer, ForeignKey("execution_session.item_id", ondelete="CASCADE"))
     parent_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection_result.item_id", ondelete="SET NULL"), nullable=True)
     request_id: Mapped[int] = mapped_column(Integer)
 

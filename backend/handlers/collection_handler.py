@@ -11,11 +11,12 @@ class CollectionHandler:
         self.update_items_queue = update_items_queue
 
     @staticmethod
-    def get_collection_result(item: Collection, parent_id: int) -> CollectionResult:
+    def get_collection_result(item: Collection, parent_id: int, execution_session_id: int) -> CollectionResult:
         return CollectionResult(
             name=item.name,
             client_type=item.client_type,
             request_id=item.item_id,
+            execution_session_id=execution_session_id,
             parent_id=parent_id,
             result="OK",
             elapsed_time=0,

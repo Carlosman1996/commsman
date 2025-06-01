@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-from PyQt6.QtCore import Qt, QSize, pyqtSignal, QPropertyAnimation, QEasingCurve
+from PyQt6.QtCore import Qt, QSize, pyqtSignal, QPropertyAnimation, QEasingCurve, QTimer
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy, QLabel
 
@@ -49,6 +49,8 @@ class ExecuteButton(QPushButton):
                 background-color: green;
                 color: white;
             }
+    last_result: object = None
+    results_history: list = None
         """)
 
     def set_blocked(self):
@@ -99,11 +101,14 @@ class BaseResult(QWidget):
         self.repository = self.backend.repository
         self.item = self.backend.repository.get_selected_item()
 
-        self.backend.signal_request_finished.connect(self.reload_data)
+        # Update the UI every 500 ms:
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.reload_data)
+        self.timer.start(500)
 
-    def reload_data(self, item_id, result):
-        if self.item.item_id == item_id:
-            self.update_view(result=result)
+    def reload_data(self):
+        result = self.repository.get_item_last_result_tree(item=self.item)
+        self.update_view(result=result)
 
     @abstractmethod
     def update_view(self, load_data: bool = False, result: object = None):

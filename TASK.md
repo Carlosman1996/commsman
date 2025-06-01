@@ -2,7 +2,13 @@
 
 ## Priority
 
+TODO: group results in execution results
+
 TODO: control the maximum number of results to save
+
+TODO: tab to show description
+
+TODO: execution session as header
 
 TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
 

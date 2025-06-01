@@ -220,6 +220,47 @@ class SQLiteRepository(BaseRepository):
                 )
             return run_options
 
+    # TODO: old
+    # def get_item_last_result_tree(self, item: BaseRequest) -> BaseResult | None:
+    #     def get_result_with_children(item_handler, item_id):
+    #         result_item = self._get_item_result(item_handler=item_handler, item_id=item_id)
+    #         for index, child_data in enumerate(result_item.children):
+    #             result_item.children[index] = get_result_with_children(**child_data)
+    #         # Sort items at each level based on 'position':
+    #         result_item.children.sort(key=lambda x: x.timestamp)
+    #         return result_item
+    #
+    #     last_execution_result = None
+    #
+    #     with self.session_scope() as session:
+    #         item_class_handler = self.get_class_handler(item.item_response_handler)
+    #
+    #         # Get the maximum execution_id
+    #         max_execution_id = session.query(func.max(item_class_handler.execution_session_id)).scalar()
+    #
+    #         # Get all rows with that execution_id
+    #         results = (
+    #             session.query(item_class_handler)
+    #             .filter(item_class_handler.request_id == item.item_id)
+    #             .filter(item_class_handler.execution_session_id == max_execution_id)
+    #             .all()
+    #         )
+    #
+    #         if results:
+    #             last_execution_result = (
+    #                 session.query(ExecutionSession)
+    #                 .filter(ExecutionSession.item_id == max_execution_id)
+    #                 .first()
+    #             )
+    #
+    #             for result in results:
+    #                 get_result_with_children(item_handler=result.item_handler,
+    #                                          item_id=result.item_id)
+    #
+    #             last_execution_result.children = results
+    #
+    #         return last_execution_result
+
     def get_item_last_result_tree(self, item: BaseRequest) -> BaseResult:
         def get_result_with_children(item_handler, item_id):
             result_item = self._get_item_result(item_handler=item_handler, item_id=item_id)

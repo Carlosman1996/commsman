@@ -85,9 +85,9 @@ class CustomModbusHandler(BaseHandler):
             case _:
                 raise Exception(f"Function '{function}' not supported")
 
-    def execute_request(self, name: str, item_id: int, parent_result_id: int, data_type: str, function: str, address: int, count: int, slave: int, values: list = None, **kwargs):
+    def execute_request(self, name: str, item_id: int, parent_result_id: int, execution_session_id: int, data_type: str, function: str, address: int, count: int, slave: int, values: list = None, **kwargs):
         self.framer.reset_packets()
-        self.initialize_response_dataclass(name=name, request_id=item_id, parent_result_id=parent_result_id)
+        self.initialize_response_dataclass(name=name, request_id=item_id, parent_result_id=parent_result_id, execution_session_id=execution_session_id)
 
         start_time = time.time()
         self.response.result = "Failed"
@@ -128,12 +128,13 @@ class CustomModbusHandler(BaseHandler):
 
         return self.response
 
-    def initialize_response_dataclass(self, name: str, request_id: int, parent_result_id: int) -> ModbusResponse:
+    def initialize_response_dataclass(self, name: str, request_id: int, parent_result_id: int, execution_session_id: int) -> ModbusResponse:
         self.response = ModbusResponse(
             name=name,
             client_type=self.client_type,
             request_id=request_id,
             parent_id=parent_result_id,
+            execution_session_id=execution_session_id,
             result="Pending",
             timestamp=datetime.now(tzlocal.get_localzone()),
             elapsed_time=0,

@@ -48,12 +48,13 @@ class ProtocolClientManager:
                 raise ValueError(f"Unsupported client type: {item_client.item_handler}")
         return self.handlers[handler_id]
 
-    def get_request_failed_result(self, item: BaseRequest, parent_id: int, error_message: str):
+    def get_request_failed_result(self, item: BaseRequest, parent_id: int, execution_session_id: int, error_message: str):
         if item.item_response_handler == "ModbusResponse":
             response = ModbusResponse(
                 name=item.name,
                 client_type=item.client_type,
                 request_id=item.item_id,
+                execution_session_id=execution_session_id,
                 parent_id=parent_id,
                 result="Failed",
                 elapsed_time=0,
