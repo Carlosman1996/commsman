@@ -1,5 +1,4 @@
 import sys
-from functools import partial
 
 from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtWidgets import QApplication

@@ -285,7 +285,7 @@ class ModbusResponseWidget(BaseResult):
 
     def get_response_data(self):
         def get_value(key, replace_if_none: str = "-"):
-            return get_model_value(self.item.last_result, key, replace_if_none)
+            return get_model_value(self.item.last_result.results[-1], key, replace_if_none)
 
         return {
             "name": get_value("name"),
@@ -312,7 +312,7 @@ class ModbusResponseWidget(BaseResult):
     def update_view(self, load_data=False, result=None):
         if not load_data:
             self.item.last_result = result
-        if self.item.last_result is None or self.item.last_result.result == "Pending":
+        if self.item.last_result is None or self.item.last_result.result == "Pending" or not self.item.last_result.results:
             return
 
         response = self.get_response_data()

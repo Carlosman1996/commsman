@@ -220,48 +220,7 @@ class SQLiteRepository(BaseRepository):
                 )
             return run_options
 
-    # TODO: old
-    # def get_item_last_result_tree(self, item: BaseRequest) -> BaseResult | None:
-    #     def get_result_with_children(item_handler, item_id):
-    #         result_item = self._get_item_result(item_handler=item_handler, item_id=item_id)
-    #         for index, child_data in enumerate(result_item.children):
-    #             result_item.children[index] = get_result_with_children(**child_data)
-    #         # Sort items at each level based on 'position':
-    #         result_item.children.sort(key=lambda x: x.timestamp)
-    #         return result_item
-    #
-    #     last_execution_result = None
-    #
-    #     with self.session_scope() as session:
-    #         item_class_handler = self.get_class_handler(item.item_response_handler)
-    #
-    #         # Get the maximum execution_id
-    #         max_execution_id = session.query(func.max(item_class_handler.execution_session_id)).scalar()
-    #
-    #         # Get all rows with that execution_id
-    #         results = (
-    #             session.query(item_class_handler)
-    #             .filter(item_class_handler.request_id == item.item_id)
-    #             .filter(item_class_handler.execution_session_id == max_execution_id)
-    #             .all()
-    #         )
-    #
-    #         if results:
-    #             last_execution_result = (
-    #                 session.query(ExecutionSession)
-    #                 .filter(ExecutionSession.item_id == max_execution_id)
-    #                 .first()
-    #             )
-    #
-    #             for result in results:
-    #                 get_result_with_children(item_handler=result.item_handler,
-    #                                          item_id=result.item_id)
-    #
-    #             last_execution_result.children = results
-    #
-    #         return last_execution_result
-
-    def get_item_last_result_tree(self, item: BaseRequest) -> BaseResult:
+    def get_item_last_result_tree(self, item: BaseRequest) -> BaseResult | None:
         def get_result_with_children(item_handler, item_id):
             result_item = self._get_item_result(item_handler=item_handler, item_id=item_id)
             for index, child_data in enumerate(result_item.children):
@@ -271,29 +230,41 @@ class SQLiteRepository(BaseRepository):
             return result_item
 
         with self.session_scope() as session:
-            item_class_handler = self.get_class_handler(item.item_response_handler)
-            last_result = (
-                session.query(item_class_handler)
+            last_execution_result = (
+                session.query(ExecutionSession)
+                .filter(ExecutionSession.request_id == item.item_id)
+                .order_by(ExecutionSession.item_id.desc())
+                .first()
+            )
+
+            if last_execution_result:
+                item_class_handler = self.get_class_handler(item.item_response_handler)
+
+                # Get all rows with that execution_id
+                last_results = (
+                    session.query(item_class_handler)
                     .filter(item_class_handler.request_id == item.item_id)
-                    .order_by(item_class_handler.timestamp.desc())
-                    .first()
+                    .filter(item_class_handler.execution_session_id == last_execution_result.item_id)
+                    .all()
                 )
 
-            if last_result:
-                last_result = get_result_with_children(item_handler=last_result.item_handler,
-                                                       item_id=last_result.item_id)
-            return last_result
+                for index, last_result in enumerate(last_results):
+                    last_results[index] = get_result_with_children(item_handler=last_result.item_handler,
+                                                                   item_id=last_result.item_id)
+
+                last_execution_result.results = last_results
+
+        return last_execution_result
 
     def get_item_results_history(self, item: BaseRequest) -> BaseResult:
         with self.session_scope() as session:
-            item_class_handler = self.get_class_handler(item.item_response_handler)
             results_history = (
-                session.query(item_class_handler)
-                    .filter(item_class_handler.request_id == item.item_id)
-                    .order_by(item_class_handler.timestamp.desc())
-                    .limit(10)
-                    .all()
-                )
+                session.query(ExecutionSession)
+                .filter(ExecutionSession.request_id == item.item_id)
+                .order_by(ExecutionSession.timestamp.desc())
+                .limit(10)
+                .all()
+            )
 
             if results_history is None:
                 results_history = []
@@ -394,4 +365,6 @@ class SQLiteRepository(BaseRepository):
 if __name__ == "__main__":
     repository_obj = SQLiteRepository()
 
-    result = repository_obj.delete_old_results(10)
+    item = repository_obj.get_item_request(1)
+    result = repository_obj.get_item_last_result_tree(item)
+    print(result)

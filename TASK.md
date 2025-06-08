@@ -2,7 +2,8 @@
 
 ## Priority
 
-TODO: group results in execution results
+TODO: Qtimer(500) must be run only while execution is running. The collection results tree does not allow to expand because it is constantly reloaded.
+TODO: individual request results, when are run inside a collection, must show last result.
 
 TODO: control the maximum number of results to save
 

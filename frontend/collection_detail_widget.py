@@ -60,7 +60,7 @@ class CollectionResultTreeView(QTreeView):
         # Set the repository to the tree view
         self.setModel(self.view_model)
 
-    def update_model(self, collection_results, collapse_view=False):
+    def update_model(self, collection_results):
         # Clear the repository and repopulate it with updated data
         self.view_model.clear()
         self.view_model.setHorizontalHeaderLabels(["Name", "Status"])
@@ -68,38 +68,40 @@ class CollectionResultTreeView(QTreeView):
         self.setColumnWidth(0, 200)  # Minimum width for column 0
         self.setColumnWidth(1, 200)  # Minimum width for column 1
 
-        self.populate_model(collection_results)
-
-        if not collapse_view:
-            # Expand all items in the tree view
-            self.expandAll()
-        else:
-            first_index = self.view_model.index(0, 0)
-            self.expand(first_index)
+        self.populate_model(collection_results.results)
 
     def populate_model(self, collection_result, parent=None):
         """Populate the QStandardItemModel with collections and requests."""
-        # Create a folder item for the collection
-        folder_item = QStandardItem(f"{collection_result.name}")
-        status_item = QStandardItem(self.get_collection_status(collection_result))
 
-        if parent is None:
-            self.view_model.appendRow([folder_item, status_item])
+        # Execution level:
+        if not parent:
+            for index, result in enumerate(collection_result):
+                # Create a folder item for the collection
+                folder_item = QStandardItem(f"Iteration {index + 1}")
+                status_item = QStandardItem(self.get_collection_status(result))
+                self.view_model.appendRow([folder_item, status_item])
+
+                self.populate_model(result, folder_item)
+
+        # Results level:
         else:
+            # Create a folder item for the collection
+            folder_item = QStandardItem(f"{collection_result.name}")
+            status_item = QStandardItem(self.get_collection_status(collection_result))
             parent.appendRow([folder_item, status_item])
 
-        # Iterate through children (both collections and requests)
-        for child in collection_result.children:
-            if child.item_handler == "CollectionResult":
-                # Handle sub-collection
-                self.populate_model(child, folder_item)
-            else:
-                # Handle request
-                request_item = QStandardItem(child.name)
-                text = self.get_request_status(child)
-                status_item = QStandardItem(text)
-                status_item.setIcon(get_icon(child.result))
-                folder_item.appendRow([request_item, status_item])
+            # Iterate through children (both collections and requests)
+            for child in collection_result.children:
+                if child.item_handler == "CollectionResult":
+                    # Handle sub-collection
+                    self.populate_model(child, folder_item)
+                else:
+                    # Handle request
+                    request_item = QStandardItem(child.name)
+                    text = self.get_request_status(child)
+                    status_item = QStandardItem(text)
+                    status_item.setIcon(get_icon(child.result))
+                    folder_item.appendRow([request_item, status_item])
 
     def get_collection_status(self, collection_result):
         total_requests = collection_result.total_ok + collection_result.total_failed + collection_result.total_pending
@@ -156,7 +158,7 @@ class CollectionResultWidget(BaseResult):
         if self.item.last_result is None:
             return
 
-        self.results_tree.update_model(self.item.last_result, load_data)
+        self.results_tree.update_model(self.item.last_result)
 
 
 class CollectionDetail(BaseDetail):

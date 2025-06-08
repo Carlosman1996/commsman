@@ -16,20 +16,29 @@ from backend.repository.sqlite_repository import SQLiteRepository
 class Runner(QThread):
     """ Worker that runs the requests in a separate Python thread inside a QThread """
 
-    def __init__(self, repository, item_id):
+    def __init__(self, repository: BaseRepository, item_id: int):
         super().__init__()
         self.repository = repository
         self.update_items_queue = []
         self.collection_handler = CollectionHandler(self.update_items_queue)
         self.protocol_client_manager = ProtocolClientManager(self.repository)
         self.running = True  # Control flag for stopping
-        self.item = self.repository.get_selected_item()
+        self.item = self.repository.get_item_request(item_id=item_id)
         self.execution_session = None
 
     def create_execution_session(self):
         self.execution_session = ExecutionSession(
             name=self.item.name,
+            request_id=self.item.item_id,
+            timestamp=datetime.now(tzlocal.get_localzone())
         )
+        self.repository.add_item_from_dataclass(item=self.execution_session)
+
+    def finish_execution_session(self):
+        if self.execution_session.total_failed > 0:
+            self.execution_session.result = "Failed"
+        else:
+            self.execution_session.result = "OK"
         self.repository.add_item_from_dataclass(item=self.execution_session)
 
     def run_requests(self, item, parent_result_item=None, main_result=None):
@@ -119,9 +128,16 @@ class Runner(QThread):
         else:
             self.run_requests(item=requests_tree)
 
+        self.finish_execution_session()
+
         self.protocol_client_manager.close_all_handlers()
         return
 
     def stop(self):
         """Gracefully stop the thread."""
         self.running = False
+
+
+if __name__ == "__main__":
+    runner = Runner(repository=SQLiteRepository(), item_id=1)
+    runner.run()

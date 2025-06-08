@@ -46,6 +46,8 @@ def get_icon(text):
         return QIcon.fromTheme("dialog-ok")  # Green check icon
     elif text == "Failed":
         return QIcon.fromTheme("dialog-error")  # Red X icon
+    elif text == "Running":
+        return QIcon.fromTheme("go-next")  # Green check icon
     else:
         raise NotImplementedError
 

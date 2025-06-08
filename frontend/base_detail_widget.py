@@ -49,8 +49,6 @@ class ExecuteButton(QPushButton):
                 background-color: green;
                 color: white;
             }
-    last_result: object = None
-    results_history: list = None
         """)
 
     def set_blocked(self):
