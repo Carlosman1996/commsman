@@ -125,8 +125,10 @@ class Runner(QThread):
         if self.item.run_options.continuous_monitoring:
             while self.running:
                 self.run_requests(item=requests_tree)
+                self.execution_session.iterations += 1
         else:
             self.run_requests(item=requests_tree)
+            self.execution_session.iterations += 1
 
         self.finish_execution_session()
 

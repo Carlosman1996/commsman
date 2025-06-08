@@ -102,7 +102,7 @@ class BaseResult(QWidget):
         # Update the UI every 500 ms:
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.reload_data)
-        self.timer.start(500)
+        self.timer.start(250)
 
     def reload_data(self):
         result = self.repository.get_item_last_result_tree(item=self.item)
@@ -171,6 +171,10 @@ class BaseDetail(BaseResult):
         header_layout.addWidget(self.frame_elapsed_time)
         self.frame_timestamp = InfoBox("")
         header_layout.addWidget(self.frame_timestamp)
+        self.frame_iterations = InfoBox("")
+        header_layout.addWidget(self.frame_iterations)
+        self.frame_results = InfoBox("")
+        header_layout.addWidget(self.frame_results)
         # All items at left side:
         header_layout.addStretch(1)
 
@@ -209,3 +213,7 @@ class BaseDetail(BaseResult):
         self.frame_result.setText(get_model_value(result, "result"))
         self.frame_elapsed_time.setText(convert_time(get_model_value(result, "elapsed_time", 0)))
         self.frame_timestamp.setText(convert_timestamp(get_model_value(result, "timestamp")))
+        self.frame_iterations.setText(f"Iterations: {get_model_value(result, "iterations")}")
+        self.frame_results.setText(f"Total OK / KO: "
+                                   f"{get_model_value(result, "total_ok")} / "
+                                   f"{get_model_value(result, "total_failed")}")

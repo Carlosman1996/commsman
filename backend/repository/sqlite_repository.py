@@ -233,7 +233,7 @@ class SQLiteRepository(BaseRepository):
             last_execution_result = (
                 session.query(ExecutionSession)
                 .filter(ExecutionSession.request_id == item.item_id)
-                .order_by(ExecutionSession.item_id.desc())
+                .order_by(ExecutionSession.timestamp.desc())
                 .first()
             )
 
@@ -241,18 +241,19 @@ class SQLiteRepository(BaseRepository):
                 item_class_handler = self.get_class_handler(item.item_response_handler)
 
                 # Get all rows with that execution_id
-                last_results = (
+                last_result = (
                     session.query(item_class_handler)
                     .filter(item_class_handler.request_id == item.item_id)
                     .filter(item_class_handler.execution_session_id == last_execution_result.item_id)
-                    .all()
+                    .order_by(item_class_handler.timestamp.desc())
+                    .first()
                 )
 
-                for index, last_result in enumerate(last_results):
-                    last_results[index] = get_result_with_children(item_handler=last_result.item_handler,
-                                                                   item_id=last_result.item_id)
+                if last_result:
+                    last_result = get_result_with_children(item_handler=last_result.item_handler,
+                                                           item_id=last_result.item_id)
 
-                last_execution_result.results = last_results
+                last_execution_result.results = last_result
 
         return last_execution_result
 

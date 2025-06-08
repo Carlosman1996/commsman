@@ -35,7 +35,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Commsman")
         # self.showMaximized()
-        self.resize(1280, 720)
+        self.resize(1920, 1080)
 
         # Define general controller:
         self.backend = BackendManager()

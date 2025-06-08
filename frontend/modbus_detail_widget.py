@@ -285,7 +285,7 @@ class ModbusResponseWidget(BaseResult):
 
     def get_response_data(self):
         def get_value(key, replace_if_none: str = "-"):
-            return get_model_value(self.item.last_result.results[-1], key, replace_if_none)
+            return get_model_value(self.item.last_result.results, key, replace_if_none)
 
         return {
             "name": get_value("name"),

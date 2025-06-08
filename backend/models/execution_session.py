@@ -17,6 +17,6 @@ class ExecutionSession(BaseItem):
     timestamp: Mapped[datetime] = mapped_column(String, default=None)
 
     result: Mapped[str] = mapped_column(String, default="Running")
+    iterations: Mapped[int] = mapped_column(Integer, default=0)
     total_ok: Mapped[int] = mapped_column(Integer, default=0)
     total_failed: Mapped[int] = mapped_column(Integer, default=0)
-    total_pending: Mapped[int] = mapped_column(Integer, default=0)

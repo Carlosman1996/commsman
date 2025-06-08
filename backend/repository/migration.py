@@ -1,12 +1,15 @@
 import json
+import pathlib
 from collections import defaultdict, deque
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from backend.models import *
 
+DIR_PATH = pathlib.Path(__file__).parent.resolve()
+
 # Load JSON data
-with open('project_structure_data.json', 'r') as f:
+with open(f'{DIR_PATH}/project_structure_data.json', 'r') as f:
     data = json.load(f)
 
 # Initialize Database

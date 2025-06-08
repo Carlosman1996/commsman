@@ -69,25 +69,25 @@ class CollectionResultTreeView(QTreeView):
         self.setColumnWidth(1, 200)  # Minimum width for column 1
 
         self.populate_model(collection_results.results)
+        self.expandAll()
+        self.scrollToBottom()
 
     def populate_model(self, collection_result, parent=None):
         """Populate the QStandardItemModel with collections and requests."""
+        if not collection_result:
+            return
+
+        # Create a folder item for the collection
+        folder_item = QStandardItem(f"{collection_result.name}")
+        status_item = QStandardItem(self.get_collection_status(collection_result))
 
         # Execution level:
         if not parent:
-            for index, result in enumerate(collection_result):
-                # Create a folder item for the collection
-                folder_item = QStandardItem(f"Iteration {index + 1}")
-                status_item = QStandardItem(self.get_collection_status(result))
-                self.view_model.appendRow([folder_item, status_item])
-
-                self.populate_model(result, folder_item)
+            self.view_model.appendRow([folder_item, status_item])
+            self.populate_model(collection_result, folder_item)
 
         # Results level:
         else:
-            # Create a folder item for the collection
-            folder_item = QStandardItem(f"{collection_result.name}")
-            status_item = QStandardItem(self.get_collection_status(collection_result))
             parent.appendRow([folder_item, status_item])
 
             # Iterate through children (both collections and requests)
