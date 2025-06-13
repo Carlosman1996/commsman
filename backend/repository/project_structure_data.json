@@ -327,20 +327,6 @@
         "polling_interval": 1,
         "delayed_start": 0
     },
-    "uuid_1fcc366b-1842-4a65-a3b8-00ed830c5ead": {
-        "name": "Modbus RTU",
-        "item_type": "Modbus",
-        "item_handler": "ModbusRtuClient",
-        "uuid": "uuid_1fcc366b-1842-4a65-a3b8-00ed830c5ead",
-        "client_type": "Modbus RTU",
-        "com_port": "COM1",
-        "baudrate": 9600,
-        "parity": "None",
-        "stopbits": 1,
-        "bytesize": 8,
-        "timeout": 3,
-        "retries": 3
-    },
     "uuid_9b49d204-e44a-4db5-ac4e-b2f7ab2a2655": {
         "name": "Request",
         "item_type": "RunOptions",
@@ -350,20 +336,6 @@
         "polling_interval": 1,
         "delayed_start": 0
     },
-    "uuid_dc75333c-f9d7-4407-8f5c-17837af75d30": {
-        "name": "Request",
-        "item_type": "Modbus",
-        "item_handler": "ModbusRtuClient",
-        "uuid": "uuid_dc75333c-f9d7-4407-8f5c-17837af75d30",
-        "client_type": "Modbus RTU",
-        "com_port": "COM1",
-        "baudrate": 19200,
-        "parity": "Even",
-        "stopbits": 2,
-        "bytesize": 7,
-        "timeout": 4,
-        "retries": 4
-    },
     "uuid_c1d5c017-e78d-434c-9392-c2238f78ce08": {
         "name": "Request",
         "item_type": "Modbus",
@@ -371,7 +343,7 @@
         "uuid": "uuid_c1d5c017-e78d-434c-9392-c2238f78ce08",
         "parent": "uuid_84cb4e73-e1c7-489c-96a7-3774518772cf",
         "children": [],
-        "client": "uuid_dc75333c-f9d7-4407-8f5c-17837af75d30",
+        "client": null,
         "client_type": "Modbus RTU",
         "run_options": "uuid_9b49d204-e44a-4db5-ac4e-b2f7ab2a2655",
         "last_result": "uuid_4514af5a-fb1b-40cf-a161-226766639be9",
@@ -394,20 +366,6 @@
         "polling_interval": 1,
         "delayed_start": 0
     },
-    "uuid_fb20ef39-f0bd-42ef-86ea-a0bbbe1367c3": {
-        "name": "Request 1",
-        "item_type": "Modbus",
-        "item_handler": "ModbusRtuClient",
-        "uuid": "uuid_fb20ef39-f0bd-42ef-86ea-a0bbbe1367c3",
-        "client_type": "Modbus RTU",
-        "com_port": "COM1",
-        "baudrate": 19200,
-        "parity": "None",
-        "stopbits": 1,
-        "bytesize": 8,
-        "timeout": 3,
-        "retries": 3
-    },
     "uuid_5808ee46-f9eb-408c-8c13-780e9c318b2c": {
         "name": "Request 1",
         "item_type": "Modbus",
@@ -415,7 +373,7 @@
         "uuid": "uuid_5808ee46-f9eb-408c-8c13-780e9c318b2c",
         "parent": "uuid_84cb4e73-e1c7-489c-96a7-3774518772cf",
         "children": [],
-        "client": "uuid_fb20ef39-f0bd-42ef-86ea-a0bbbe1367c3",
+        "client": null,
         "client_type": "Modbus RTU",
         "run_options": "uuid_c70f230c-c03b-4d8e-a35c-b1966b50e537",
         "last_result": "uuid_01861dcc-bea3-4554-b2f5-0c8c4513dd95",
@@ -437,20 +395,6 @@
         "polling_interval": 1,
         "delayed_start": 0
     },
-    "uuid_31a30c1b-1293-4aa3-aa61-81d2cf89aaf6": {
-        "name": "RTU test",
-        "item_type": "Modbus",
-        "item_handler": "ModbusRtuClient",
-        "uuid": "uuid_31a30c1b-1293-4aa3-aa61-81d2cf89aaf6",
-        "client_type": "Modbus RTU",
-        "com_port": "COM1",
-        "baudrate": 9600,
-        "parity": "None",
-        "stopbits": 1,
-        "bytesize": 8,
-        "timeout": 3,
-        "retries": 3
-    },
     "uuid_f1766976-8d97-48aa-9e59-561eb182423b": {
         "name": "RTU test",
         "item_type": "Modbus",
@@ -458,7 +402,7 @@
         "uuid": "uuid_f1766976-8d97-48aa-9e59-561eb182423b",
         "parent": "uuid_84cb4e73-e1c7-489c-96a7-3774518772cf",
         "children": [],
-        "client": "uuid_31a30c1b-1293-4aa3-aa61-81d2cf89aaf6",
+        "client": null,
         "client_type": "Modbus RTU",
         "run_options": "uuid_4706d5f6-5a71-4855-9cd0-599728e50262",
         "last_result": "uuid_390cae56-db2b-4fe5-beb5-5b20561681ba",
@@ -535,7 +479,7 @@
             "uuid_f1766976-8d97-48aa-9e59-561eb182423b",
             "uuid_ee65f157-3b68-4bf9-adf2-60b59e0205c4"
         ],
-        "client": "uuid_1fcc366b-1842-4a65-a3b8-00ed830c5ead",
+        "client": null,
         "client_type": "Modbus RTU",
         "run_options": "uuid_e502e200-ee22-4d28-9842-21af51ba8cca",
         "last_result": "uuid_5c194dba-4fb6-4f37-80a5-88f7ea2c29fb"
@@ -2839,20 +2783,6 @@
         "timeout": 3,
         "retries": 3
     },
-    "uuid_f1a8d9bb-0f98-4a15-b911-f069865086db": {
-        "name": "Project 1",
-        "item_type": "Modbus",
-        "item_handler": "ModbusRtuClient",
-        "uuid": "uuid_f1a8d9bb-0f98-4a15-b911-f069865086db",
-        "client_type": "Modbus RTU",
-        "com_port": "COM1",
-        "baudrate": 9600,
-        "parity": "None",
-        "stopbits": 1,
-        "bytesize": 8,
-        "timeout": 3,
-        "retries": 3
-    },
     "uuid_c5883e70-b624-45f4-a8d1-ae248eea06e5": {
         "name": "Project 1",
         "item_type": "Modbus",
@@ -2932,20 +2862,6 @@
         "client_type": "Modbus TCP",
         "host": "127.0.0.1",
         "port": 502,
-        "timeout": 3,
-        "retries": 3
-    },
-    "uuid_5d5faf30-4801-4868-b94c-7e87c0703f07": {
-        "name": "Request Inherit",
-        "item_type": "Modbus",
-        "item_handler": "ModbusRtuClient",
-        "uuid": "uuid_5d5faf30-4801-4868-b94c-7e87c0703f07",
-        "client_type": "Modbus RTU",
-        "com_port": "COM1",
-        "baudrate": 9600,
-        "parity": "None",
-        "stopbits": 1,
-        "bytesize": 8,
         "timeout": 3,
         "retries": 3
     },
@@ -3037,20 +2953,6 @@
         "timeout": 3,
         "retries": 3
     },
-    "uuid_6e71e908-0a14-4b58-85bd-23cc88ba1857": {
-        "name": "Request Inherit",
-        "item_type": "Modbus",
-        "item_handler": "ModbusRtuClient",
-        "uuid": "uuid_6e71e908-0a14-4b58-85bd-23cc88ba1857",
-        "client_type": "Modbus RTU",
-        "com_port": "COM1",
-        "baudrate": 9600,
-        "parity": "None",
-        "stopbits": 1,
-        "bytesize": 8,
-        "timeout": 3,
-        "retries": 3
-    },
     "uuid_82cdbc40-ed93-409c-838e-7e1bf172ebcc": {
         "name": "Request Inherit",
         "item_type": "Modbus",
@@ -3059,20 +2961,6 @@
         "client_type": "Modbus TCP",
         "host": "127.0.0.1",
         "port": 502,
-        "timeout": 3,
-        "retries": 3
-    },
-    "uuid_7f87ef1f-60e8-4309-aca8-8600dd100fd3": {
-        "name": "Request Inherit",
-        "item_type": "Modbus",
-        "item_handler": "ModbusRtuClient",
-        "uuid": "uuid_7f87ef1f-60e8-4309-aca8-8600dd100fd3",
-        "client_type": "Modbus RTU",
-        "com_port": "COM1",
-        "baudrate": 9600,
-        "parity": "None",
-        "stopbits": 1,
-        "bytesize": 8,
         "timeout": 3,
         "retries": 3
     },
@@ -3186,20 +3074,6 @@
         "timeout": 3,
         "retries": 3
     },
-    "uuid_cf628dac-1514-4e52-b0c3-2defa053e97b": {
-        "name": "Request Inherit",
-        "item_type": "Modbus",
-        "item_handler": "ModbusRtuClient",
-        "uuid": "uuid_cf628dac-1514-4e52-b0c3-2defa053e97b",
-        "client_type": "Modbus RTU",
-        "com_port": "COM1",
-        "baudrate": 9600,
-        "parity": "None",
-        "stopbits": 1,
-        "bytesize": 8,
-        "timeout": 3,
-        "retries": 3
-    },
     "uuid_21fc5e0c-a719-4300-be24-d4adeb8a905b": {
         "name": "Request Inherit",
         "item_type": "Modbus",
@@ -3221,20 +3095,6 @@
         "port": 502,
         "timeout": 3,
         "retries": 3
-    },
-    "uuid_b922037c-ae65-40d9-a57b-eb96ccd84367": {
-        "name": "Request Inherit",
-        "item_type": "Modbus",
-        "item_handler": "ModbusRtuClient",
-        "uuid": "uuid_b922037c-ae65-40d9-a57b-eb96ccd84367",
-        "client_type": "Modbus RTU",
-        "com_port": "COM1",
-        "baudrate": 19200,
-        "parity": "Even",
-        "stopbits": 2,
-        "bytesize": 7,
-        "timeout": 2,
-        "retries": 2
     },
     "uuid_abb9676a-ae1d-4b4f-b2cb-ca120f9238b9": {
         "name": "Request Inherit",
@@ -3324,20 +3184,6 @@
         "client_type": "Modbus TCP",
         "host": "127.0.0.",
         "port": 50,
-        "timeout": 3,
-        "retries": 3
-    },
-    "uuid_6ffb3e85-be23-4c5d-9c5b-48a0b99af119": {
-        "name": "aaa",
-        "item_type": "Modbus",
-        "item_handler": "ModbusRtuClient",
-        "uuid": "uuid_6ffb3e85-be23-4c5d-9c5b-48a0b99af119",
-        "client_type": "Modbus RTU",
-        "com_port": "COM1",
-        "baudrate": 9600,
-        "parity": "None",
-        "stopbits": 1,
-        "bytesize": 8,
         "timeout": 3,
         "retries": 3
     },

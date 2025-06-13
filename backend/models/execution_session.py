@@ -8,6 +8,9 @@ class ExecutionSession(BaseItem):
     __tablename__ = "execution_session"
 
     results: list = None
+    iterations: int = 0
+    total_ok: int = 0
+    total_failed: int = 0
 
     # Initialize to None but it is non-nullable:
     request_id: Mapped[int] = mapped_column(Integer, ForeignKey("request.item_id", ondelete="SET NULL"), nullable=False, default=None)
@@ -17,6 +20,4 @@ class ExecutionSession(BaseItem):
     timestamp: Mapped[datetime] = mapped_column(String, default=None)
 
     result: Mapped[str] = mapped_column(String, default="Running")
-    iterations: Mapped[int] = mapped_column(Integer, default=0)
-    total_ok: Mapped[int] = mapped_column(Integer, default=0)
-    total_failed: Mapped[int] = mapped_column(Integer, default=0)
+

@@ -1,2 +1,1 @@
 from backend.repository.base_repository import BaseRepository
-from backend.repository.json_repository import JsonRepository

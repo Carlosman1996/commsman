@@ -105,8 +105,9 @@ class BaseResult(QWidget):
         self.timer.start(250)
 
     def reload_data(self):
-        result = self.repository.get_item_last_result_tree(item=self.item)
-        self.update_view(result=result)
+        if self.backend.running:
+            result = self.repository.get_item_last_result_tree(item=self.item)
+            self.update_view(result=result)
 
     @abstractmethod
     def update_view(self, load_data: bool = False, result: object = None):

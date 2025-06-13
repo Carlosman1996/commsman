@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine, event, func, desc, over
+from sqlalchemy import create_engine, event, func, desc, over, select
 from sqlalchemy.orm import sessionmaker, declarative_base, Session, aliased
 
 from backend.models import *
@@ -229,33 +229,52 @@ class SQLiteRepository(BaseRepository):
             result_item.children.sort(key=lambda x: x.timestamp)
             return result_item
 
+        execution_session = None
         with self.session_scope() as session:
-            last_execution_result = (
-                session.query(ExecutionSession)
-                .filter(ExecutionSession.request_id == item.item_id)
-                .order_by(ExecutionSession.timestamp.desc())
-                .first()
+
+            item_class_handler = self.get_class_handler(item.item_response_handler)
+
+            # Get item last results from last execution session:
+            subquery = select(func.max(ExecutionSession.item_id)).scalar_subquery()
+            results = (
+                session.query(item_class_handler)
+                .filter(item_class_handler.request_id == item.item_id)
+                .filter(item_class_handler.execution_session_id == subquery)
+                .order_by(item_class_handler.timestamp.desc())
+                .all()
             )
 
-            if last_execution_result:
-                item_class_handler = self.get_class_handler(item.item_response_handler)
+            if results:
+                last_result = results[0]
 
-                # Get all rows with that execution_id
-                last_result = (
-                    session.query(item_class_handler)
-                    .filter(item_class_handler.request_id == item.item_id)
-                    .filter(item_class_handler.execution_session_id == last_execution_result.item_id)
-                    .order_by(item_class_handler.timestamp.desc())
+                # Get item last execution session:
+                execution_session = (
+                    session.query(ExecutionSession)
+                    .filter(ExecutionSession.item_id == last_result.execution_session_id)
+                    .order_by(ExecutionSession.timestamp.desc())
                     .first()
                 )
 
-                if last_result:
+                if execution_session:
+
+                    # Resolve the number of total results ok and ko:
+                    execution_session.iterations = len(results)
+                    for result in results:
+                        if result.item_handler == "CollectionResult":
+                            execution_session.total_ok += result.total_ok
+                            execution_session.total_failed += result.total_failed
+                        else:
+                            if result.result == "OK":
+                                execution_session.total_ok += 1
+                            elif result.result == "Failed":
+                                execution_session.total_failed += 1
+
+                    # Resolve the possible nested results in collections:
                     last_result = get_result_with_children(item_handler=last_result.item_handler,
                                                            item_id=last_result.item_id)
+                    execution_session.results = last_result
 
-                last_execution_result.results = last_result
-
-        return last_execution_result
+            return execution_session
 
     def get_item_results_history(self, item: BaseRequest) -> BaseResult:
         with self.session_scope() as session:

@@ -18,11 +18,16 @@ class BackendManager(QObject):
         super().__init__()
         self.repository = repository if repository else SQLiteRepository()
         self.running_threads = {}  # Track active threads
+        self.running = False
 
         # Setup background task manager:
         self.background_task_manager = BackgroundTaskManager()
         self.background_task_manager.add_periodic_task(self.repository.delete_old_results, 600)
         self.background_task_manager.start()
+
+    @property
+    def running(self):
+        return bool(self.running_threads)
 
     def start(self, item_id):
         """ Starts a new thread for a given item_id """
@@ -32,7 +37,7 @@ class BackendManager(QObject):
         print(f"Starting process for Item ID {item_id}")
 
         thread = Runner(repository=self.repository, item_id=item_id)
-        thread.finished.connect(lambda: self.remove_thread(item_id))
+        thread.finished.connect(lambda: self._remove_thread(item_id))
         self.running_threads[item_id] = thread
         thread.start()
 
@@ -41,7 +46,7 @@ class BackendManager(QObject):
         def stop_thread(item_id):
             self.running_threads[item_id].stop()  # Set running flag to False
             self.running_threads[item_id].wait()  # Wait for completion
-            self.remove_thread(item_id)
+            self._remove_thread(item_id)
             print(f"Stopped process for Item ID {item_id}")
 
         if item_id in self.running_threads:
@@ -50,11 +55,15 @@ class BackendManager(QObject):
             items_id = list(self.running_threads.keys())
             [stop_thread(item_id) for item_id in items_id]
 
-    def remove_thread(self, item_id):
+    def _remove_thread(self, item_id):
         """Removes the finished thread from the tracking dictionary."""
         if item_id in self.running_threads:
             self.running_threads.pop(item_id)
         self.signal_finish.emit()
+
+    @running.setter
+    def running(self, value):
+        self._running = value
 
 
 if __name__ == "__main__":
