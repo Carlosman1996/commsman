@@ -234,12 +234,20 @@ class SQLiteRepository(BaseRepository):
 
             item_class_handler = self.get_class_handler(item.item_response_handler)
 
-            # Get item last results from last execution session:
-            subquery = select(func.max(ExecutionSession.item_id)).scalar_subquery()
+            # Step 1: Get max execution_session_id for this item
+            last_execution_session_id = (
+                session.query(func.max(item_class_handler.execution_session_id))
+                .filter(item_class_handler.request_id == item.item_id)
+                .first()
+            )
+            if not last_execution_session_id:
+                return None
+
+            # Step 2: Get all results linked to last execution id
             results = (
                 session.query(item_class_handler)
                 .filter(item_class_handler.request_id == item.item_id)
-                .filter(item_class_handler.execution_session_id == subquery)
+                .filter(item_class_handler.execution_session_id == last_execution_session_id[0])
                 .order_by(item_class_handler.timestamp.desc())
                 .all()
             )
@@ -278,9 +286,24 @@ class SQLiteRepository(BaseRepository):
 
     def get_item_results_history(self, item: BaseRequest) -> BaseResult:
         with self.session_scope() as session:
+
+            item_class_handler = self.get_class_handler(item.item_response_handler)
+
+            # Step 1: Get all distinct execution_session_ids for this item
+            execution_sessions = (
+                session.query(item_class_handler.execution_session_id)
+                .filter(item_class_handler.request_id == item.item_id)
+                .distinct()
+                .all()
+            )
+
+            # Flatten the list of tuples to a list of IDs
+            execution_session_ids = [row[0] for row in execution_sessions]
+
+            # Step 2: Get the last 10 ExecutionSession entries for those session IDs
             results_history = (
                 session.query(ExecutionSession)
-                .filter(ExecutionSession.request_id == item.item_id)
+                .filter(ExecutionSession.item_id.in_(execution_session_ids))
                 .order_by(ExecutionSession.timestamp.desc())
                 .limit(10)
                 .all()
