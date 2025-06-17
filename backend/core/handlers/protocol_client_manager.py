@@ -1,10 +1,10 @@
 from dataclasses import asdict
-from datetime import timezone, datetime
+from datetime import datetime
 
 import tzlocal
 
-from backend.handlers.base_handler import BaseHandler
-from backend.handlers.custom_modbus_handler import CustomModbusTcpClient, CustomModbusRtuClient
+from backend.core.handlers.base_handler import BaseHandler
+from backend.core.handlers.custom_modbus_handler import CustomModbusTcpClient, CustomModbusRtuClient
 from backend.models import BaseRequest, ModbusResponse
 
 

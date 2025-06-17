@@ -1,6 +1,5 @@
 import dataclasses
 import json
-import os
 import sys
 
 from PyQt6.QtCore import QEvent, Qt, QSortFilterProxyModel, QRect, pyqtSignal, QModelIndex
@@ -20,7 +19,7 @@ from PyQt6.QtWidgets import (
     QStyle,
 )
 
-from backend.backend_manager import BackendManager
+from backend.core.backend_manager import BackendManager
 from frontend.common import ITEMS
 from frontend.item_creation_dialog import ItemCreationDialog
 from utils.common import FRONTEND_PATH, OUTPUTS_PATH

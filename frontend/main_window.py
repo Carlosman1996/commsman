@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy
 )
 
-from backend.backend_manager import BackendManager
+from backend.core.backend_manager import BackendManager
 from frontend.collection_detail_widget import CollectionDetail
 from frontend.project_structure_section import ProjectStructureSection
 from qt_material import apply_stylesheet

@@ -1,12 +1,6 @@
-import sys
+from PyQt6.QtGui import QStandardItemModel, QStandardItem
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QTabWidget, QTreeView)
 
-from PyQt6.QtCore import QModelIndex, QAbstractItemModel, Qt, QTimer
-from PyQt6.QtGui import QStandardItemModel, QStandardItem, QColor, QIcon
-from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
-                             QLineEdit, QSpinBox, QTabWidget, QHBoxLayout, QSplitter, QTextEdit, QTableWidgetItem,
-                             QTreeView, QSizePolicy)
-
-from backend.backend_manager import BackendManager
 from frontend.base_detail_widget import BaseDetail, BaseResult, BaseRequest
 from frontend.common import convert_time, get_icon
 from frontend.connection_tab_widget import ConnectionTabWidget

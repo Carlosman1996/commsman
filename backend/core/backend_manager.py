@@ -1,18 +1,13 @@
-import sys
+import threading
 
-from PyQt6.QtCore import QObject, pyqtSignal
-from PyQt6.QtWidgets import QApplication
-
-from backend.background_task_manager import BackgroundTaskManager
+from backend.core.background_task_manager import BackgroundTaskManager
 from backend.repository import BaseRepository
 from backend.repository.sqlite_repository import SQLiteRepository
-from backend.runner import Runner
+from backend.core.runner import Runner
 
 
-class BackendManager(QObject):
+class BackendManager:
     """ Manages multiple backend worker threads """
-
-    signal_finish = pyqtSignal()
 
     def __init__(self, repository: BaseRepository = None):
         super().__init__()
@@ -27,7 +22,15 @@ class BackendManager(QObject):
 
     @property
     def running(self):
-        return bool(self.running_threads)
+        return bool(self.get_running_threads())
+
+    def get_running_threads(self):
+        running_threads = {}
+        for item, value in self.running_threads.items():
+            if value.is_alive():
+                running_threads[item] = value
+        self.running_threads = running_threads
+        return list(self.running_threads.keys())
 
     def start(self, item_id):
         """ Starts a new thread for a given item_id """
@@ -36,8 +39,8 @@ class BackendManager(QObject):
 
         print(f"Starting process for Item ID {item_id}")
 
-        thread = Runner(repository=self.repository, item_id=item_id)
-        thread.finished.connect(lambda: self._remove_thread(item_id))
+        thread = Runner(repository=self.repository, item_id=item_id, daemon=True)
+
         self.running_threads[item_id] = thread
         thread.start()
 
@@ -45,7 +48,7 @@ class BackendManager(QObject):
         """Stops a specific worker thread gracefully."""
         def stop_thread(item_id):
             self.running_threads[item_id].stop()  # Set running flag to False
-            self.running_threads[item_id].wait()  # Wait for completion
+            self.running_threads[item_id].join()  # Wait for completion
             self._remove_thread(item_id)
             print(f"Stopped process for Item ID {item_id}")
 
@@ -59,7 +62,6 @@ class BackendManager(QObject):
         """Removes the finished thread from the tracking dictionary."""
         if item_id in self.running_threads:
             self.running_threads.pop(item_id)
-        self.signal_finish.emit()
 
     @running.setter
     def running(self, value):
@@ -67,11 +69,7 @@ class BackendManager(QObject):
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)  # ✅ Create QApplication before using QThread
-
     backend_manager = BackendManager()
     backend_manager.repository.set_selected_item(item_id=1)
     backend_manager.start(item_id=1)  # Start first request
     # backend_manager.start(item_id=2)  # Start another request (independent)
-
-    sys.exit(app.exec())  # ✅ Ensures Qt event loop runs
