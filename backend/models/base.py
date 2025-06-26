@@ -24,13 +24,14 @@ class BaseItem(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, onupdate=datetime.now(tzlocal.get_localzone()), init=False)
     modified_by: Mapped[str] = mapped_column(String, init=False)
 
+    parent: object = None
+    children: list = None
+
     def __post_init__(self):
         self.item_handler = self.__class__.__name__
         self.created_at = datetime.now(tzlocal.get_localzone())
         self.updated_at = datetime.now(tzlocal.get_localzone())
         self.modified_by = "Ordillan"
-        self.parent = None
-        self.children = []
 
 
 @dataclass
@@ -55,13 +56,13 @@ class BaseRequest(BaseItem):
 class BaseResult(BaseItem):
     __abstract__ = True
 
-    execution_session_id: Mapped[int] = mapped_column(Integer, ForeignKey("execution_session.item_id", ondelete="CASCADE"))
-    parent_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection_result.item_id", ondelete="SET NULL"), nullable=True)
-    request_id: Mapped[int] = mapped_column(Integer, ForeignKey("request.item_id", ondelete="SET NULL"))
+    execution_session_id: Mapped[int] = mapped_column(Integer, ForeignKey("execution_session.item_id", ondelete="CASCADE"), nullable=False, default=None)
+    parent_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection_result.item_id", ondelete="SET NULL"), nullable=True, default=None)
+    request_id: Mapped[int] = mapped_column(Integer, ForeignKey("request.item_id", ondelete="SET NULL"), nullable=False, default=None)
 
-    client_type: Mapped[str] = mapped_column(String)
-    result: Mapped[str] = mapped_column(String)
-    elapsed_time: Mapped[int] = mapped_column(String)
-    timestamp: Mapped[datetime] = mapped_column(String)
+    client_type: Mapped[str] = mapped_column(String, nullable=False, default=None)
+    result: Mapped[str] = mapped_column(String, nullable=False, default=None)
+    elapsed_time: Mapped[int] = mapped_column(String, nullable=False, default=None)
+    timestamp: Mapped[datetime] = mapped_column(String, nullable=False, default=None)
 
-    error_message: Mapped[str] = mapped_column(String)
+    error_message: Mapped[str] = mapped_column(String, default=None)

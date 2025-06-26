@@ -55,7 +55,7 @@ class ModbusResponse(BaseResult):
     __tablename__ = "modbus_response"
 
     # Initialize to None but it is non-nullable:
-    request_id: Mapped[int] = mapped_column(Integer, ForeignKey("modbus_request.item_id", ondelete="SET NULL"))  # Do not delete on cascade because parent result will show incorrect results
+    request_id: Mapped[int] = mapped_column(Integer, ForeignKey("modbus_request.item_id", ondelete="SET NULL"), nullable=False, default=None)  # Do not delete on cascade because parent result will show incorrect results
 
     item_type: Mapped[int] = mapped_column(String, default="Modbus")
     slave: Mapped[int] = mapped_column(Integer, default=None, nullable=True)

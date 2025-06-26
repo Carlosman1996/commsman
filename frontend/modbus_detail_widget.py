@@ -68,39 +68,39 @@ def convert_value_after_sending(data_type: str, address: int, values: list):
 
 
 class ModbusRequestTabWidget(BaseRequest):
-    def __init__(self, repository):
-        super().__init__(repository)
+    def __init__(self, api_client, item):
+        super().__init__(api_client, item)
 
         self.grid_layout = CustomGridLayout()
 
         self.function_combo = CustomComboBox()
         self.function_combo.addItems(FUNCTIONS)
-        self.function_combo.set_item(self.item.function)
+        self.function_combo.set_item(self.item["function"])
         self.grid_layout.add_widget(QLabel("Modbus Function:"), self.function_combo)
 
         self.address_spinbox = QSpinBox()
         self.address_spinbox.setRange(1, 999999)
-        self.address_spinbox.setValue(self.item.address)
+        self.address_spinbox.setValue(self.item["address"])
         self.grid_layout.add_widget(QLabel("Address:"), self.address_spinbox)
 
         self.quantity_spinbox = QSpinBox()
         self.quantity_spinbox.setRange(1, 999999)
-        self.quantity_spinbox.setValue(self.item.count)
+        self.quantity_spinbox.setValue(self.item["count"])
         self.grid_layout.add_widget(QLabel("Count:"), self.quantity_spinbox)
 
         self.unit_id_spinbox = QSpinBox()
         self.unit_id_spinbox.setRange(1, 247)
-        self.unit_id_spinbox.setValue(self.item.slave)
+        self.unit_id_spinbox.setValue(self.item["slave"])
         self.grid_layout.add_widget(QLabel("Unit ID:"), self.unit_id_spinbox)
 
         self.data_type_combo = CustomComboBox()
         self.data_type_combo.addItems(["16-bit Integer", "16-bit Unsigned Integer", "32-bit Integer", "32-bit Unsigned Integer", "Hexadecimal", "Float", "Double", "String"])
-        self.data_type_combo.set_item(self.item.data_type)
+        self.data_type_combo.set_item(self.item["data_type"])
         self.grid_layout.add_widget(QLabel("Data Type:"), self.data_type_combo)
 
         self.values_table = CustomTable(["Value"])
         self.update_table_rows_view()
-        self.values_table.set_items(self.item.values)
+        self.values_table.set_items(self.item["values"])
         self.grid_layout.add_widget(QLabel("Values to Write:"), self.values_table)
 
         self.setLayout(self.grid_layout)
@@ -119,8 +119,8 @@ class ModbusRequestTabWidget(BaseRequest):
             "data_type": self.data_type_combo.currentText(),
             "values": self.values_table.get_values(),
         }
-        self.repository.update_item_from_handler(item_handler=self.item.item_handler,
-                                                 item_id=self.item.item_id,
+        self.repository.update_item_from_handler(item_handler=self.item["item_handler"],
+                                                 item_id=self.item["item_id"],
                                                  **update_data)
 
     def update_view(self):
@@ -152,7 +152,7 @@ class ModbusRequestTabWidget(BaseRequest):
 
 class ModbusRequestWidget(QWidget):
 
-    def __init__(self, repository):
+    def __init__(self, api_client, item):
         super().__init__()
 
         # Main layout
@@ -162,21 +162,21 @@ class ModbusRequestWidget(QWidget):
         # Set tabs:
         detail_tabs = QTabWidget()
 
-        self.connection_widget = ConnectionTabWidget(repository, ["Inherit from parent", "Modbus TCP", "Modbus RTU"])
+        self.connection_widget = ConnectionTabWidget(api_client, item, ["Inherit from parent", "Modbus TCP", "Modbus RTU"])
         detail_tabs.addTab(self.connection_widget, "Connection")
 
-        self.request_widget = ModbusRequestTabWidget(repository)
+        self.request_widget = ModbusRequestTabWidget(api_client, item)
         detail_tabs.addTab(self.request_widget, "Request")
 
-        detail_tabs.addTab(RunOptionsTabWidget(repository), "Run options")
+        detail_tabs.addTab(RunOptionsTabWidget(api_client, item), "Run options")
 
         main_layout.addWidget(detail_tabs)
 
 
 class ModbusResponseWidget(BaseResult):
 
-    def __init__(self, backend):
-        super().__init__(backend)
+    def __init__(self, api_client, item):
+        super().__init__(api_client, item)
 
         # Main layout
         main_layout = QVBoxLayout()
@@ -201,7 +201,7 @@ class ModbusResponseWidget(BaseResult):
 
         self.data_type_combo = CustomComboBox()
         self.data_type_combo.addItems(["16-bit Integer", "16-bit Unsigned Integer", "32-bit Integer", "32-bit Unsigned Integer", "Hexadecimal", "Float", "Double", "String"])
-        self.data_type_combo.set_item(getattr(self.item.last_result, "data_type", "16-bit Integer"))
+        self.data_type_combo.set_item(getattr(self.item["last_result"], "data_type", "16-bit Integer"))
         self.data_type_combo.setMaximumWidth(200)
         self.data_type_combo.setMinimumWidth(200)
         self.data_type_label = QLabel("Show data type:")
@@ -275,7 +275,7 @@ class ModbusResponseWidget(BaseResult):
         self.tabs.addTab(raw_data_tab, "Raw Data")
 
         # History
-        self.history_tab = HistoryTabWidget(backend)
+        self.history_tab = HistoryTabWidget(api_client, item)
         self.tabs.addTab(self.history_tab, "History")
 
         # Set initial state and connect signals:
@@ -285,7 +285,7 @@ class ModbusResponseWidget(BaseResult):
 
     def get_response_data(self):
         def get_value(key, replace_if_none: str = "-"):
-            return get_model_value(self.item.last_result.results, key, replace_if_none)
+            return get_model_value(self.item["last_result"]["results"], key, replace_if_none)
 
         return {
             "name": get_value("name"),
@@ -311,8 +311,8 @@ class ModbusResponseWidget(BaseResult):
 
     def update_view(self, load_data=False, result=None):
         if not load_data:
-            self.item.last_result = result
-        if self.item.last_result is None or self.item.last_result.result == "Pending" or not self.item.last_result.results:
+            self.item["last_result"] = result
+        if self.item["last_result"] is None or self.item["last_result"]["result"] == "Pending" or not self.item["last_result"]["results"]:
             return
 
         response = self.get_response_data()
@@ -363,11 +363,11 @@ class ModbusResponseWidget(BaseResult):
             self.update_table()
 
     def update_table(self):
-        result = self.item.last_result
+        result = self.item["last_result"]
         if result is None or result.result == "Pending":
             return
 
-        self.item.last_result.data_type = self.data_type_combo.currentText()
+        self.item["last_result"]["data_type"] = self.data_type_combo.currentText()
         response = self.get_response_data()
 
         data_type = self.data_type_combo.currentText()
@@ -385,16 +385,14 @@ class ModbusResponseWidget(BaseResult):
 
 
 class ModbusDetail(BaseDetail):
-    def __init__(self, backend):
-        super().__init__(backend)
-
-        repository = backend.repository
+    def __init__(self, api_client, item):
+        super().__init__(api_client, item)
 
         # Detail
-        self.request_tabs = ModbusRequestWidget(repository)
+        self.request_tabs = ModbusRequestWidget(api_client, item)
 
         # Results
-        self.results_tabs = ModbusResponseWidget(backend)
+        self.results_tabs = ModbusResponseWidget(api_client, item)
 
         # Fill splitter:
         self.request_layout.addWidget(self.request_tabs)

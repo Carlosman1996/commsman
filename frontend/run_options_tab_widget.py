@@ -7,8 +7,8 @@ from frontend.components.components import CustomGridLayout
 
 class RunOptionsTabWidget(BaseRequest):
 
-    def __init__(self, repository):
-        super().__init__(repository)
+    def __init__(self, api_client, item):
+        super().__init__(api_client, item)
 
         main_layout = QVBoxLayout()
 
@@ -41,29 +41,29 @@ class RunOptionsTabWidget(BaseRequest):
         self.grid_layout.signal_update_item.connect(self.update_sequence)
 
     def update_item(self):
-        if self.item.run_options:
+        if self.item["run_options"]:
             run_options = {
-                "name": self.item.name,
+                "name": self.item["name"],
                 "polling_interval": int(self.polling_interval_label.text()),
                 "delayed_start": int(self.delayed_start.text()),
                 "continuous_monitoring": bool(self.continuous_monitoring.isChecked()),
             }
-            self.item.run_options = self.repository.update_item_from_handler(
-                item_handler=self.item.run_options.item_handler,
-                item_id=self.item.run_options.item_id,
+            self.item["run_options"] = self.repository.update_item_from_handler(
+                item_handler=self.item["run_options"]["item_handler"],
+                item_id=self.item["run_options"]["item_id"],
                 **run_options
             )
         else:
-            self.item.run_options = self.repository.create_run_options_item(
-                item_name=self.item.name,
+            self.item["run_options"] = self.repository.create_run_options_item(
+                item_name=self.item["name"],
                 item_handler="RunOptions",
                 parent=self.item,
             )
 
     def update_view(self, load_data: bool = False):
-        if load_data and not self.item.run_options:
+        if load_data and not self.item["run_options"]:
             self.update_sequence()
 
-        self.polling_interval_label.setValue(self.item.run_options.polling_interval)
-        self.delayed_start.setValue(self.item.run_options.delayed_start)
-        self.continuous_monitoring.setChecked(self.item.run_options.continuous_monitoring)
+        self.polling_interval_label.setValue(self.item["run_options"]["polling_interval"])
+        self.delayed_start.setValue(self.item["run_options"]["delayed_start"])
+        self.continuous_monitoring.setChecked(self.item["run_options"]["continuous_monitoring"])

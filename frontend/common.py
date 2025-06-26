@@ -25,11 +25,8 @@ ITEMS = {
 }
 
 
-def get_model_value(item: object, key: str, replace_if_none: str | int = "-"):
-    if hasattr(item, key):
-        value = getattr(item, key)
-    else:
-        value = "Unknown"
+def get_model_value(item: dict, key: str, replace_if_none: str | int = "-"):
+    value = item.get(key, "Unknown")
 
     if value is None:
         return replace_if_none

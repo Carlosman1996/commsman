@@ -42,11 +42,11 @@ class BaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create_client_item(self, item_name: str, item_handler: str, parent: BaseItem):
+    def create_client_item(self, item_name: str, item_handler: str, parent_item_id: int):
         raise NotImplementedError
 
     @abstractmethod
-    def create_run_options_item(self, item_name: str, item_handler: str, parent: BaseItem):
+    def create_run_options_item(self, item_name: str, item_handler: str, parent_item_id: int):
         raise NotImplementedError
 
     @abstractmethod
@@ -54,11 +54,15 @@ class BaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_item_last_result_tree(self, item_id: BaseItem):
+    def get_item_last_result_tree(self, item_id: int):
         raise NotImplementedError
 
     @abstractmethod
-    def get_items_request_tree(self, item_id: int):
+    def get_item_results_history(self, item_id: int):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_items_request_tree(self):
         raise NotImplementedError
 
     @abstractmethod

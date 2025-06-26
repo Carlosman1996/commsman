@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine, event, func, desc, over, select
-from sqlalchemy.orm import sessionmaker, declarative_base, Session, aliased
+from sqlalchemy import create_engine, event, func, desc, over
+from sqlalchemy.orm import sessionmaker, declarative_base, aliased
 
 from backend.models import *
 from backend.repository.base_repository import BaseRepository
@@ -122,7 +122,7 @@ class SQLiteRepository(BaseRepository):
 
     def update_item_from_handler(self, item_handler: str, item_id: int, **kwargs):
         with self.session_scope() as session:
-            item = self._get_item(item_handler=item_handler, item_id=item_id)
+            item = self._get_item_from_handler(item_handler=item_handler, item_id=item_id)
             for key, value in kwargs.items():
                 setattr(item, key, value)
             session.add(item)
@@ -145,32 +145,46 @@ class SQLiteRepository(BaseRepository):
             session.add(item)
             return item
 
-    def create_client_item(self, item_name: str, item_handler: str, parent: BaseItem):
+    def create_client_item(self, item_name: str, item_handler: str, parent_item_id: int):
         """Crea un nuevo ítem y lo guarda en la base de datos."""
         with self.session_scope() as session:
             item = DATACLASS_REGISTRY.get(item_handler)(name=item_name)
             base_client_item = DATACLASS_REGISTRY["Client"](name=item_name, client_type_handler=item.item_handler)
 
+            parent_item = self._get_item(parent_item_id)
+
             session.add(base_client_item)
             session.flush()
             item.client_id = base_client_item.item_id
             session.add(item)
-            parent.client_id = base_client_item.item_id
-            session.add(parent)
+            parent_item.client_id = base_client_item.item_id
+            session.add(parent_item)
             return item
 
-    def create_run_options_item(self, item_name: str, item_handler: str, parent: BaseItem):
+    def create_run_options_item(self, item_name: str, item_handler: str, parent_item_id: int):
         """Crea un nuevo ítem y lo guarda en la base de datos."""
         with self.session_scope() as session:
             item = DATACLASS_REGISTRY.get(item_handler)(name=item_name)
             session.add(item)
             session.flush()
 
-            parent.run_options_id = item.item_id
-            session.add(parent)
+            parent_item = self._get_item(parent_item_id)
+
+            parent_item.run_options_id = item.item_id
+            session.add(parent_item)
         return item
 
-    def _get_item(self, item_handler: str, item_id: int):
+    def _get_item(self, item_id: int):
+        with self.session_scope() as session:
+            base_item = (
+                session.query(Request)
+                    .filter(Request.item_id == item_id)
+                    .first()
+            )
+            item = self._get_item_from_handler(item_handler=base_item.request_type_handler, item_id=base_item.item_id)
+            return item
+
+    def _get_item_from_handler(self, item_handler: str, item_id: int):
         with self.session_scope() as session:
             item_class_handler = self.get_class_handler(item_handler)
 
@@ -189,7 +203,7 @@ class SQLiteRepository(BaseRepository):
                     .first()
             )
 
-            item = self._get_item(item_handler=base_request.request_type_handler, item_id=item_id)
+            item = self._get_item_from_handler(item_handler=base_request.request_type_handler, item_id=item_id)
             return item
 
     def _get_item_client(self, item: BaseRequest) -> Client:
@@ -220,7 +234,7 @@ class SQLiteRepository(BaseRepository):
                 )
             return run_options
 
-    def get_item_last_result_tree(self, item: BaseRequest) -> BaseResult | None:
+    def get_item_last_result_tree(self, item_id: int) -> BaseResult | None:
         def get_result_with_children(item_handler, item_id):
             result_item = self._get_item_result(item_handler=item_handler, item_id=item_id)
             for index, child_data in enumerate(result_item.children):
@@ -232,12 +246,13 @@ class SQLiteRepository(BaseRepository):
         execution_session = None
         with self.session_scope() as session:
 
-            item_class_handler = self.get_class_handler(item.item_response_handler)
+            item = self._get_item(item_id)
+            response_class_handler = self.get_class_handler(item.item_response_handler)
 
             # Step 1: Get max execution_session_id for this item
             last_execution_session_id = (
-                session.query(func.max(item_class_handler.execution_session_id))
-                .filter(item_class_handler.request_id == item.item_id)
+                session.query(func.max(response_class_handler.execution_session_id))
+                .filter(response_class_handler.request_id == item.item_id)
                 .first()
             )
             if not last_execution_session_id:
@@ -245,10 +260,10 @@ class SQLiteRepository(BaseRepository):
 
             # Step 2: Get all results linked to last execution id
             results = (
-                session.query(item_class_handler)
-                .filter(item_class_handler.request_id == item.item_id)
-                .filter(item_class_handler.execution_session_id == last_execution_session_id[0])
-                .order_by(item_class_handler.timestamp.desc())
+                session.query(response_class_handler)
+                .filter(response_class_handler.request_id == item.item_id)
+                .filter(response_class_handler.execution_session_id == last_execution_session_id[0])
+                .order_by(response_class_handler.timestamp.desc())
                 .all()
             )
 
@@ -284,15 +299,16 @@ class SQLiteRepository(BaseRepository):
 
             return execution_session
 
-    def get_item_results_history(self, item: BaseRequest) -> BaseResult:
+    def get_item_results_history(self, item_id: int) -> BaseResult:
         with self.session_scope() as session:
 
-            item_class_handler = self.get_class_handler(item.item_response_handler)
+            item = self._get_item(item_id)
+            response_class_handler = self.get_class_handler(item.item_response_handler)
 
             # Step 1: Get all distinct execution_session_ids for this item
             execution_sessions = (
-                session.query(item_class_handler.execution_session_id)
-                .filter(item_class_handler.request_id == item.item_id)
+                session.query(response_class_handler.execution_session_id)
+                .filter(response_class_handler.request_id == item.item_id)
                 .distinct()
                 .all()
             )
@@ -314,7 +330,7 @@ class SQLiteRepository(BaseRepository):
 
             return results_history
 
-    def get_items_request_tree(self, item: BaseItem = None) -> list[Collection]:
+    def get_items_request_tree(self) -> list[Collection]:
         def get_item_with_children(item_id):
             _item = self.get_item_request(item_id=item_id)
             # Replace item dict by dataclass:
@@ -325,14 +341,11 @@ class SQLiteRepository(BaseRepository):
             return _item
 
         with self.session_scope() as session:
-            if item is None:
-                items = (
-                    session.query(Collection)
-                    .filter(Collection.parent_id == None)
-                    .all()
-                )
-            else:
-                items = [item]
+            items = (
+                session.query(Collection)
+                .filter(Collection.parent_id == None)
+                .all()
+            )
 
             if items:
                 for index, item in enumerate(items):
@@ -351,9 +364,9 @@ class SQLiteRepository(BaseRepository):
             request.client = item_client
             item_run_options = self._get_item_run_options(request)
             request.run_options = item_run_options
-            item_last_result = self.get_item_last_result_tree(request)
+            item_last_result = self.get_item_last_result_tree(item_id)
             request.last_result = item_last_result
-            item_results_history = self.get_item_results_history(request)
+            item_results_history = self.get_item_results_history(item_id)
             request.results_history = item_results_history
 
             # Solve children:
@@ -380,7 +393,7 @@ class SQLiteRepository(BaseRepository):
 
     def _get_item_result(self, item_handler: str, item_id: int):
         with self.session_scope() as session:
-            result = self._get_item(item_handler=item_handler, item_id=item_id)
+            result = self._get_item_from_handler(item_handler=item_handler, item_id=item_id)
 
             # Solve children:
             if result.item_handler == "CollectionResult":
@@ -408,6 +421,5 @@ class SQLiteRepository(BaseRepository):
 if __name__ == "__main__":
     repository_obj = SQLiteRepository()
 
-    item = repository_obj.get_item_request(1)
-    result = repository_obj.get_item_last_result_tree(item)
-    print(result)
+    item = repository_obj.get_item_request(10)
+    print(item)
