@@ -13,13 +13,13 @@ def init_runner_routes(backend_manager):
     backend = backend_manager
 
 
-@bp.route("/runner/start/<int:item_id>", methods=["POST"])
+@bp.route("/runner/start/<int:item_id>", methods=["PUT"])
 def run_item(item_id):
     backend.start(item_id)
     return make_response({"item_id": item_id, "running_threads": backend.get_running_threads()})
 
 
-@bp.route("/runner/stop/<int:item_id>", methods=["POST"])
+@bp.route("/runner/stop/<int:item_id>", methods=["PUT"])
 def stop_item(item_id):
     backend.stop(item_id)
     return make_response({"item_id": item_id, "running_threads": backend.get_running_threads()})

@@ -120,7 +120,7 @@ class SQLiteRepository(BaseRepository):
             delete_by_table(CollectionResult)
             delete_by_table(ModbusResponse)
 
-    def update_item_from_handler(self, item_handler: str, item_id: int, **kwargs):
+    def update_item_from_handler(self, item_id: int, item_handler: str, **kwargs):
         with self.session_scope() as session:
             item = self._get_item_from_handler(item_handler=item_handler, item_id=item_id)
             for key, value in kwargs.items():
@@ -134,14 +134,14 @@ class SQLiteRepository(BaseRepository):
             session.add(item)
             return item
 
-    def create_item_request_from_handler(self, item_name: str, item_handler: str, parent_id: int = None):
+    def create_item_request_from_handler(self, item_name: str, item_handler: str, parent_item_id: int = None):
         """Crea un nuevo ítem y lo guarda en la base de datos."""
         with self.session_scope() as session:
             base_request_item = DATACLASS_REGISTRY["Request"](name=item_name, request_type_handler=item_handler)
             session.add(base_request_item)
             session.flush()
 
-            item = DATACLASS_REGISTRY.get(item_handler)(item_id=base_request_item.item_id, name=item_name, parent_id=parent_id)
+            item = DATACLASS_REGISTRY.get(item_handler)(item_id=base_request_item.item_id, name=item_name, parent_id=parent_item_id)
             session.add(item)
             return item
 
@@ -330,7 +330,7 @@ class SQLiteRepository(BaseRepository):
 
             return results_history
 
-    def get_items_request_tree(self) -> list[Collection]:
+    def get_items_request_tree(self, item: BaseItem = None) -> list[Collection]:
         def get_item_with_children(item_id):
             _item = self.get_item_request(item_id=item_id)
             # Replace item dict by dataclass:
@@ -341,11 +341,14 @@ class SQLiteRepository(BaseRepository):
             return _item
 
         with self.session_scope() as session:
-            items = (
-                session.query(Collection)
-                .filter(Collection.parent_id == None)
-                .all()
-            )
+            if item:
+                items = [item]
+            else:
+                items = (
+                    session.query(Collection)
+                    .filter(Collection.parent_id == None)
+                    .all()
+                )
 
             if items:
                 for index, item in enumerate(items):

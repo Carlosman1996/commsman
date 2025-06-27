@@ -65,7 +65,7 @@ class CustomStandardItemModel(QStandardItemModel):
         self.view_items[item["item_id"]] = view_item  # Save reference
         return view_item
 
-    def load_model(self, data: dict, status_code: int = None):
+    def load_model(self, data: dict):
         """Loads all elements from repository into a QStandardItemModel, considering the 'position' key."""
         self.view_items = {}
         self.clear()
@@ -205,8 +205,8 @@ class CustomStandardItemModel(QStandardItemModel):
     def add_item(self, item):
         view_item = self.create_view_item(item)
         root_level_item = self.invisibleRootItem()
-        if item.parent_id:
-            self.view_items[item.parent_id].appendRow(view_item)
+        if item["parent_id"]:
+            self.view_items[item["parent_id"]].appendRow(view_item)
         else:
             root_level_item.appendRow(view_item)
 
@@ -488,10 +488,10 @@ class ProjectStructureSection(QWidget):
             else:
                 parent_data = {}
 
-            item = self.api_client.create_item_request_from_handler(item_name=dialog.item_name,
-                                                                    item_handler=dialog.item_handler,
-                                                                    parent_id=parent_data.get("item_id"))
-            self.view_model.add_item(item=item)
+            self.api_client.create_item_request_from_handler(item_name=dialog.item_name,
+                                                             item_handler=dialog.item_handler,
+                                                             parent_item_id=parent_data.get("item_id"),
+                                                             callback=self.view_model.add_item)
 
             self.expand_tree_view_item(selected_item)
 
@@ -507,7 +507,8 @@ class ProjectStructureSection(QWidget):
         item_data = item.data(Qt.ItemDataRole.UserRole)
         self.api_client.update_item_from_handler(item_handler=item_data["item_handler"],
                                                  item_id=item_data["item_id"],
-                                                 name=item.text())
+                                                 name=item.text(),
+                                                 callback=None)
 
     def move_item(self, item):
         self.proxy_model.setSourceModel(None)

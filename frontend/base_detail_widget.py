@@ -75,10 +75,6 @@ class BaseRequest(QWidget):
         self.api_client = api_client
         self.item = item
 
-    def update_sequence(self):
-        self.update_item()
-        self.update_view()
-
     @abstractmethod
     def reload_data(self):
         raise NotImplementedError
@@ -88,7 +84,7 @@ class BaseRequest(QWidget):
         raise NotImplementedError
 
     @abstractmethod
-    def update_view(self):
+    def update_view(self, data: dict):
         raise NotImplementedError
 
 
@@ -98,12 +94,13 @@ class BaseResult(QWidget):
 
         self.api_client = api_client
         self.item = item
+        self.item_last_result = self.item["last_result"]
         self.backend_running = False
 
         # Update the UI every 500 ms:
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.get_backend_running)
-        self.timer.start(250)
+        self.timer.start(500)
 
     def get_backend_running(self):
         self.api_client.get_running_threads(callback=self.reload_data)
@@ -112,15 +109,17 @@ class BaseResult(QWidget):
     def on_finished(self):
         pass
 
-    def reload_data(self, data: dict, status_code: int):
+    def reload_data(self, data: dict):
+        if self.backend_running:
+            self.api_client.get_item_last_result_tree(item_id=self.item["item_id"], callback=self.update_view)
+
+        # Update running flag after updating results to show last result:
         self.backend_running = bool(data["running_threads"])
-        if data["running_threads"]:
-            self.api_client.get_item_last_result_tree(item=self.item, callback=self.update_view)
-        else:
+        if not self.backend_running:
             self.on_finished()
 
     @abstractmethod
-    def update_view(self, data: dict, status_code: int):
+    def update_view(self, data: dict):
         raise NotImplementedError
 
 
@@ -198,6 +197,9 @@ class BaseDetail(BaseResult):
 
     def execute(self):
         if self.execute_button.run:
+            # Backend running should be initialized to True to read, at least, one result from backend. If not, in fast
+            # executions the results might not be reported:
+            self.backend_running = True
             self.execute_button.set_stop()
 
             # Create and start the backend_manager thread
@@ -210,7 +212,7 @@ class BaseDetail(BaseResult):
     def on_finished(self):
         self.execute_button.set_run()
 
-    def update_view(self, data: dict, status_code: int = None):
+    def update_view(self, data: dict):
         if data is None:
             self.result_splitter_section.setVisible(False)
             return

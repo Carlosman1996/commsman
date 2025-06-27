@@ -106,9 +106,9 @@ class ModbusRequestTabWidget(BaseRequest):
         self.setLayout(self.grid_layout)
 
         # Set initial state and connect signals:
-        self.update_view()
+        self.update_view(data=self.item)
 
-        self.grid_layout.signal_update_item.connect(self.update_sequence)
+        self.grid_layout.signal_update_item.connect(self.update_item)
 
     def update_item(self):
         update_data = {
@@ -119,11 +119,18 @@ class ModbusRequestTabWidget(BaseRequest):
             "data_type": self.data_type_combo.currentText(),
             "values": self.values_table.get_values(),
         }
-        self.repository.update_item_from_handler(item_handler=self.item["item_handler"],
+        self.api_client.update_item_from_handler(item_handler=self.item["item_handler"],
                                                  item_id=self.item["item_id"],
-                                                 **update_data)
+                                                 **update_data,
+                                                 callback=self.update_view)
 
-    def update_view(self):
+    def update_view(self, data: dict):
+        if not data:
+            self.update_item()
+            return
+        else:
+            self.item = data
+
         selected_function = self.function_combo.currentText()
 
         if selected_function in FUNCTIONS_DICT["write"]:
@@ -201,7 +208,6 @@ class ModbusResponseWidget(BaseResult):
 
         self.data_type_combo = CustomComboBox()
         self.data_type_combo.addItems(["16-bit Integer", "16-bit Unsigned Integer", "32-bit Integer", "32-bit Unsigned Integer", "Hexadecimal", "Float", "Double", "String"])
-        self.data_type_combo.set_item(getattr(self.item["last_result"], "data_type", "16-bit Integer"))
         self.data_type_combo.setMaximumWidth(200)
         self.data_type_combo.setMinimumWidth(200)
         self.data_type_label = QLabel("Show data type:")
@@ -279,13 +285,13 @@ class ModbusResponseWidget(BaseResult):
         self.tabs.addTab(self.history_tab, "History")
 
         # Set initial state and connect signals:
-        self.update_view(load_data=True)
+        self.update_view(data=self.item_last_result)
 
         self.data_type_combo.currentTextChanged.connect(self.update_table)
 
     def get_response_data(self):
         def get_value(key, replace_if_none: str = "-"):
-            return get_model_value(self.item["last_result"]["results"], key, replace_if_none)
+            return get_model_value(self.item_last_result["results"], key, replace_if_none)
 
         return {
             "name": get_value("name"),
@@ -309,11 +315,11 @@ class ModbusResponseWidget(BaseResult):
             "byte_count": get_value("byte_count"),
         }
 
-    def update_view(self, load_data=False, result=None):
-        if not load_data:
-            self.item["last_result"] = result
-        if self.item["last_result"] is None or self.item["last_result"]["result"] == "Pending" or not self.item["last_result"]["results"]:
+    def update_view(self, data: dict):
+        if data is None or self.item_last_result["result"] == "Pending" or not self.item_last_result["results"]:
             return
+        else:
+            self.item_last_result = data
 
         response = self.get_response_data()
 
@@ -363,11 +369,11 @@ class ModbusResponseWidget(BaseResult):
             self.update_table()
 
     def update_table(self):
-        result = self.item["last_result"]
-        if result is None or result.result == "Pending":
+        result = self.item_last_result
+        if result is None or result["result"] == "Pending":
             return
 
-        self.item["last_result"]["data_type"] = self.data_type_combo.currentText()
+        self.item_last_result["data_type"] = self.data_type_combo.currentText()
         response = self.get_response_data()
 
         data_type = self.data_type_combo.currentText()

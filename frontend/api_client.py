@@ -2,6 +2,7 @@ from PyQt6.QtCore import QObject, pyqtSignal, QUrl, QByteArray
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 import json
 from typing import Optional, Dict, Any, Union, Callable
+import logging
 
 
 class ApiClient(QObject):
@@ -9,10 +10,13 @@ class ApiClient(QObject):
     API Client for interacting with the repository backend
     """
     response_received = pyqtSignal(object, int)  # Signal for successful responses
-    error_occurred = pyqtSignal(str, int)  # Signal for errors (message, status_code)
+    error_occurred = pyqtSignal(dict, int)  # Signal for errors (message, status_code)
 
-    def __init__(self, base_url: str = "http://localhost:5000"):
+    def __init__(self, base_url: str = "http://localhost:5001"):
         super().__init__()
+
+        self.logger = logging.getLogger(__name__)
+
         self.base_url = base_url
         self.network_manager = QNetworkAccessManager()
         self.network_manager.finished.connect(self._handle_response)
@@ -57,19 +61,20 @@ class ApiClient(QObject):
             callback = self._callbacks.pop(reply, None)
             status_code = response_data.get("status", 500) if isinstance(response_data, dict) else 200
 
-            if callback:
-                callback(response_data, status_code)
-            else:
-                if reply.error() == QNetworkReply.NetworkError.NoError:
+            if reply.error() == QNetworkReply.NetworkError.NoError:
+                if callback:
+                    callback(response_data)
+                else:
                     # Emit the raw parsed data (could be dict or list)
                     self.response_received.emit(response_data, status_code)
-                else:
-                    error_data = {
-                        "error": reply.errorString(),
-                        "details": response_data if isinstance(response_data, dict) else {"response": response_data},
-                        "status": status_code
-                    }
-                    self.error_occurred.emit(error_data, status_code)
+            else:
+                error_data = {
+                    "error": reply.errorString(),
+                    "details": response_data if isinstance(response_data, dict) else {"response": response_data},
+                    "status": status_code
+                }
+                self.logger.error(str(error_data))
+                self.error_occurred.emit(error_data, status_code)
 
         except Exception as e:
             if not callback:
@@ -77,6 +82,7 @@ class ApiClient(QObject):
                     "error": f"Unexpected error processing response: {str(e)}",
                     "status": 500
                 }
+                self.logger.error(str(error_data))
                 self.error_occurred.emit(error_data, 500)
             else:
                 raise Exception(e)
@@ -90,7 +96,7 @@ class ApiClient(QObject):
         request.setHeader(QNetworkRequest.KnownHeaders.ContentTypeHeader, "application/json")
 
         reply = None
-        if data:
+        if data is not None:
             json_data = json.dumps(data).encode('utf-8')
             if method == "POST":
                 reply = self.network_manager.post(request, QByteArray(json_data))
@@ -108,16 +114,16 @@ class ApiClient(QObject):
 
     # Repository methods matching your Flask routes
 
-    def create_item_request_from_handler(self, item_name: str, item_handler: str, parent: int | None, callback: Callable):
+    def create_item_request_from_handler(self, item_name: str, item_handler: str, parent_item_id: int | None, callback: Callable = None):
         """POST /items/request"""
         data = {
             "item_name": item_name,
             "item_handler": item_handler,
-            "parent": parent
+            "parent_item_id": parent_item_id
         }
         self._send_request("POST", "items/request", data, callback=callback)
 
-    def create_client_item(self, item_name: str, item_handler: str, parent_item_id: int, callback: Callable):
+    def create_client_item(self, item_name: str, item_handler: str, parent_item_id: int, callback: Callable = None):
         """POST /items/client"""
         data = {
             "item_name": item_name,
@@ -126,7 +132,7 @@ class ApiClient(QObject):
         }
         self._send_request("POST", "items/client", data, callback=callback)
 
-    def create_run_options_item(self, item_name: str, item_handler: str, parent_item_id: int, callback: Callable):
+    def create_run_options_item(self, item_name: str, item_handler: str, parent_item_id: int, callback: Callable = None):
         """POST /items/run_options"""
         data = {
             "item_name": item_name,
@@ -135,19 +141,19 @@ class ApiClient(QObject):
         }
         self._send_request("POST", "items/run_options", data, callback=callback)
 
-    def get_item_request(self, item_id: int, callback: Callable):
+    def get_item_request(self, item_id: int, callback: Callable = None):
         """GET /items/<item_id>/request"""
         self._send_request("GET", f"items/{item_id}/request", callback=callback)
 
-    def get_item_last_result_tree(self, item_id: int, callback: Callable):
+    def get_item_last_result_tree(self, item_id: int, callback: Callable = None):
         """GET /items/<item_id>/last_result_tree"""
         self._send_request("GET", f"items/{item_id}/last_result_tree", callback=callback)
 
-    def get_items_request_tree(self, callback: Callable):
+    def get_items_request_tree(self, callback: Callable = None):
         """GET /items/<item_id>/request_tree"""
         self._send_request("GET", f"items/request_tree", callback=callback)
 
-    def update_item_from_handler(self, item_id: int, item_handler: str, callback: Callable, **kwargs):
+    def update_item_from_handler(self, item_id: int, item_handler: str, callback: Callable = None, **kwargs):
         """PUT /items/<item_id>"""
         data = {
             "item_handler": item_handler,
@@ -155,18 +161,18 @@ class ApiClient(QObject):
         }
         self._send_request("PUT", f"items/{item_id}", data, callback=callback)
 
-    def delete_item(self, item_id: int, callback: Callable):
+    def delete_item(self, item_id: int, callback: Callable = None):
         """DELETE /items/<item_id>"""
         self._send_request("DELETE", f"items/{item_id}", callback=callback)
 
-    def run_item(self, item_id: int, callback: Callable):
-        """POST /runner/start/<int:item_id>"""
-        self._send_request("POST", f"runner/start/{item_id}", callback=callback)
+    def run_item(self, item_id: int, callback: Callable = None):
+        """PUT /runner/start/<int:item_id>"""
+        self._send_request("PUT", f"runner/start/{item_id}", data={}, callback=callback)
 
-    def stop_item(self, item_id: int, callback: Callable):
-        """POST /runner/stop/<int:item_id>"""
-        self._send_request("POST", f"runner/stop/{item_id}", callback=callback)
+    def stop_item(self, item_id: int, callback: Callable = None):
+        """PUT /runner/stop/<int:item_id>"""
+        self._send_request("PUT", f"runner/stop/{item_id}", data={}, callback=callback)
 
-    def get_running_threads(self, callback: Callable):
+    def get_running_threads(self, callback: Callable = None):
         """GET /runner/running_threads"""
         self._send_request("GET", f"runner/running_threads", callback=callback)

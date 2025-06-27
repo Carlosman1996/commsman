@@ -34,7 +34,7 @@ class BaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create_item_request_from_handler(self, item_name: str, item_handler: str, parent: int):
+    def create_item_request_from_handler(self, item_name: str, item_handler: str, parent_item_id: int):
         raise NotImplementedError
 
     @abstractmethod

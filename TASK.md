@@ -3,6 +3,8 @@
 ## Priority
 
 TODO: decouple backend from PYQT/SIDE
+    - TODO: History tab.
+    - TODO: Collection results.
 
 TODO: tab to show description
 
