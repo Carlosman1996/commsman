@@ -149,6 +149,10 @@ class ApiClient(QObject):
         """GET /items/<item_id>/last_result_tree"""
         self._send_request("GET", f"items/{item_id}/last_result_tree", callback=callback)
 
+    def get_item_results_history(self, item_id: int, callback: Callable = None):
+        """GET /items/<item_id>/results_history"""
+        self._send_request("GET", f"items/{item_id}/results_history", callback=callback)
+
     def get_items_request_tree(self, callback: Callable = None):
         """GET /items/<item_id>/request_tree"""
         self._send_request("GET", f"items/request_tree", callback=callback)

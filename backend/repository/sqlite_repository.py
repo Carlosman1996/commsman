@@ -21,7 +21,7 @@ class SQLiteRepository(BaseRepository):
         @event.listens_for(self.engine, "connect")
         def enable_foreign_keys(dbapi_connection, connection_record):
             cursor = dbapi_connection.cursor()
-            cursor.execute("PRAGMA foreign_keys=ON;")
+            cursor.execute("PRAGMA foreign_keys=ON")
             cursor.close()
 
     @contextmanager

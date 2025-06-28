@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 import tzlocal
-import uuid
 from sqlalchemy import Integer, String, ForeignKey, Column, Boolean, JSON, DateTime, UniqueConstraint
 from sqlalchemy.orm import Mapped, MappedAsDataclass, DeclarativeBase
 from sqlalchemy.testing.schema import mapped_column
@@ -32,6 +31,7 @@ class BaseItem(Base):
         self.created_at = datetime.now(tzlocal.get_localzone())
         self.updated_at = datetime.now(tzlocal.get_localzone())
         self.modified_by = "Ordillan"
+        self.children = []
 
 
 @dataclass
@@ -58,7 +58,7 @@ class BaseResult(BaseItem):
 
     execution_session_id: Mapped[int] = mapped_column(Integer, ForeignKey("execution_session.item_id", ondelete="CASCADE"), nullable=False, default=None)
     parent_id: Mapped[int] = mapped_column(Integer, ForeignKey("collection_result.item_id", ondelete="SET NULL"), nullable=True, default=None)
-    request_id: Mapped[int] = mapped_column(Integer, ForeignKey("request.item_id", ondelete="SET NULL"), nullable=False, default=None)
+    request_id: Mapped[int] = mapped_column(Integer, ForeignKey("request.item_id", ondelete="SET NULL"), nullable=True, default=None)
 
     client_type: Mapped[str] = mapped_column(String, nullable=False, default=None)
     result: Mapped[str] = mapped_column(String, nullable=False, default=None)

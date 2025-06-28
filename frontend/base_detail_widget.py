@@ -95,35 +95,35 @@ class BaseResult(QWidget):
         self.api_client = api_client
         self.item = item
         self.item_last_result = self.item["last_result"]
+        self.item_results_history = self.item["results_history"]
         self.backend_running = False
 
         # Update the UI every 500 ms:
         self.timer = QTimer(self)
-        self.timer.timeout.connect(self.get_backend_running)
+        self.timer.timeout.connect(self.reload_data)
         self.timer.start(500)
 
-    def get_backend_running(self):
-        self.api_client.get_running_threads(callback=self.reload_data)
-
-    @abstractmethod
-    def on_finished(self):
-        pass
-
-    def reload_data(self, data: dict):
+    def reload_data(self):
         if self.backend_running:
             self.api_client.get_item_last_result_tree(item_id=self.item["item_id"], callback=self.update_view)
 
-        # Update running flag after updating results to show last result:
+        self.api_client.get_running_threads(callback=self.set_backend_running_status)
+
+    def set_backend_running_status(self, data):
         self.backend_running = bool(data["running_threads"])
         if not self.backend_running:
             self.on_finished()
 
     @abstractmethod
+    def on_finished(self):
+        pass
+
+    @abstractmethod
     def update_view(self, data: dict):
-        raise NotImplementedError
+        pass
 
 
-class BaseDetail(BaseResult):
+class BaseDetail(QWidget):
     def __init__(self, api_client, item):
         # BaseResult is needed because it inherits methods related with backend:
         super().__init__(api_client, item)

@@ -44,7 +44,7 @@ class BackendManager:
         self.running_threads[item_id] = thread
         thread.start()
 
-    def stop(self, item_id):
+    def stop(self, item_id: int = None):
         """Stops a specific worker thread gracefully."""
         def stop_thread(item_id):
             self.running_threads[item_id].stop()  # Set running flag to False

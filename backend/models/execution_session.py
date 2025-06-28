@@ -13,7 +13,7 @@ class ExecutionSession(BaseItem):
     total_failed: int = 0
 
     # Initialize to None but it is non-nullable:
-    request_id: Mapped[int] = mapped_column(Integer, ForeignKey("request.item_id", ondelete="SET NULL"), nullable=False, default=None)
+    request_id: Mapped[int] = mapped_column(Integer, ForeignKey("request.item_id", ondelete="SET NULL"), nullable=True, default=None)
 
     item_type: Mapped[str] = mapped_column(String, default="ExecutionSession")
     elapsed_time: Mapped[int] = mapped_column(String, default=0)

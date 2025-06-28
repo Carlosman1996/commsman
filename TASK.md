@@ -2,10 +2,6 @@
 
 ## Priority
 
-TODO: decouple backend from PYQT/SIDE
-    - TODO: History tab.
-    - TODO: Collection results.
-
 TODO: tab to show description
 
 TODO: execution session as header
@@ -19,6 +15,10 @@ TODO: migrate QT to PYSIDE
 TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
+
+TODO: BaseResult and BaseDetail are called from different points, and are doing several and the same API calls.
+
+TODO: logger and log files per execution
 
 TODO: separate both repository model and backend DTOs -- SEE FINAL DOCUMENTATION
 ✔️ Use SQLAlchemy models for persistence

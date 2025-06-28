@@ -78,6 +78,14 @@ def get_item_last_result_tree(item_id):
         return make_response({'error': str(e)}), 500
 
 
+@bp.route('/items/<int:item_id>/results_history', methods=['GET'])
+def get_item_results_history(item_id):
+    try:
+        result = repository.get_item_results_history(item_id)
+        return make_response(result), 200
+    except Exception as e:
+        return make_response({'error': str(e)}), 500
+
 @bp.route('/items/request_tree', methods=['GET'])
 def get_items_request_tree():
     try:

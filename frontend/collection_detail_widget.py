@@ -142,15 +142,15 @@ class CollectionResultWidget(BaseResult):
         self.tabs.addTab(self.history_tab, "History")
 
         # Set initial state and connect signals:
-        self.update_view(load_data=True)
+        self.update_view(data=self.item_last_result)
 
-    def update_view(self, load_data=False, result=None):
-        if not load_data:
-            self.item["last_result"] = result
-        if self.item["last_result"] is None:
+    def update_view(self, data: dict):
+        if data is None:
             return
+        else:
+            self.item_last_result = data
 
-        self.results_tree.update_model(self.item["last_result"])
+        self.results_tree.update_model(self.item_last_result)
 
 
 class CollectionDetail(BaseDetail):
