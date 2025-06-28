@@ -1,4 +1,6 @@
+import weakref
 from abc import abstractmethod
+from functools import wraps
 
 from PyQt6.QtCore import Qt, QSize, pyqtSignal, QPropertyAnimation, QEasingCurve, QTimer
 from PyQt6.QtGui import QIcon
@@ -13,7 +15,7 @@ class ExecuteButton(QPushButton):
         super().__init__("Run")
         self.setFixedWidth(100)
         self.run = True
-        if backend_running and blocked:
+        if blocked:
             self.set_blocked()
         elif backend_running:
             self.set_stop()
@@ -96,6 +98,7 @@ class BaseResult(QWidget):
         self.item = item
         self.item_last_result = self.item["last_result"]
         self.item_results_history = self.item["results_history"]
+        self.running_threads = []
         self.backend_running = False
 
         # Update the UI every 500 ms:
@@ -110,9 +113,16 @@ class BaseResult(QWidget):
         self.api_client.get_running_threads(callback=self.set_backend_running_status)
 
     def set_backend_running_status(self, data):
-        self.backend_running = bool(data["running_threads"])
-        if not self.backend_running:
+        self.running_threads = data["running_threads"]
+        self.backend_running = bool(self.running_threads)
+        if self.backend_running:
+            self.on_running()
+        else:
             self.on_finished()
+
+    @abstractmethod
+    def on_running(self):
+        pass
 
     @abstractmethod
     def on_finished(self):
@@ -123,7 +133,7 @@ class BaseResult(QWidget):
         pass
 
 
-class BaseDetail(QWidget):
+class BaseDetail(BaseResult):
     def __init__(self, api_client, item):
         # BaseResult is needed because it inherits methods related with backend:
         super().__init__(api_client, item)
@@ -157,8 +167,7 @@ class BaseDetail(QWidget):
         # Execute button at right side:
         header_layout.addStretch(1)
         # Execute request:
-        backend_running_other_item = bool(self.backend_running and self.item["item_id"] not in self.backend.running_threads)
-        self.execute_button = ExecuteButton(backend_running=self.backend_running, blocked=backend_running_other_item)
+        self.execute_button = ExecuteButton(backend_running=False, blocked=True)
         header_layout.addWidget(self.execute_button)
 
         # Request side layout:
@@ -211,6 +220,13 @@ class BaseDetail(QWidget):
 
     def on_finished(self):
         self.execute_button.set_run()
+
+    def on_running(self):
+        backend_running_other_item = bool(self.item["item_id"] not in self.running_threads)
+        if backend_running_other_item:
+            self.execute_button.set_blocked()
+        else:
+            self.execute_button.set_stop()
 
     def update_view(self, data: dict):
         if data is None:
