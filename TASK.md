@@ -2,8 +2,6 @@
 
 ## Priority
 
-TODO: BUG - Run a collection and change to another causes a strange API call response and frontend crashes.
-
 TODO: tab to show description
 
 TODO: execution session as header
