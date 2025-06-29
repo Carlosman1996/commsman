@@ -27,6 +27,7 @@ class ApiClient(QObject):
         status_code = reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute) or 500
         content_type = reply.header(QNetworkRequest.KnownHeaders.ContentTypeHeader) or ""
 
+        response_data = None
         try:
             response_data = bytes(reply.readAll()).decode('utf-8')
 
@@ -35,8 +36,6 @@ class ApiClient(QObject):
 
             if "application/json" in content_type:
                 parsed = json.loads(response_data)
-                if isinstance(parsed, (dict, list)):
-                    return parsed
                 return {"response": parsed, "status": status_code}
 
             return {"response": response_data, "status": status_code}
@@ -63,7 +62,7 @@ class ApiClient(QObject):
 
             if reply.error() == QNetworkReply.NetworkError.NoError:
                 if callback:
-                    callback(response_data)
+                    callback(response_data["response"])
                 else:
                     # Emit the raw parsed data (could be dict or list)
                     self.response_received.emit(response_data, status_code)
