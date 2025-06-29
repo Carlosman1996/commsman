@@ -1,23 +1,22 @@
-import copy
-import time
 import threading
+import time
 from dataclasses import asdict
 from datetime import datetime
 
 import tzlocal
-from PyQt6.QtCore import QThread, pyqtSignal, QObject
-from backend.handlers.collection_handler import CollectionHandler
+from PyQt6.QtCore import QThread
+from backend.core.handlers.collection_handler import CollectionHandler
 from backend.models.execution_session import ExecutionSession
 from backend.repository import *
-from backend.handlers.protocol_client_manager import ProtocolClientManager
+from backend.core.handlers.protocol_client_manager import ProtocolClientManager
 from backend.repository.sqlite_repository import SQLiteRepository
 
 
-class Runner(QThread):
-    """ Worker that runs the requests in a separate Python thread inside a QThread """
+class Runner(threading.Thread):
+    """ Worker that runs the requests in a separate Python thread """
 
-    def __init__(self, repository: BaseRepository, item_id: int):
-        super().__init__()
+    def __init__(self, repository: BaseRepository, item_id: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.repository = repository
         self.update_items_queue = []
         self.collection_handler = CollectionHandler(self.update_items_queue)
@@ -133,6 +132,7 @@ class Runner(QThread):
         self.finish_execution_session()
 
         self.protocol_client_manager.close_all_handlers()
+
         return
 
     def stop(self):

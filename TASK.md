@@ -2,10 +2,11 @@
 
 ## Priority
 
-TODO: Qtimer(500) must be run only while execution is running. The collection results tree does not allow to expand because it is constantly reloaded.
-TODO: individual request results, when are run inside a collection, must show last result.
+TODO: 0.3.0 - Deploy procedure.
 
-TODO: control the maximum number of results to save
+TODO: 0.3.0 - Method to get an available port for API: improve stability.
+
+TODO: 0.3.0 - Database and logs in public folders outside temporal files.
 
 TODO: tab to show description
 
@@ -21,7 +22,17 @@ TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
 
-TODO: decouple backend from PYQT/SIDE
+TODO: document API and expose endpoints in a formal way.
+
+TODO: BaseResult and BaseDetail are called from different points, and are doing several and the same API calls.
+
+TODO: logger and log files per execution
+
+TODO: separate both repository model and backend DTOs -- SEE FINAL DOCUMENTATION
+✔️ Use SQLAlchemy models for persistence
+✔️ Use dataclasses / Pydantic / dicts for business logic and API interaction
+
+TODO: control the maximum number of results to save
 
 TODO: clear results button
 
@@ -99,3 +110,60 @@ TODO: Modbus TLS/Socket/ASCII
 
 TODO: Understand read discrete input modbus response
 
+## Documentation
+
+### separate both repository model and backend DTOs
+
+Step 1: Define your SQLAlchemy model
+
+# models/device.py
+from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
+
+class Base(DeclarativeBase):
+    pass
+
+class Device(Base):
+    __tablename__ = "devices"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    type: Mapped[str]
+    status: Mapped[str]
+
+🧾 Step 2: Define your DTO
+
+# dtos/device_dto.py
+from dataclasses import dataclass
+
+@dataclass
+class DeviceDTO:
+    id: int
+    name: str
+    type: str
+    status: str
+
+🔁 Step 3: Write reusable converters
+
+You can keep them in a converters/device_converter.py file:
+
+# converters/device_converter.py
+from models.device import Device
+from dtos.device_dto import DeviceDTO
+
+def to_dto(device: Device) -> DeviceDTO:
+    return DeviceDTO(
+        id=device.id,
+        name=device.name,
+        type=device.type,
+        status=device.status
+    )
+
+def from_dto(dto: DeviceDTO) -> Device:
+    return Device(
+        id=dto.id,
+        name=dto.name,
+        type=dto.type,
+        status=dto.status
+    )
+
+Optional: you can even pass **asdict(dto) if you’re careful with field alignment.

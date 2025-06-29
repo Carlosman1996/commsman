@@ -43,17 +43,10 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-### 2. Create SQLite Database
+### 2. Run the Application
 
 ```bash
-# Apply latest schema updates
-alembic upgrade head
-```
-
-### 3. Run the Application
-
-```bash
-python -m frontend.main_window
+python start.py
 ```
 
 ---

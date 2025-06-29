@@ -1,4 +1,6 @@
+import weakref
 from abc import abstractmethod
+from functools import wraps
 
 from PyQt6.QtCore import Qt, QSize, pyqtSignal, QPropertyAnimation, QEasingCurve, QTimer
 from PyQt6.QtGui import QIcon
@@ -13,7 +15,7 @@ class ExecuteButton(QPushButton):
         super().__init__("Run")
         self.setFixedWidth(100)
         self.run = True
-        if backend_running and blocked:
+        if blocked:
             self.set_blocked()
         elif backend_running:
             self.set_stop()
@@ -69,54 +71,72 @@ class ExecuteButton(QPushButton):
 
 class BaseRequest(QWidget):
 
-    def __init__(self, repository, *args, **kwargs):
+    def __init__(self, api_client, item, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.repository = repository
-        self.item = self.repository.get_selected_item()
+        self.api_client = api_client
+        self.item = item
 
-    def update_sequence(self):
-        self.update_item()
-        self.update_view()
-
+    @abstractmethod
     def reload_data(self):
-        self.item = self.repository.get_selected_item()
+        raise NotImplementedError
 
     @abstractmethod
     def update_item(self):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def update_view(self):
-        pass
+    def update_view(self, data: dict):
+        raise NotImplementedError
 
 
 class BaseResult(QWidget):
-    def __init__(self, backend, *args, **kwargs):
+    def __init__(self, api_client, item, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.backend = backend
-        self.repository = self.backend.repository
-        self.item = self.backend.repository.get_selected_item()
+        self.api_client = api_client
+        self.item = item
+        self.item_last_result = self.item["last_result"]
+        self.item_results_history = self.item["results_history"]
+        self.running_threads = []
+        self.backend_running = False
 
         # Update the UI every 500 ms:
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.reload_data)
-        self.timer.start(250)
+        self.timer.start(500)
 
     def reload_data(self):
-        result = self.repository.get_item_last_result_tree(item=self.item)
-        self.update_view(result=result)
+        if self.backend_running:
+            self.api_client.get_item_last_result_tree(item_id=self.item["item_id"], callback=self.update_view)
+
+        self.api_client.get_running_threads(callback=self.set_backend_running_status)
+
+    def set_backend_running_status(self, data):
+        self.running_threads = data["running_threads"]
+        self.backend_running = bool(self.running_threads)
+        if self.backend_running:
+            self.on_running()
+        else:
+            self.on_finished()
 
     @abstractmethod
-    def update_view(self, load_data: bool = False, result: object = None):
-        raise NotImplementedError
+    def on_running(self):
+        pass
+
+    @abstractmethod
+    def on_finished(self):
+        pass
+
+    @abstractmethod
+    def update_view(self, data: dict):
+        pass
 
 
 class BaseDetail(BaseResult):
-    def __init__(self, backend):
+    def __init__(self, api_client, item):
         # BaseResult is needed because it inherits methods related with backend:
-        super().__init__(backend)
+        super().__init__(api_client, item)
 
         self.setMinimumSize(500, 600)
 
@@ -142,14 +162,12 @@ class BaseDetail(BaseResult):
         header_widget.setLayout(header_layout)
         self.request_layout.addWidget(header_widget)
         # Title:
-        self.title_label = IconTextWidget(self.item.name, QIcon(ITEMS[self.item.item_handler]["icon"]), QSize(75, 50))
+        self.title_label = IconTextWidget(self.item["name"], QIcon(ITEMS[self.item["item_handler"]]["icon"]), QSize(75, 50))
         header_layout.addWidget(self.title_label)
         # Execute button at right side:
         header_layout.addStretch(1)
         # Execute request:
-        backend_running = bool(self.backend.running_threads)
-        backend_running_other_item = bool(backend_running and self.item.item_id not in self.backend.running_threads)
-        self.execute_button = ExecuteButton(backend_running=backend_running, blocked=backend_running_other_item)
+        self.execute_button = ExecuteButton(backend_running=False, blocked=True)
         header_layout.addWidget(self.execute_button)
 
         # Request side layout:
@@ -182,38 +200,45 @@ class BaseDetail(BaseResult):
         self.setLayout(main_layout)
 
         # Set initial state and connect signals:
-        self.update_view(load_data=True)
+        self.update_view(data=self.item["last_result"])
 
         self.execute_button.clicked.connect(self.execute)
-        self.backend.signal_finish.connect(self.on_finished)
 
     def execute(self):
         if self.execute_button.run:
+            # Backend running should be initialized to True to read, at least, one result from backend. If not, in fast
+            # executions the results might not be reported:
+            self.backend_running = True
             self.execute_button.set_stop()
 
             # Create and start the backend_manager thread
-            self.backend.start(item_id=self.item.item_id)
+            self.api_client.run_item(item_id=self.item["item_id"])
         else:
             # Stop the backend_manager thread
-            self.backend.stop(item_id=self.item.item_id)
+            self.api_client.stop_item(item_id=self.item["item_id"])
             self.execute_button.set_run()
 
     def on_finished(self):
         self.execute_button.set_run()
 
-    def update_view(self, load_data=False, result=None):
-        if load_data:
-            result = self.item.last_result
-        if result is None:
+    def on_running(self):
+        backend_running_other_item = bool(self.item["item_id"] not in self.running_threads)
+        if backend_running_other_item:
+            self.execute_button.set_blocked()
+        else:
+            self.execute_button.set_stop()
+
+    def update_view(self, data: dict):
+        if data is None:
             self.result_splitter_section.setVisible(False)
             return
         else:
             self.result_splitter_section.setVisible(True)
 
-        self.frame_result.setText(get_model_value(result, "result"))
-        self.frame_elapsed_time.setText(convert_time(get_model_value(result, "elapsed_time", 0)))
-        self.frame_timestamp.setText(convert_timestamp(get_model_value(result, "timestamp")))
-        self.frame_iterations.setText(f"Iterations: {get_model_value(result, "iterations")}")
+        self.frame_result.setText(get_model_value(data, "result"))
+        self.frame_elapsed_time.setText(convert_time(get_model_value(data, "elapsed_time", 0)))
+        self.frame_timestamp.setText(convert_timestamp(get_model_value(data, "timestamp")))
+        self.frame_iterations.setText(f"Iterations: {get_model_value(data, "iterations")}")
         self.frame_results.setText(f"Total OK / KO: "
-                                   f"{get_model_value(result, "total_ok")} / "
-                                   f"{get_model_value(result, "total_failed")}")
+                                   f"{get_model_value(data, "total_ok")} / "
+                                   f"{get_model_value(data, "total_failed")}")

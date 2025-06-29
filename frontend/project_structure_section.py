@@ -1,6 +1,5 @@
 import dataclasses
 import json
-import os
 import sys
 
 from PyQt6.QtCore import QEvent, Qt, QSortFilterProxyModel, QRect, pyqtSignal, QModelIndex
@@ -20,7 +19,7 @@ from PyQt6.QtWidgets import (
     QStyle,
 )
 
-from backend.backend_manager import BackendManager
+from backend.core.backend_manager import BackendManager
 from frontend.common import ITEMS
 from frontend.item_creation_dialog import ItemCreationDialog
 from utils.common import FRONTEND_PATH, OUTPUTS_PATH
@@ -48,51 +47,55 @@ class CustomStandardItemModel(QStandardItemModel):
     signal_move_item = pyqtSignal(CustomStandardItem)
     signal_update_item = pyqtSignal()
 
-    def __init__(self, repository, *args, **kwargs):
+    def __init__(self, api_client, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.repository = repository
+        self.api_client = api_client
         self.view_items = {}
-        self.load_model()
+
+        # Load all model by calling the API:
+        self.api_client.get_items_request_tree(callback=self.load_model)
 
     def create_view_item(self, item) -> CustomStandardItem:
-        view_item = CustomStandardItem(item.name, item.item_handler)
+        view_item = CustomStandardItem(item["name"], item["item_handler"])
         item_data = {
-            "item_id": item.item_id,
-            "item_handler": item.item_handler,
+            "item_id": item["item_id"],
+            "item_handler": item["item_handler"],
         }
         view_item.setData(item_data, role=Qt.ItemDataRole.UserRole)
-        self.view_items[item.item_id] = view_item  # Save reference
+        self.view_items[item["item_id"]] = view_item  # Save reference
         return view_item
 
-    def load_model(self):
+    def load_model(self, data: dict):
         """Loads all elements from repository into a QStandardItemModel, considering the 'position' key."""
         self.view_items = {}
         self.clear()
         self.setHorizontalHeaderLabels(["Project"])
 
-        db_items = self.repository.get_items_request_tree()
-
         # Step 1: Create QStandardItem objects for each item
-        def get_items(db_items):
-            for db_item in db_items:
+        def get_items(data):
+            if not data:
+                return
+            for db_item in data:
                 item = self.create_view_item(db_item)
-                self.view_items[db_item.item_id] = item
-                get_items(db_item.children)
+                self.view_items[db_item.get("item_id")] = item
+                get_items(db_item.get("children"))
         # Get items::
-        get_items(db_items)
+        get_items(data)
 
         # Step 2: Attach items to parents, maintaining order
         root_level_item = self.invisibleRootItem()
-        def set_model(db_items):
-            for db_item in db_items:
-                if db_item.parent_id:  # Attach to a parent
-                    parent_view_item = self.view_items.get(db_item.parent_id)
-                    parent_view_item.appendRow(self.view_items[db_item.item_id])
+        def set_model(data):
+            if not data:
+                return
+            for db_item in data:
+                if db_item.get("parent_id"):  # Attach to a parent
+                    parent_view_item = self.view_items.get(db_item.get("parent_id"))
+                    parent_view_item.appendRow(self.view_items[db_item.get("item_id")])
                 else:  # Root-level items
-                    root_level_item.appendRow(self.view_items[db_item.item_id])
-                set_model(db_item.children)
+                    root_level_item.appendRow(self.view_items[db_item.get("item_id")])
+                set_model(db_item.get("children"))
         # Set model:
-        set_model(db_items)
+        set_model(data)
 
     def recalculate_positions(self):
         """Recalculates and updates the 'position' of each item based on its order in the QStandardItemModel."""
@@ -104,7 +107,7 @@ class CustomStandardItemModel(QStandardItemModel):
                 item_data = child_item.data(Qt.ItemDataRole.UserRole)  # Retrieve the unique identifier
 
                 # Update position based on index within the parent
-                self.repository.update_item_from_handler(item_handler=item_data["item_handler"],
+                self.api_client.update_item_from_handler(item_handler=item_data["item_handler"],
                                                          item_id=item_data["item_id"],
                                                          position=index)
 
@@ -188,7 +191,7 @@ class CustomStandardItemModel(QStandardItemModel):
         self.layoutChanged.emit()
 
         # Update backend repository
-        self.repository.update_item_from_handler(item_handler=item_data["item_handler"],
+        self.api_client.update_item_from_handler(item_handler=item_data["item_handler"],
                                                  item_id=item_data["item_id"],
                                                  parent_id=parent_data.get("item_id"))
 
@@ -202,8 +205,8 @@ class CustomStandardItemModel(QStandardItemModel):
     def add_item(self, item):
         view_item = self.create_view_item(item)
         root_level_item = self.invisibleRootItem()
-        if item.parent_id:
-            self.view_items[item.parent_id].appendRow(view_item)
+        if item["parent_id"]:
+            self.view_items[item["parent_id"]].appendRow(view_item)
         else:
             root_level_item.appendRow(view_item)
 
@@ -377,10 +380,13 @@ class CustomItemDelegate(QStyledItemDelegate):
 
 
 class ProjectStructureSection(QWidget):
-    def __init__(self, repository):
+    def __init__(self, api_client):
         super().__init__()
 
         self.setMinimumWidth(250)
+
+        # Set api client:
+        self.api_client = api_client
 
         # Buttons:
         self.add_button = Button("Add")
@@ -404,8 +410,7 @@ class ProjectStructureSection(QWidget):
         self.delegate.signal_item_clicked.connect(self.set_add_button_visibility)
 
         # Data repository:
-        self.repository = repository
-        self.view_model = CustomStandardItemModel(self.repository)
+        self.view_model = CustomStandardItemModel(self.api_client)
         self.view_model.itemChanged.connect(self.edit_item)
         self.view_model.signal_move_item.connect(self.move_item)
 
@@ -461,7 +466,7 @@ class ProjectStructureSection(QWidget):
             return self.view_model.itemFromIndex(model_index)
         return None
 
-    def get_selected_item_data(self) -> str | None:
+    def get_selected_item_data(self) -> int | None:
         item = self.get_selected_item()
         if item:
             return item.data(Qt.ItemDataRole.UserRole)["item_id"]
@@ -483,10 +488,10 @@ class ProjectStructureSection(QWidget):
             else:
                 parent_data = {}
 
-            item = self.repository.create_item_request_from_handler(item_name=dialog.item_name,
-                                                                    item_handler=dialog.item_handler,
-                                                                    parent_id=parent_data.get("item_id"))
-            self.view_model.add_item(item=item)
+            self.api_client.create_item_request_from_handler(item_name=dialog.item_name,
+                                                             item_handler=dialog.item_handler,
+                                                             parent_item_id=parent_data.get("item_id"),
+                                                             callback=self.view_model.add_item)
 
             self.expand_tree_view_item(selected_item)
 
@@ -500,9 +505,10 @@ class ProjectStructureSection(QWidget):
 
     def edit_item(self, item):
         item_data = item.data(Qt.ItemDataRole.UserRole)
-        self.repository.update_item_from_handler(item_handler=item_data["item_handler"],
+        self.api_client.update_item_from_handler(item_handler=item_data["item_handler"],
                                                  item_id=item_data["item_id"],
-                                                 name=item.text())
+                                                 name=item.text(),
+                                                 callback=None)
 
     def move_item(self, item):
         self.proxy_model.setSourceModel(None)
@@ -524,7 +530,7 @@ class ProjectStructureSection(QWidget):
             if reply == QMessageBox.StandardButton.Yes:
                 selected_item = self.get_item_from_selected_index(indexes[0])
                 item_data = selected_item.data(Qt.ItemDataRole.UserRole)
-                self.repository.delete_item(item_id=item_data["item_id"])
+                self.api_client.delete_item(item_id=item_data["item_id"])
                 self.view_model.delete_item(item_id=item_data["item_id"])
                 self.set_add_button_visibility()
 

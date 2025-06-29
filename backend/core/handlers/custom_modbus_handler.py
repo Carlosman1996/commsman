@@ -1,14 +1,14 @@
 import struct
 import time
 from abc import abstractmethod
-from datetime import timezone, datetime
+from datetime import datetime
 import tzlocal
 
 from pymodbus import ModbusException
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.framer import FramerSocket, FramerRTU
 from pymodbus.pdu import DecodePDU
-from backend.handlers.base_handler import BaseHandler
+from backend.core.handlers.base_handler import BaseHandler
 from backend.models.modbus import ModbusResponse
 
 

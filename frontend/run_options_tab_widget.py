@@ -7,8 +7,8 @@ from frontend.components.components import CustomGridLayout
 
 class RunOptionsTabWidget(BaseRequest):
 
-    def __init__(self, repository):
-        super().__init__(repository)
+    def __init__(self, api_client, item):
+        super().__init__(api_client, item)
 
         main_layout = QVBoxLayout()
 
@@ -19,9 +19,11 @@ class RunOptionsTabWidget(BaseRequest):
 
         self.polling_interval_label = QSpinBox()
         self.polling_interval_label.setRange(0, 999999)
+        self.polling_interval_label.setValue(0)
 
         self.delayed_start = QSpinBox()
         self.delayed_start.setRange(0, 999999)
+        self.delayed_start.setValue(0)
 
         self.continuous_monitoring = QCheckBox()
 
@@ -36,34 +38,44 @@ class RunOptionsTabWidget(BaseRequest):
         self.setLayout(main_layout)
 
         # Set initial state and connect signals:
-        self.update_view(load_data=True)
+        self.item_run_options = self.item["run_options"]
+        self.update_view(data=self.item_run_options)
 
-        self.grid_layout.signal_update_item.connect(self.update_sequence)
+        self.grid_layout.signal_update_item.connect(self.update_item)
 
     def update_item(self):
-        if self.item.run_options:
+        if self.item_run_options:
             run_options = {
-                "name": self.item.name,
+                "name": self.item_run_options["name"],
                 "polling_interval": int(self.polling_interval_label.text()),
                 "delayed_start": int(self.delayed_start.text()),
                 "continuous_monitoring": bool(self.continuous_monitoring.isChecked()),
             }
-            self.item.run_options = self.repository.update_item_from_handler(
-                item_handler=self.item.run_options.item_handler,
-                item_id=self.item.run_options.item_id,
-                **run_options
+            self.api_client.update_item_from_handler(
+                item_handler=self.item_run_options["item_handler"],
+                item_id=self.item_run_options["item_id"],
+                **run_options,
+                callback=self.update_view
             )
         else:
-            self.item.run_options = self.repository.create_run_options_item(
-                item_name=self.item.name,
+            self.api_client.create_run_options_item(
+                item_name=self.item["name"],
                 item_handler="RunOptions",
-                parent=self.item,
+                parent_item_id=self.item["item_id"],
+                callback=self.update_view
             )
 
-    def update_view(self, load_data: bool = False):
-        if load_data and not self.item.run_options:
-            self.update_sequence()
+    def update_view(self, data: dict):
+        if not data:
+            self.update_item()
+            return
+        else:
+            self.item_run_options = data
 
-        self.polling_interval_label.setValue(self.item.run_options.polling_interval)
-        self.delayed_start.setValue(self.item.run_options.delayed_start)
-        self.continuous_monitoring.setChecked(self.item.run_options.continuous_monitoring)
+        self.grid_layout.blockSignals(True)
+
+        self.polling_interval_label.setValue(self.item_run_options["polling_interval"])
+        self.delayed_start.setValue(self.item_run_options["delayed_start"])
+        self.continuous_monitoring.setChecked(self.item_run_options["continuous_monitoring"])
+
+        self.grid_layout.blockSignals(False)

@@ -8,9 +8,11 @@ from backend.models import *
 
 DIR_PATH = pathlib.Path(__file__).parent.resolve()
 
+
 # Load JSON data
 with open(f'{DIR_PATH}/project_structure_data.json', 'r') as f:
     data = json.load(f)
+
 
 # Initialize Database
 engine = create_engine("sqlite:///commsman.db")
