@@ -2,7 +2,11 @@
 
 ## Priority
 
-TODO: deploy procedure
+TODO: 0.3.0 - Deploy procedure.
+
+TODO: 0.3.0 - Method to get an available port for API: improve stability.
+
+TODO: 0.3.0 - Database and logs in public folders outside temporal files.
 
 TODO: tab to show description
 

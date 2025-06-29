@@ -1,19 +1,19 @@
 # start.py
+import sys
 from datetime import datetime
 import os
 import subprocess
 import time
-import sys
 import json
 import requests
 import argparse
 
-from utils.common import PROJECT_PATH, BACKEND_PATH, FRONTEND_PATH
+from utils.common import PROJECT_PATH, get_data_path
 
 
 TIMESTAMP = int(datetime.now().timestamp())
 CONFIG_FILE = os.path.join(PROJECT_PATH, "config.json")
-LOG_PATH = os.path.join(PROJECT_PATH, f"logs/logs_{TIMESTAMP}")
+LOG_PATH = os.path.join(get_data_path(), f"logs/logs_{TIMESTAMP}")
 LOG_BACKEND_PATH = os.path.join(LOG_PATH, "backend")
 LOG_FRONTEND_PATH = os.path.join(LOG_PATH, "frontend")
 DB_FILE = os.path.join(PROJECT_PATH, "commsman.db")
@@ -45,7 +45,7 @@ def start_backend():
     log_file = open(str(LOG_BACKEND_PATH) + "/logs.txt", "w")
 
     return subprocess.Popen(
-        [sys.executable, "backend/main.py"],
+        [sys.executable, "-m", "backend.main"],
         cwd=PROJECT_PATH,
         stdout=log_file,
         stderr=subprocess.STDOUT
@@ -75,7 +75,7 @@ def start_frontend():
     log_file = open(str(LOG_FRONTEND_PATH) + "/logs.txt", "w")
 
     return subprocess.Popen(
-        [sys.executable, "frontend/main_window.py"],
+        [sys.executable, "-m", "frontend.main_window"],
         cwd=PROJECT_PATH,
         stdout=log_file,
         stderr=subprocess.STDOUT
@@ -91,6 +91,9 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    print(f"📁 Logs path: {LOG_PATH}")
+
     config = load_config()
     api_url = config["api"]["base_url"]
 

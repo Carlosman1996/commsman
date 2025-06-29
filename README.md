@@ -1,7 +1,3 @@
-Here is a more detailed `README.md` version that reflects both your current features and your broader future plans, without mentioning monetization or MVPs:
-
----
-
 # CommsMan
 
 **CommsMan** (Communication Manager) is a powerful, extensible tool for testing, monitoring, and managing industrial communication protocols. It is designed to help engineers and testers interact with embedded systems, PLCs, and other field devices via common industrial protocols.
@@ -47,17 +43,10 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-### 2. Create SQLite Database
+### 2. Run the Application
 
 ```bash
-# Apply latest schema updates
-alembic upgrade head
-```
-
-### 3. Run the Application
-
-```bash
-python -m frontend.main_window
+python start.py
 ```
 
 ---
@@ -118,7 +107,3 @@ python -m frontend.main_window
 ## 🧠 Philosophy
 
 CommsMan is designed with the mindset of being **protocol-agnostic**, **extensible**, and **integrated into real engineering workflows**. Whether you're debugging a single device or validating a full industrial system, CommsMan aims to be your go-to companion for communication diagnostics and automation.
-
----
-
-Let me know if you want a logo, screenshots, or usage examples added to this!
