@@ -13,4 +13,11 @@ database:
 	alembic downgrade -1
 
 run:
-	python -m frontend.main_window
+	# Normal startup
+	python start.py
+
+	# Rebuild database before starting
+	python start.py --rebuild-db
+
+	# Just test config and DB (no frontend/backend launch)
+	python start.py --test

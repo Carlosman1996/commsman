@@ -2,6 +2,8 @@
 
 ## Priority
 
+TODO: deploy procedure
+
 TODO: tab to show description
 
 TODO: execution session as header

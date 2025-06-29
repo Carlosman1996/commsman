@@ -168,3 +168,4 @@ outputs
 **/*.txt
 *.db*
 *.pkl
+logs

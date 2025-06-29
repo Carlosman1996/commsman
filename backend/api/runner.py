@@ -13,6 +13,11 @@ def init_runner_routes(backend_manager):
     backend = backend_manager
 
 
+@bp.route("/ping", methods=["GET"])
+def ping():
+    return {"status": "ok"}, 200
+
+
 @bp.route("/runner/start/<int:item_id>", methods=["PUT"])
 def run_item(item_id):
     backend.start(item_id)

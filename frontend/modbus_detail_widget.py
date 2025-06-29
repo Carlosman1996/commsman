@@ -316,7 +316,9 @@ class ModbusResponseWidget(BaseResult):
         }
 
     def update_view(self, data: dict):
-        if data is None or self.item_last_result["result"] == "Pending" or not self.item_last_result["results"]:
+        if data is None:
+            return
+        elif self.item_last_result and (self.item_last_result["result"] == "Pending" or not self.item_last_result["results"]):
             return
         else:
             self.item_last_result = data
