@@ -22,6 +22,8 @@ TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
 
+TODO: document API and expose endpoints in a formal way.
+
 TODO: BaseResult and BaseDetail are called from different points, and are doing several and the same API calls.
 
 TODO: logger and log files per execution
