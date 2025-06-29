@@ -12,7 +12,7 @@ class ApiClient(QObject):
     response_received = pyqtSignal(object, int)  # Signal for successful responses
     error_occurred = pyqtSignal(dict, int)  # Signal for errors (message, status_code)
 
-    def __init__(self, base_url: str = "http://localhost:5001"):
+    def __init__(self, base_url: str = "http://localhost:5000/api"):
         super().__init__()
 
         self.logger = logging.getLogger(__name__)

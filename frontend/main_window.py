@@ -1,3 +1,4 @@
+import json
 import sys
 
 from PyQt6.QtWidgets import (
@@ -17,7 +18,7 @@ from frontend.project_structure_section import ProjectStructureSection
 from qt_material import apply_stylesheet
 from frontend.modbus_detail_widget import ModbusDetail
 
-from utils.common import FRONTEND_PATH
+from utils.common import FRONTEND_PATH, PROJECT_PATH
 
 
 class Button(QPushButton):
@@ -33,12 +34,15 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        with open(f"{PROJECT_PATH}/config.json") as f:
+            self.config_file = json.load(f)
+
         self.setWindowTitle("Commsman")
         # self.showMaximized()
         self.resize(1920, 1080)
 
         # Set API client:
-        self.api_client = ApiClient()
+        self.api_client = ApiClient(base_url=self.config_file["api"]["base_url"])
 
         # Divide window in two sections:
         self.main_window_sections_splitter = QSplitter()

@@ -1,10 +1,13 @@
+import json
+
 from flask import Flask
 from backend.repository.sqlite_repository import SQLiteRepository
 from backend.core.backend_manager import BackendManager
 from backend.api import register_routes
+from utils.common import PROJECT_PATH
 
 
-def create_app():
+def create_app(database):
     app = Flask(__name__)
 
     repository_manager = SQLiteRepository()
@@ -16,5 +19,8 @@ def create_app():
 
 
 if __name__ == "__main__":
-    app = create_app()
-    app.run(debug=True, port=5001)
+    with open(f"{PROJECT_PATH}/config.json") as f:
+        config_file = json.load(f)
+
+    app = create_app(database=config_file["db"]["url"])
+    app.run(debug=config_file["api"]["debug"], host=config_file["api"]["host"], port=config_file["api"]["port"])

@@ -7,12 +7,11 @@ from backend.models import *
 from backend.repository.base_repository import BaseRepository
 
 
-DATABASE_URL = "sqlite:///commsman.db"
 Base = declarative_base()
 
 
 class SQLiteRepository(BaseRepository):
-    def __init__(self, database_url: str = DATABASE_URL):
+    def __init__(self, database_url: str = "sqlite:///commsman.db"):
         super().__init__()
 
         self.engine = create_engine(database_url)
