@@ -12,12 +12,12 @@ class ApiClient(QObject):
     response_received = pyqtSignal(object, int)  # Signal for successful responses
     error_occurred = pyqtSignal(dict, int)  # Signal for errors (message, status_code)
 
-    def __init__(self, base_url: str = "http://localhost:5000/api"):
+    def __init__(self, host: str, port: int):
         super().__init__()
 
         self.logger = logging.getLogger(__name__)
 
-        self.base_url = base_url
+        self.base_url = f"http://{host}:{port}"
         self.network_manager = QNetworkAccessManager()
         self.network_manager.finished.connect(self._handle_response)
         self._callbacks = {}  # Maps QNetworkReply to user callback

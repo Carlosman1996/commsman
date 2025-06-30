@@ -1,4 +1,5 @@
 # start.py
+import socket
 import sys
 from datetime import datetime
 import os
@@ -8,21 +9,14 @@ import json
 import requests
 import argparse
 
-from utils.common import PROJECT_PATH, get_data_path
-
+from utils.common import PROJECT_PATH, get_data_path, load_app_config
 
 TIMESTAMP = int(datetime.now().timestamp())
-CONFIG_FILE = os.path.join(PROJECT_PATH, "config.json")
 LOG_PATH = os.path.join(get_data_path(), f"logs/logs_{TIMESTAMP}")
 LOG_BACKEND_PATH = os.path.join(LOG_PATH, "backend")
 LOG_FRONTEND_PATH = os.path.join(LOG_PATH, "frontend")
 DB_FILE = os.path.join(PROJECT_PATH, "commsman.db")
 ALEMBIC_INI = os.path.join(PROJECT_PATH, "alembic.ini")
-
-
-def load_config():
-    with open(CONFIG_FILE) as f:
-        return json.load(f)
 
 
 def run_alembic_migrations():
@@ -37,7 +31,7 @@ def rebuild_database():
     run_alembic_migrations()
 
 
-def start_backend():
+def start_backend(config):
     print("🚀 Starting backend server...")
 
     if not os.path.exists(LOG_BACKEND_PATH):
@@ -45,14 +39,17 @@ def start_backend():
     log_file = open(str(LOG_BACKEND_PATH) + "/logs.txt", "w")
 
     return subprocess.Popen(
-        [sys.executable, "-m", "backend.main"],
+        [sys.executable, "-m", "backend.main", f"--debug={config["db"]["url"]}", f"--host={config["api"]["host"]}", f"--port={config["api"]["port"]}"],
         cwd=PROJECT_PATH,
         stdout=log_file,
         stderr=subprocess.STDOUT
     )
 
 
-def wait_for_backend(api_url, timeout=10):
+def wait_for_backend(config, timeout=10):
+
+    api_url = f"http://{config["api"]["host"]}:{config["api"]["port"]}"
+
     print(f"⏳ Waiting for backend to become available at {api_url}...")
     for _ in range(timeout):
         try:
@@ -67,7 +64,7 @@ def wait_for_backend(api_url, timeout=10):
     return False
 
 
-def start_frontend():
+def start_frontend(config):
     print("🖥️ Starting frontend application...")
 
     if not os.path.exists(LOG_FRONTEND_PATH):
@@ -75,7 +72,7 @@ def start_frontend():
     log_file = open(str(LOG_FRONTEND_PATH) + "/logs.txt", "w")
 
     return subprocess.Popen(
-        [sys.executable, "-m", "frontend.main_window"],
+        [sys.executable, "-m", "frontend.main_window", f"--host={config["api"]["host"]}", f"--port={config["api"]["port"]}"],
         cwd=PROJECT_PATH,
         stdout=log_file,
         stderr=subprocess.STDOUT
@@ -94,8 +91,7 @@ def main():
 
     print(f"📁 Logs path: {LOG_PATH}")
 
-    config = load_config()
-    api_url = config["api"]["base_url"]
+    config = load_app_config()
 
     # Rebuild DB if requested
     if args.rebuild_db:
@@ -107,11 +103,10 @@ def main():
         print("✅ Test mode: config loaded, DB check passed. No apps launched.")
         return
 
-    backend_proc = start_backend()
+    backend_proc = start_backend(config)
 
-
-    if wait_for_backend(api_url):
-        frontend_proc = start_frontend()
+    if wait_for_backend(config):
+        frontend_proc = start_frontend(config)
 
         try:
             while True:

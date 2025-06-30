@@ -4,9 +4,9 @@
 
 TODO: 0.3.0 - Deploy procedure.
 
-TODO: 0.3.0 - Method to get an available port for API: improve stability.
-
 TODO: 0.3.0 - Database and logs in public folders outside temporal files.
+
+TODO: small bug in stop button. When it is clicked, it makes a strange transition stop-run-stop.
 
 TODO: tab to show description
 
