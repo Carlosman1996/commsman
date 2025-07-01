@@ -5,13 +5,13 @@ from sqlalchemy.orm import sessionmaker, declarative_base, aliased
 
 from backend.models import *
 from backend.repository.base_repository import BaseRepository
-
+from config import SQLALCHEMY_URL
 
 Base = declarative_base()
 
 
 class SQLiteRepository(BaseRepository):
-    def __init__(self, database_url: str = "sqlite:///commsman.db"):
+    def __init__(self, database_url: str = SQLALCHEMY_URL):
         super().__init__()
 
         self.engine = create_engine(database_url)

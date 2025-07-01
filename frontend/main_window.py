@@ -1,4 +1,4 @@
-import json
+import argparse
 import sys
 
 from PyQt6.QtWidgets import (
@@ -18,7 +18,7 @@ from frontend.project_structure_section import ProjectStructureSection
 from qt_material import apply_stylesheet
 from frontend.modbus_detail_widget import ModbusDetail
 
-from utils.common import FRONTEND_PATH, PROJECT_PATH
+from config import FRONTEND_PATH, load_app_config
 
 
 class Button(QPushButton):
@@ -31,18 +31,15 @@ class Button(QPushButton):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, host: str, port: int):
         super().__init__()
-
-        with open(f"{PROJECT_PATH}/config.json") as f:
-            self.config_file = json.load(f)
 
         self.setWindowTitle("Commsman")
         # self.showMaximized()
         self.resize(1920, 1080)
 
         # Set API client:
-        self.api_client = ApiClient(base_url=self.config_file["api"]["base_url"])
+        self.api_client = ApiClient(host=host, port=port)
 
         # Divide window in two sections:
         self.main_window_sections_splitter = QSplitter()
@@ -100,11 +97,22 @@ class MainWindow(QMainWindow):
         super().closeEvent(*args, **kwargs)
 
 
-if __name__ == "__main__":
+def run(host: str, port: int):
     app = QApplication(sys.argv)
-    apply_stylesheet(app, theme=f"{FRONTEND_PATH}/theme.xml", css_file=f"{FRONTEND_PATH}/styles.css")
+    apply_stylesheet(app, theme=f"{FRONTEND_PATH}/fixtures/theme.xml", css_file=f"{FRONTEND_PATH}/fixtures/styles.css")
 
-    window = MainWindow()
+    window = MainWindow(host=host, port=port)
     window.show()
 
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    config = load_app_config(find_port=False)
+
+    parser = argparse.ArgumentParser(description="Start frontend.")
+    parser.add_argument("--host", help="API host.", default=config["api"]["host"])
+    parser.add_argument("--port", help="API port.", default=config["api"]["port"])
+    args = parser.parse_args()
+
+    run(host=args.host, port=args.port)

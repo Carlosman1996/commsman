@@ -1,33 +1,21 @@
 # start.py
 import sys
-from datetime import datetime
 import os
-import subprocess
 import time
-import json
 import requests
 import argparse
-
-from utils.common import PROJECT_PATH, get_data_path
-
-
-TIMESTAMP = int(datetime.now().timestamp())
-CONFIG_FILE = os.path.join(PROJECT_PATH, "config.json")
-LOG_PATH = os.path.join(get_data_path(), f"logs/logs_{TIMESTAMP}")
-LOG_BACKEND_PATH = os.path.join(LOG_PATH, "backend")
-LOG_FRONTEND_PATH = os.path.join(LOG_PATH, "frontend")
-DB_FILE = os.path.join(PROJECT_PATH, "commsman.db")
-ALEMBIC_INI = os.path.join(PROJECT_PATH, "alembic.ini")
+from multiprocessing import Process
+from config import PROJECT_PATH, load_app_config, ALEMBIC_INI, DB_FILE, LOG_BACKEND_PATH, LOG_FRONTEND_PATH, LOG_PATH
 
 
-def load_config():
-    with open(CONFIG_FILE) as f:
-        return json.load(f)
+from backend import main as backend_main
+from frontend import main_window as frontend_main
 
 
 def run_alembic_migrations():
     print("🛠️  Running Alembic migrations...")
-    subprocess.run(["alembic", "-c", str(ALEMBIC_INI), "upgrade", "head"], cwd=PROJECT_PATH)
+    from subprocess import run
+    run(["alembic", "-c", str(ALEMBIC_INI), "upgrade", "head"], cwd=PROJECT_PATH)
 
 
 def rebuild_database():
@@ -37,22 +25,26 @@ def rebuild_database():
     run_alembic_migrations()
 
 
-def start_backend():
-    print("🚀 Starting backend server...")
-
+def run_backend(host, port, db_url):
     if not os.path.exists(LOG_BACKEND_PATH):
         os.makedirs(LOG_BACKEND_PATH)
-    log_file = open(str(LOG_BACKEND_PATH) + "/logs.txt", "w")
-
-    return subprocess.Popen(
-        [sys.executable, "-m", "backend.main"],
-        cwd=PROJECT_PATH,
-        stdout=log_file,
-        stderr=subprocess.STDOUT
-    )
+    with open(str(LOG_BACKEND_PATH) + "/logs.txt", "w") as f:
+        sys.stdout = f
+        sys.stderr = f
+        backend_main.run(debug=False, database_url=db_url, host=host, port=port)
 
 
-def wait_for_backend(api_url, timeout=10):
+def run_frontend(host, port):
+    if not os.path.exists(LOG_FRONTEND_PATH):
+        os.makedirs(LOG_FRONTEND_PATH)
+    with open(str(LOG_FRONTEND_PATH) + "/logs.txt", "w") as f:
+        sys.stdout = f
+        sys.stderr = f
+        frontend_main.run(host=host, port=port)
+
+
+def wait_for_backend(config, timeout=10):
+    api_url = f"http://{config['api']['host']}:{config['api']['port']}"
     print(f"⏳ Waiting for backend to become available at {api_url}...")
     for _ in range(timeout):
         try:
@@ -67,21 +59,6 @@ def wait_for_backend(api_url, timeout=10):
     return False
 
 
-def start_frontend():
-    print("🖥️ Starting frontend application...")
-
-    if not os.path.exists(LOG_FRONTEND_PATH):
-        os.makedirs(LOG_FRONTEND_PATH)
-    log_file = open(str(LOG_FRONTEND_PATH) + "/logs.txt", "w")
-
-    return subprocess.Popen(
-        [sys.executable, "-m", "frontend.main_window"],
-        cwd=PROJECT_PATH,
-        stdout=log_file,
-        stderr=subprocess.STDOUT
-    )
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Start frontend and backend.")
     parser.add_argument("--rebuild-db", action="store_true", help="Recreate the database before launching.")
@@ -94,10 +71,8 @@ def main():
 
     print(f"📁 Logs path: {LOG_PATH}")
 
-    config = load_config()
-    api_url = config["api"]["base_url"]
+    config = load_app_config()
 
-    # Rebuild DB if requested
     if args.rebuild_db:
         rebuild_database()
     elif not os.path.exists(DB_FILE):
@@ -107,18 +82,19 @@ def main():
         print("✅ Test mode: config loaded, DB check passed. No apps launched.")
         return
 
-    backend_proc = start_backend()
+    backend_proc = Process(target=run_backend, args=(config["api"]["host"], config["api"]["port"], config["db"]["url"]))
+    backend_proc.start()
 
-
-    if wait_for_backend(api_url):
-        frontend_proc = start_frontend()
+    if wait_for_backend(config):
+        frontend_proc = Process(target=run_frontend, args=(config["api"]["host"], config["api"]["port"]))
+        frontend_proc.start()
 
         try:
             while True:
-                if frontend_proc.poll() is not None:
+                if not frontend_proc.is_alive():
                     print("🖥️ Frontend closed.")
                     break
-                if backend_proc.poll() is not None:
+                if not backend_proc.is_alive():
                     print("🌐 Backend terminated.")
                     break
                 time.sleep(0.5)
@@ -127,21 +103,20 @@ def main():
             print("🛑 Keyboard interrupt received.")
 
         finally:
-            # Terminate both safely
-            if frontend_proc.poll() is None:
+            if frontend_proc.is_alive():
                 print("🛑 Terminating frontend...")
                 frontend_proc.terminate()
-                frontend_proc.wait()
+                frontend_proc.join()
 
-            if backend_proc.poll() is None:
+            if backend_proc.is_alive():
                 print("🛑 Terminating backend...")
                 backend_proc.terminate()
-                backend_proc.wait()
+                backend_proc.join()
 
     else:
         print("💥 Backend not available, aborting.")
         backend_proc.terminate()
-        backend_proc.wait()
+        backend_proc.join()
 
 
 if __name__ == "__main__":

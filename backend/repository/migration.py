@@ -5,6 +5,7 @@ from collections import defaultdict, deque
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from backend.models import *
+from config import SQLALCHEMY_URL
 
 DIR_PATH = pathlib.Path(__file__).parent.resolve()
 
@@ -15,7 +16,7 @@ with open(f'{DIR_PATH}/project_structure_data.json', 'r') as f:
 
 
 # Initialize Database
-engine = create_engine("sqlite:///commsman.db")
+engine = create_engine(SQLALCHEMY_URL)
 Base.metadata.create_all(engine)
 
 Session = sessionmaker(bind=engine)

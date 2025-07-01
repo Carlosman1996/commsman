@@ -4,7 +4,7 @@ from dataclasses import asdict
 
 from backend.repository.base_repository import BaseRepository
 from backend.models import DATACLASS_REGISTRY, BaseRequest
-from utils.common import PROJECT_PATH
+from config import PROJECT_PATH
 
 
 JSON_DATA_FILE = os.path.join(PROJECT_PATH, "project_structure_data.json")
