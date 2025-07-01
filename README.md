@@ -32,6 +32,13 @@ Currently, CommsMan supports **Modbus TCP** and **Modbus RTU** protocols, with a
 
 ---
 
+## 📥 Download
+
+Prebuilt executables for **Windows**, **Linux**, and **macOS** are available in every [GitHub Release](https://github.com/tu-usuario/commsman/releases).  
+You can download the latest version of Commsman for your platform without needing to install Python or any dependencies.
+
+---
+
 ## 📦 Installation & Setup
 
 ### 1. Create and Activate Virtual Environment
