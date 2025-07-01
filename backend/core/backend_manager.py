@@ -17,7 +17,7 @@ class BackendManager:
 
         # Setup background task manager:
         self.background_task_manager = BackgroundTaskManager()
-        self.background_task_manager.add_periodic_task(self.repository.delete_old_results, 600)
+        # self.background_task_manager.add_periodic_task(self.repository.delete_old_results, 600)
         self.background_task_manager.start()
 
     @property

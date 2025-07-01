@@ -167,7 +167,8 @@ class BaseDetail(BaseResult):
         # Execute button at right side:
         header_layout.addStretch(1)
         # Execute request:
-        self.execute_button = ExecuteButton(backend_running=False, blocked=True)
+        self.execute_button = ExecuteButton(backend_running=False, blocked=False)
+        self.execute_button.setVisible(False)
         header_layout.addWidget(self.execute_button)
 
         # Request side layout:
@@ -209,14 +210,11 @@ class BaseDetail(BaseResult):
             # Backend running should be initialized to True to read, at least, one result from backend. If not, in fast
             # executions the results might not be reported:
             self.backend_running = True
-            self.execute_button.set_stop()
-
             # Create and start the backend_manager thread
             self.api_client.run_item(item_id=self.item["item_id"])
         else:
             # Stop the backend_manager thread
             self.api_client.stop_item(item_id=self.item["item_id"])
-            self.execute_button.set_run()
 
     def on_finished(self):
         self.execute_button.set_run()
@@ -229,6 +227,10 @@ class BaseDetail(BaseResult):
             self.execute_button.set_stop()
 
     def update_view(self, data: dict):
+
+        if not self.execute_button.isVisible():
+            self.execute_button.setVisible(True)
+
         if data is None:
             self.result_splitter_section.setVisible(False)
             return

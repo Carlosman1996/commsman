@@ -1,6 +1,6 @@
 # build.py
-import os
 import sys
+import platform
 import subprocess
 import shutil
 from pathlib import Path
@@ -30,6 +30,14 @@ def run_pyinstaller():
 
     shutil.rmtree(DIST_PATH, ignore_errors=True)
 
+    system = platform.system()
+    if system == "Windows":
+        name = f"{APP_NAME}.exe"
+    elif system == "Darwin":
+        name = f"{APP_NAME}-mac"
+    else:
+        name = f"{APP_NAME}-linux"
+
     items_to_include = [
         "config.json",
         "alembic.ini",
@@ -42,7 +50,7 @@ def run_pyinstaller():
 
     cmd = [
         "pyinstaller",
-        "--name", APP_NAME,
+        "--name", name,
         "--onefile",
         "--windowed",
         *add_data_args,

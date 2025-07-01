@@ -4,12 +4,6 @@
 
 TODO: 0.3.0 - Deploy procedure.
 
-TODO: 0.3.0 - Database and logs in public folders outside temporal files.
-
-TODO: why backend.main deletes all collection results?
-
-TODO: small bug in stop button. When it is clicked, it makes a strange transition stop-run-stop.
-
 TODO: tab to show description
 
 TODO: execution session as header
@@ -23,6 +17,8 @@ TODO: migrate QT to PYSIDE
 TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
+
+TODO: create a way to remove the last results or to control the number of results to save.
 
 TODO: document API and expose endpoints in a formal way.
 
