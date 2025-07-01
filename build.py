@@ -26,7 +26,7 @@ def build_add_data_args(items, sep):
 
 
 def run_pyinstaller():
-    print(f"📦 Building {APP_NAME}...")
+    print(f"Building {APP_NAME}...")
 
     shutil.rmtree(DIST_PATH, ignore_errors=True)
 
@@ -57,9 +57,9 @@ def run_pyinstaller():
         ENTRY_SCRIPT
     ]
 
-    print("🔧 Running:", " ".join(cmd))
+    print("Running:", " ".join(cmd))
     subprocess.run(cmd, check=True)
-    print(f"✅ Build complete. Executable in: dist/{APP_NAME}")
+    print(f"Build complete. Executable in: dist/{APP_NAME}")
 
 
 if __name__ == "__main__":

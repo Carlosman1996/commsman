@@ -13,14 +13,14 @@ from frontend import main_window as frontend_main
 
 
 def run_alembic_migrations():
-    print("🛠️  Running Alembic migrations...")
+    print("Running Alembic migrations...")
     from subprocess import run
     run(["alembic", "-c", str(ALEMBIC_INI), "upgrade", "head"], cwd=PROJECT_PATH)
 
 
 def rebuild_database():
     if os.path.exists(DB_FILE):
-        print("⚠️  Removing existing database...")
+        print("Removing existing database...")
         os.remove(DB_FILE)
     run_alembic_migrations()
 
@@ -45,17 +45,17 @@ def run_frontend(host, port):
 
 def wait_for_backend(config, timeout=10):
     api_url = f"http://{config['api']['host']}:{config['api']['port']}"
-    print(f"⏳ Waiting for backend to become available at {api_url}...")
+    print(f"Waiting for backend to become available at {api_url}...")
     for _ in range(timeout):
         try:
             r = requests.get(f"{api_url}/ping", timeout=1)
             if r.status_code == 200:
-                print("✅ Backend is live.")
+                print("Backend is live.")
                 return True
         except requests.exceptions.RequestException:
             pass
         time.sleep(1)
-    print("❌ Backend did not respond in time.")
+    print("Backend did not respond in time.")
     return False
 
 
@@ -69,7 +69,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    print(f"📁 Logs path: {LOG_PATH}")
+    print(f"Logs path: {LOG_PATH}")
 
     config = load_app_config()
 
@@ -79,7 +79,7 @@ def main():
         run_alembic_migrations()
 
     if args.test:
-        print("✅ Test mode: config loaded, DB check passed. No apps launched.")
+        print("Test mode: config loaded, DB check passed. No apps launched.")
         return
 
     backend_proc = Process(target=run_backend, args=(config["api"]["host"], config["api"]["port"], config["db"]["url"]))
@@ -92,29 +92,29 @@ def main():
         try:
             while True:
                 if not frontend_proc.is_alive():
-                    print("🖥️ Frontend closed.")
+                    print("Frontend closed.")
                     break
                 if not backend_proc.is_alive():
-                    print("🌐 Backend terminated.")
+                    print("Backend terminated.")
                     break
                 time.sleep(0.5)
 
         except KeyboardInterrupt:
-            print("🛑 Keyboard interrupt received.")
+            print("Keyboard interrupt received.")
 
         finally:
             if frontend_proc.is_alive():
-                print("🛑 Terminating frontend...")
+                print("Terminating frontend...")
                 frontend_proc.terminate()
                 frontend_proc.join()
 
             if backend_proc.is_alive():
-                print("🛑 Terminating backend...")
+                print("Terminating backend...")
                 backend_proc.terminate()
                 backend_proc.join()
 
     else:
-        print("💥 Backend not available, aborting.")
+        print("Backend not available, aborting.")
         backend_proc.terminate()
         backend_proc.join()
 
