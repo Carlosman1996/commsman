@@ -169,3 +169,4 @@ outputs
 *.db*
 *.pkl
 logs
+.secrets
