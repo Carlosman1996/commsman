@@ -1,5 +1,4 @@
 import argparse
-import json
 import sys
 
 from PyQt6.QtWidgets import (
@@ -19,7 +18,7 @@ from frontend.project_structure_section import ProjectStructureSection
 from qt_material import apply_stylesheet
 from frontend.modbus_detail_widget import ModbusDetail
 
-from utils.common import FRONTEND_PATH, PROJECT_PATH, load_app_config
+from config import FRONTEND_PATH, load_app_config
 
 
 class Button(QPushButton):
@@ -98,18 +97,22 @@ class MainWindow(QMainWindow):
         super().closeEvent(*args, **kwargs)
 
 
+def run(host: str, port: int):
+    app = QApplication(sys.argv)
+    apply_stylesheet(app, theme=f"{FRONTEND_PATH}/fixtures/theme.xml", css_file=f"{FRONTEND_PATH}/fixtures/styles.css")
+
+    window = MainWindow(host=host, port=port)
+    window.show()
+
+    sys.exit(app.exec())
+
+
 if __name__ == "__main__":
-    config = load_app_config()
+    config = load_app_config(find_port=False)
 
     parser = argparse.ArgumentParser(description="Start frontend.")
     parser.add_argument("--host", help="API host.", default=config["api"]["host"])
     parser.add_argument("--port", help="API port.", default=config["api"]["port"])
     args = parser.parse_args()
 
-    app = QApplication(sys.argv)
-    apply_stylesheet(app, theme=f"{FRONTEND_PATH}/theme.xml", css_file=f"{FRONTEND_PATH}/styles.css")
-
-    window = MainWindow(host=args.host, port=args.port)
-    window.show()
-
-    sys.exit(app.exec())
+    run(host=args.host, port=args.port)

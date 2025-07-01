@@ -22,7 +22,7 @@ from PyQt6.QtWidgets import (
 from backend.core.backend_manager import BackendManager
 from frontend.common import ITEMS
 from frontend.item_creation_dialog import ItemCreationDialog
-from utils.common import FRONTEND_PATH, OUTPUTS_PATH
+from config import FRONTEND_PATH, OUTPUTS_PATH
 
 
 class Button(QPushButton):

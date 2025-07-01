@@ -3,8 +3,7 @@ from datetime import datetime, timezone
 
 import tzlocal
 from sqlalchemy import Integer, String, ForeignKey, Column, Boolean, JSON, DateTime, UniqueConstraint
-from sqlalchemy.orm import Mapped, MappedAsDataclass, DeclarativeBase
-from sqlalchemy.testing.schema import mapped_column
+from sqlalchemy.orm import Mapped, MappedAsDataclass, DeclarativeBase, mapped_column
 
 
 class Base(MappedAsDataclass, DeclarativeBase):

@@ -1,4 +1,5 @@
 alembic==1.15.1
+altgraph==0.17.4
 aniso8601==10.0.1
 blinker==1.9.0
 certifi==2024.12.14
@@ -13,10 +14,10 @@ Jinja2==3.1.5
 Mako==1.3.9
 Markdown==3.7
 MarkupSafe==3.0.2
+packaging==25.0
+pyinstaller==6.14.1
+pyinstaller-hooks-contrib==2025.5
 pymodbus==3.8.3
-PyQt5==5.15.11
-PyQt5-Qt5==5.15.16
-PyQt5_sip==12.16.1
 PyQt6==6.8.0
 PyQt6-Charts==6.8.0
 PyQt6-Charts-Qt6==6.8.1
@@ -28,6 +29,7 @@ pytz==2025.2
 qt-material==2.14
 qtwidgets==1.1
 requests==2.32.3
+setuptools==80.9.0
 six==1.17.0
 SQLAlchemy==2.0.38
 tk==0.1.0
