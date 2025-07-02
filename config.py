@@ -18,6 +18,7 @@ if hasattr(sys, '_MEIPASS'):
         PROJECT_DATA_PATH = Path(os.getenv("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "commsman"
     else:
         PROJECT_DATA_PATH = Path.home() / ".local" / "share" / "commsman"
+    os.makedirs(PROJECT_DATA_PATH, exist_ok=True)
 else:
     PROJECT_PATH = Path(__file__).parent.resolve()
     PROJECT_DATA_PATH = PROJECT_PATH
