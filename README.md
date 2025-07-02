@@ -37,6 +37,14 @@ Currently, CommsMan supports **Modbus TCP** and **Modbus RTU** protocols, with a
 Prebuilt executables for **Windows**, **Linux**, and **macOS** are available in every [GitHub Release](https://github.com/Carlosman1996/commsman/releases).  
 You can download the latest version of Commsman for your platform without needing to install Python or any dependencies.
 
+> ⚠️ **Important Note for Windows Users:**  
+> When downloading the `.exe` version of CommsMan, **Windows Defender or your antivirus may falsely detect it as a virus or unknown app**.  
+> This is a **false positive** — the code is **100% open source and trustworthy**.  
+> However, since CommsMan is an independent project and does **not have funding for a code-signing certificate**, Windows marks it as "unrecognized."  
+> You can safely run the application after allowing it through your antivirus.
+
+The source code is fully available and verifiable in this repository.
+
 ---
 
 ## 📦 Installation & Setup

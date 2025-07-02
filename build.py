@@ -42,6 +42,7 @@ def run_pyinstaller():
         "config.json",
         "alembic.ini",
         "frontend/fixtures",
+        "alembic"
     ]
     sep = ";" if sys.platform.startswith("win") else ":"
     # List any files or folders to include
@@ -51,8 +52,10 @@ def run_pyinstaller():
     cmd = [
         "pyinstaller",
         "--name", name,
+        "--icon=frontend/fixtures/icons/commsman.ico",
         "--onefile",
         "--windowed",
+        "--hidden-import=logging.config",
         *add_data_args,
         ENTRY_SCRIPT
     ]
