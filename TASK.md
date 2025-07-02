@@ -2,8 +2,6 @@
 
 ## Priority
 
-TODO: 0.3.0 - Deploy procedure.
-
 TODO: tab to show description
 
 TODO: execution session as header
@@ -17,6 +15,8 @@ TODO: migrate QT to PYSIDE
 TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
+
+TODO: Windows and MacOS support. Test the application in both platforms.
 
 TODO: create a way to remove the last results or to control the number of results to save.
 
