@@ -52,7 +52,7 @@ def run_pyinstaller():
     cmd = [
         "pyinstaller",
         "--name", name,
-        "--icon", "frontend/fixtures/icons/commsman.ico",
+        "--icon=frontend/fixtures/icons/commsman.ico",
         "--onefile",
         "--windowed",
         "--hidden-import=logging.config",
