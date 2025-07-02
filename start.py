@@ -5,24 +5,27 @@ import time
 import requests
 import argparse
 from multiprocessing import Process
-from config import PROJECT_PATH, load_app_config, ALEMBIC_INI, DB_FILE, LOG_BACKEND_PATH, LOG_FRONTEND_PATH, LOG_PATH
-
+from config import load_app_config, ALEMBIC_INI, DB_FILE, LOG_BACKEND_PATH, LOG_FRONTEND_PATH, LOG_PATH, ALEMBIC_PATH
+from alembic.config import Config
+from alembic import command
 
 from backend import main as backend_main
 from frontend import main_window as frontend_main
 
 
-def run_alembic_migrations():
+def run_alembic_migrations(db_url):
     print("Running Alembic migrations...")
-    from subprocess import run
-    run(["alembic", "-c", str(ALEMBIC_INI), "upgrade", "head"], cwd=PROJECT_PATH)
+    alembic_cfg = Config(str(ALEMBIC_INI))
+    alembic_cfg.set_main_option('script_location', str(ALEMBIC_PATH))
+    alembic_cfg.set_main_option('sqlalchemy.url', db_url)
+    command.upgrade(alembic_cfg, 'head')
 
 
-def rebuild_database():
+def rebuild_database(db_url):
     if os.path.exists(DB_FILE):
         print("Removing existing database...")
         os.remove(DB_FILE)
-    run_alembic_migrations()
+    run_alembic_migrations(db_url)
 
 
 def run_backend(host, port, db_url):
@@ -74,9 +77,9 @@ def main():
     config = load_app_config()
 
     if args.rebuild_db:
-        rebuild_database()
+        rebuild_database(config["db"]["url"])
     elif not os.path.exists(DB_FILE):
-        run_alembic_migrations()
+        run_alembic_migrations(config["db"]["url"])
 
     if args.test:
         print("Test mode: config loaded, DB check passed. No apps launched.")

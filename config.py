@@ -28,6 +28,7 @@ BACKEND_PATH = os.path.join(PROJECT_PATH, "backend")
 UTILS_PATH = os.path.join(PROJECT_PATH, "utils")
 OUTPUTS_PATH = os.path.join(PROJECT_PATH, "outputs")
 CONFIG_FILE = os.path.join(PROJECT_PATH, "config.json")
+ALEMBIC_PATH = os.path.join(PROJECT_PATH, "alembic")
 ALEMBIC_INI = os.path.join(PROJECT_PATH, "alembic.ini")
 
 

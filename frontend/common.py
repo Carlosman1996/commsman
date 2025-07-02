@@ -7,6 +7,11 @@ from config import FRONTEND_PATH
 
 
 ITEMS = {
+    "App": {
+        "icon": f"{FRONTEND_PATH}/fixtures/icons/commsman.ico",
+        "icon_simple": f"{FRONTEND_PATH}/fixtures/icons/commsman.png",
+        "item_handler": "App"
+    },
     "Collection": {
         "icon": f"{FRONTEND_PATH}/fixtures/icons/folder.png",
         "icon_simple": f"{FRONTEND_PATH}/fixtures/icons/folder.png",

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.3] - 2025-07-01
+
+### Fixed
+- Remove MacOS operating system from project building due to it cannot be tested.
+- Windows bugfix related with alembic imports.
+
+## [0.3.2] - 2025-07-01
+
+### Fixed
+- Deploy pipeline
+
 ## [0.3.1] - 2025-07-01
 
 ### Added

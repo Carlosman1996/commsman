@@ -19,7 +19,6 @@ class ApiClient(QObject):
         self.logger = CustomLogger(name=__name__)
 
         self.base_url = f"http://{host}:{port}"
-        print(self.base_url)
         self.network_manager = QNetworkAccessManager()
         self.network_manager.finished.connect(self._handle_response)
         self._callbacks = {}  # Maps QNetworkReply to user callback

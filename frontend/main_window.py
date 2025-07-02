@@ -1,6 +1,7 @@
 import argparse
 import sys
 
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QSplitter,
     QLabel,
@@ -14,6 +15,7 @@ from PyQt6.QtWidgets import (
 
 from frontend.api_client import ApiClient
 from frontend.collection_detail_widget import CollectionDetail
+from frontend.common import ITEMS
 from frontend.project_structure_section import ProjectStructureSection
 from qt_material import apply_stylesheet
 from frontend.modbus_detail_widget import ModbusDetail
@@ -35,6 +37,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Commsman")
+        self.setWindowIcon(QIcon(ITEMS["App"]["icon"]))
         # self.showMaximized()
         self.resize(1920, 1080)
 
