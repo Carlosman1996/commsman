@@ -1,8 +1,11 @@
+import weakref
+
 from PyQt6.QtCore import QObject, pyqtSignal, QUrl, QByteArray
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 import json
 from typing import Optional, Dict, Any, Union, Callable
 
+from frontend.common import SafeCallback
 from utils.logger import CustomLogger
 
 
@@ -44,12 +47,13 @@ class ApiClient(QObject):
         except json.JSONDecodeError:
             return {
                 "error": "Invalid JSON response",
-                "raw_response": response_data,
+                "response": response_data,
                 "status": status_code
             }
         except Exception as e:
             return {
                 "error": f"Response parsing failed: {str(e)}",
+                "response": None,
                 "status": status_code
             }
 
@@ -109,7 +113,7 @@ class ApiClient(QObject):
         else:
             raise ValueError(f"Unsupported method: {method}")
 
-        self._callbacks[reply] = callback
+        self._callbacks[reply] = SafeCallback(callback)
         return reply
 
     # Repository methods matching your Flask routes

@@ -29,21 +29,13 @@ def rebuild_database(db_url):
 
 
 def run_backend(host, port, db_url):
-    if not os.path.exists(LOG_BACKEND_PATH):
-        os.makedirs(LOG_BACKEND_PATH)
-    with open(str(LOG_BACKEND_PATH) + "/logs.txt", "w") as f:
-        sys.stdout = f
-        sys.stderr = f
-        backend_main.run(debug=False, database_url=db_url, host=host, port=port)
+    # TODO: add logging
+    backend_main.run(debug=False, database_url=db_url, host=host, port=port)
 
 
 def run_frontend(host, port):
-    if not os.path.exists(LOG_FRONTEND_PATH):
-        os.makedirs(LOG_FRONTEND_PATH)
-    with open(str(LOG_FRONTEND_PATH) + "/logs.txt", "w") as f:
-        sys.stdout = f
-        sys.stderr = f
-        frontend_main.run(host=host, port=port)
+    # TODO: add logging
+    frontend_main.run(host=host, port=port)
 
 
 def wait_for_backend(config, timeout=10):

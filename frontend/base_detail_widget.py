@@ -240,7 +240,7 @@ class BaseDetail(BaseResult):
         self.frame_result.setText(get_model_value(data, "result"))
         self.frame_elapsed_time.setText(convert_time(get_model_value(data, "elapsed_time", 0)))
         self.frame_timestamp.setText(convert_timestamp(get_model_value(data, "timestamp")))
-        self.frame_iterations.setText(f"Iterations: {get_model_value(data, "iterations")}")
+        self.frame_iterations.setText(f"Iterations: {get_model_value(data, 'iterations')}")
         self.frame_results.setText(f"Total OK / KO: "
-                                   f"{get_model_value(data, "total_ok")} / "
-                                   f"{get_model_value(data, "total_failed")}")
+                                   f"{get_model_value(data, 'total_ok')} / "
+                                   f"{get_model_value(data, 'total_failed')}")

@@ -1,9 +1,12 @@
+import traceback
 from datetime import datetime
 
 import tzlocal
 from PyQt6.QtGui import QIcon
+import weakref
 
 from config import FRONTEND_PATH
+from utils.logger import CustomLogger
 
 
 ITEMS = {
@@ -82,3 +85,23 @@ def convert_time(seconds: str | float) -> str:
         return f"{seconds * 1e6:.3f} µs"
     else:
         return f"{seconds * 1e9:.3f} ns"
+
+
+class SafeCallback:
+    def __init__(self, method):
+
+        self.logger = CustomLogger(name=__name__)
+        self._method_ref = weakref.WeakMethod(method)
+
+    def __call__(self, *args, **kwargs):
+        method = self._method_ref()
+
+        if method is not None:
+            try:
+                self.logger.debug(f"Calling method {method.__name__}")
+                method(*args, **kwargs)
+            except Exception as e:
+                self.logger.info("Exception in SafeCallback:", e)
+                traceback.print_exc()
+        else:
+            self.logger.info("Window is gone, callback skipped.")

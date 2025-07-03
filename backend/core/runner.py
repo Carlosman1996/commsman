@@ -4,7 +4,6 @@ from dataclasses import asdict
 from datetime import datetime
 
 import tzlocal
-from PyQt6.QtCore import QThread
 from backend.core.handlers.collection_handler import CollectionHandler
 from backend.models.execution_session import ExecutionSession
 from backend.repository import *

@@ -1,5 +1,6 @@
 import argparse
 import sys
+import faulthandler
 
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
@@ -111,6 +112,7 @@ def run(host: str, port: int):
 
 
 if __name__ == "__main__":
+    faulthandler.enable()
     config = load_app_config(find_port=False)
 
     parser = argparse.ArgumentParser(description="Start frontend.")
