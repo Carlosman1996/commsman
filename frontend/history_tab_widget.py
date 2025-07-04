@@ -23,7 +23,6 @@ class HistoryTabWidget(BaseResult):
         self.main_layout.addStretch()
 
         # Update the UI every 1 s:
-        self.timer = QTimer(self)
         self.timer.timeout.connect(self.reload_data)
         self.timer.start(1000)
 

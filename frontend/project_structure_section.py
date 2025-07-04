@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import sys
+import weakref
 
 from PyQt6.QtCore import QEvent, Qt, QSortFilterProxyModel, QRect, pyqtSignal, QModelIndex
 from PyQt6.QtGui import QStandardItemModel, QIcon, QDrag, QMouseEvent, QStandardItem
@@ -52,8 +53,26 @@ class CustomStandardItemModel(QStandardItemModel):
         self.api_client = api_client
         self.view_items = {}
 
+        self.api_client.dispatch_to_main.connect(self._on_dispatch_to_main)
+
         # Load all model by calling the API:
         self.api_client.get_items_request_tree(callback=self.load_model)
+
+    def _on_dispatch_to_main(self, callback, data):
+        """
+        This method runs in the main thread.
+        It executes the callback with the given data
+        only if self (the current view/handler) is still alive.
+        """
+        self_weak = weakref.ref(self)
+
+        def safe_call():
+            self_obj = self_weak()
+            if self_obj is not None and callable(callback):
+                callback(data)
+            # else: do nothing if self was deleted
+
+        safe_call()
 
     def create_view_item(self, item) -> CustomStandardItem:
         view_item = CustomStandardItem(item["name"], item["item_handler"])
@@ -431,6 +450,16 @@ class ProjectStructureSection(QWidget):
         section_layout.addWidget(self.tree_view)
 
         self.setLayout(section_layout)
+
+        self.api_client.dispatch_to_main.connect(self._on_dispatch_to_main)
+
+    def _on_dispatch_to_main(self, callback, data):
+        """
+        This method runs in the main thread.
+        It simply executes the callback with the given data.
+        """
+        if callable(callback):
+            callback(data)
 
     def eventFilter(self, source, event):
         if source == self.tree_view.viewport() and event.type() == QEvent.Type.MouseButtonPress:

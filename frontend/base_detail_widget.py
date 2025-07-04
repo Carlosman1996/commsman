@@ -68,31 +68,60 @@ class ExecuteButton(QPushButton):
         """)
 
 
-
-class BaseRequest(QWidget):
+class Base(QWidget):
 
     def __init__(self, api_client, item, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.api_client = api_client
         self.item = item
+        self.timer = QTimer(self)
 
-    @abstractmethod
-    def reload_data(self):
-        raise NotImplementedError
+        self.api_client.dispatch_to_main.connect(self._on_dispatch_to_main)
 
-    @abstractmethod
-    def update_item(self):
-        raise NotImplementedError
+    def _on_dispatch_to_main(self, callback, data):
+        """
+        This method runs in the main thread.
+        It executes the callback with the given data
+        only if self (the current view/handler) is still alive.
+        """
+        self_weak = weakref.ref(self)
+
+        def safe_call():
+            self_obj = self_weak()
+            if self_obj is not None and callable(callback):
+                callback(data)
+            # else: do nothing if self was deleted
+
+        safe_call()
 
     @abstractmethod
     def update_view(self, data: dict):
         raise NotImplementedError
 
+    def closeEvent(self, event):
+        self.timer.stop()
+        try:
+            self.api_client.dispatch_to_main.disconnect(self._on_dispatch_to_main)
+        except TypeError:
+            pass  # Already disconnected
 
-class BaseResult(QWidget):
+        super().closeEvent(event)
+
+
+class BaseRequest(Base):
+
     def __init__(self, api_client, item, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(api_client, item, *args, **kwargs)
+
+    @abstractmethod
+    def update_item(self):
+        raise NotImplementedError
+
+
+class BaseResult(Base):
+    def __init__(self, api_client, item, *args, **kwargs):
+        super().__init__(api_client, item, *args, **kwargs)
 
         self.api_client = api_client
         self.item = item
@@ -102,7 +131,6 @@ class BaseResult(QWidget):
         self.backend_running = False
 
         # Update the UI every 500 ms:
-        self.timer = QTimer(self)
         self.timer.timeout.connect(self.reload_data)
         self.timer.start(500)
 
@@ -126,10 +154,6 @@ class BaseResult(QWidget):
 
     @abstractmethod
     def on_finished(self):
-        pass
-
-    @abstractmethod
-    def update_view(self, data: dict):
         pass
 
 
@@ -240,7 +264,7 @@ class BaseDetail(BaseResult):
         self.frame_result.setText(get_model_value(data, "result"))
         self.frame_elapsed_time.setText(convert_time(get_model_value(data, "elapsed_time", 0)))
         self.frame_timestamp.setText(convert_timestamp(get_model_value(data, "timestamp")))
-        self.frame_iterations.setText(f"Iterations: {get_model_value(data, "iterations")}")
+        self.frame_iterations.setText(f"Iterations: {get_model_value(data, 'iterations')}")
         self.frame_results.setText(f"Total OK / KO: "
-                                   f"{get_model_value(data, "total_ok")} / "
-                                   f"{get_model_value(data, "total_failed")}")
+                                   f"{get_model_value(data, 'total_ok')} / "
+                                   f"{get_model_value(data, 'total_failed')}")

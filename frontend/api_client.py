@@ -10,6 +10,7 @@ class ApiClient(QObject):
     """
     API Client for interacting with the repository backend
     """
+    dispatch_to_main = pyqtSignal(object, object)
     response_received = pyqtSignal(object, int)  # Signal for successful responses
     error_occurred = pyqtSignal(dict, int)  # Signal for errors (message, status_code)
 
@@ -44,12 +45,13 @@ class ApiClient(QObject):
         except json.JSONDecodeError:
             return {
                 "error": "Invalid JSON response",
-                "raw_response": response_data,
+                "response": response_data,
                 "status": status_code
             }
         except Exception as e:
             return {
                 "error": f"Response parsing failed: {str(e)}",
+                "response": None,
                 "status": status_code
             }
 
@@ -61,9 +63,11 @@ class ApiClient(QObject):
             callback = self._callbacks.pop(reply, None)
             status_code = response_data.get("status", 500) if isinstance(response_data, dict) else 200
 
+            self.logger.debug(f"Response received: {status_code} {response_data}. Callback: {callback}")
+
             if reply.error() == QNetworkReply.NetworkError.NoError:
                 if callback:
-                    callback(response_data["response"])
+                    self.dispatch_to_main.emit(callback, response_data["response"])
                 else:
                     # Emit the raw parsed data (could be dict or list)
                     self.response_received.emit(response_data, status_code)

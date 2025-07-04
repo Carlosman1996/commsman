@@ -72,7 +72,7 @@ class CollectionResultTreeView(QTreeView):
             return
 
         # Create a folder item for the collection
-        folder_item = QStandardItem(f"{collection_result["name"]}")
+        folder_item = QStandardItem(f"{collection_result['name']}")
         status_item = QStandardItem(self.get_collection_status(collection_result))
 
         # Execution level:
@@ -100,17 +100,17 @@ class CollectionResultTreeView(QTreeView):
     def get_collection_status(self, collection_result):
         total_requests = collection_result["total_ok"] + collection_result["total_failed"] + collection_result["total_pending"]
         if collection_result["total_failed"] > 0:
-            return f"Failed ({total_requests} requests: {collection_result["total_ok"]} OK, {collection_result["total_failed"]} Failed)"
+            return f"Failed ({total_requests} requests: {collection_result['total_ok']} OK, {collection_result['total_failed']} Failed)"
         else:
-            return f"Success ({total_requests} requests: {collection_result["total_ok"]} OK)"
+            return f"Success ({total_requests} requests: {collection_result['total_ok']} OK)"
 
     def get_request_status(self, request):
-        if request["result"] == "Pending":
+        if request['result'] == "Pending":
             return f"Pending"
-        elif request["result"] == "OK":
-            return f"OK  [ {convert_time(request["elapsed_time"])} ]"
+        elif request['result'] == "OK":
+            return f"OK  [ {convert_time(request['elapsed_time'])} ]"
         else:
-            return f"Failed  [ {convert_time(request["elapsed_time"])} ]"
+            return f"Failed  [ {convert_time(request['elapsed_time'])} ]"
 
 
 class CollectionResultWidget(BaseResult):

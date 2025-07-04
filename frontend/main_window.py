@@ -107,7 +107,11 @@ def run(host: str, port: int):
     window = MainWindow(host=host, port=port)
     window.show()
 
-    sys.exit(app.exec())
+    try:
+        exec_obj = app.exec()
+        sys.exit(exec_obj)
+    except Exception as e:
+        print(e)
 
 
 if __name__ == "__main__":
