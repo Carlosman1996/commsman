@@ -456,10 +456,18 @@ class ProjectStructureSection(QWidget):
     def _on_dispatch_to_main(self, callback, data):
         """
         This method runs in the main thread.
-        It simply executes the callback with the given data.
+        It executes the callback with the given data
+        only if self (the current view/handler) is still alive.
         """
-        if callable(callback):
-            callback(data)
+        self_weak = weakref.ref(self)
+
+        def safe_call():
+            self_obj = self_weak()
+            if self_obj is not None and callable(callback):
+                callback(data)
+            # else: do nothing if self was deleted
+
+        safe_call()
 
     def eventFilter(self, source, event):
         if source == self.tree_view.viewport() and event.type() == QEvent.Type.MouseButtonPress:
