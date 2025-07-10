@@ -55,6 +55,7 @@ class RunOptionsTabWidget(BaseRequest):
                 item_handler=self.item_run_options["item_handler"],
                 item_id=self.item_run_options["item_id"],
                 **run_options,
+                request_id=self.request_id,
                 callback=self.update_view
             )
         else:
@@ -62,6 +63,7 @@ class RunOptionsTabWidget(BaseRequest):
                 item_name=self.item["name"],
                 item_handler="RunOptions",
                 parent_item_id=self.item["item_id"],
+                request_id=self.request_id,
                 callback=self.update_view
             )
 

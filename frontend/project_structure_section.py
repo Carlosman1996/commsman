@@ -1,7 +1,6 @@
 import dataclasses
 import json
 import sys
-import weakref
 
 from PyQt6.QtCore import QEvent, Qt, QSortFilterProxyModel, QRect, pyqtSignal, QModelIndex
 from PyQt6.QtGui import QStandardItemModel, QIcon, QDrag, QMouseEvent, QStandardItem
@@ -21,6 +20,7 @@ from PyQt6.QtWidgets import (
 )
 
 from backend.core.backend_manager import BackendManager
+from frontend.api.api_helper_mixin import ApiCallMixin
 from frontend.common import ITEMS
 from frontend.item_creation_dialog import ItemCreationDialog
 from config import FRONTEND_PATH, OUTPUTS_PATH
@@ -43,36 +43,21 @@ class CustomStandardItem(QStandardItem):
         self.setEditable(True)
 
 
-class CustomStandardItemModel(QStandardItemModel):
+class CustomStandardItemModel(QStandardItemModel, ApiCallMixin):
 
     signal_move_item = pyqtSignal(CustomStandardItem)
     signal_update_item = pyqtSignal()
 
     def __init__(self, api_client, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.api_client = api_client
+
+        self.setup_api_client(api_client)
+
         self.view_items = {}
 
-        self.api_client.dispatch_to_main.connect(self._on_dispatch_to_main)
-
         # Load all model by calling the API:
-        self.api_client.get_items_request_tree(callback=self.load_model)
-
-    def _on_dispatch_to_main(self, callback, data):
-        """
-        This method runs in the main thread.
-        It executes the callback with the given data
-        only if self (the current view/handler) is still alive.
-        """
-        self_weak = weakref.ref(self)
-
-        def safe_call():
-            self_obj = self_weak()
-            if self_obj is not None and callable(callback):
-                callback(data)
-            # else: do nothing if self was deleted
-
-        safe_call()
+        self.call_api(api_method="get_items_request_tree",
+                      callback=self.load_model)
 
     def create_view_item(self, item) -> CustomStandardItem:
         view_item = CustomStandardItem(item["name"], item["item_handler"])
@@ -126,9 +111,10 @@ class CustomStandardItemModel(QStandardItemModel):
                 item_data = child_item.data(Qt.ItemDataRole.UserRole)  # Retrieve the unique identifier
 
                 # Update position based on index within the parent
-                self.api_client.update_item_from_handler(item_handler=item_data["item_handler"],
-                                                         item_id=item_data["item_id"],
-                                                         position=index)
+                self.call_api(api_method="update_item_from_handler",
+                              item_handler=item_data["item_handler"],
+                              item_id=item_data["item_id"],
+                              position=index)
 
                 # Recursively update children
                 update_positions_recursive(child_item)
@@ -210,9 +196,10 @@ class CustomStandardItemModel(QStandardItemModel):
         self.layoutChanged.emit()
 
         # Update backend repository
-        self.api_client.update_item_from_handler(item_handler=item_data["item_handler"],
-                                                 item_id=item_data["item_id"],
-                                                 parent_id=parent_data.get("item_id"))
+        self.call_api(api_method="update_item_from_handler",
+                      item_handler=item_data["item_handler"],
+                      item_id=item_data["item_id"],
+                      parent_id=parent_data.get("item_id"))
 
         if destination_item != self.invisibleRootItem():
             self.signal_move_item.emit(destination_item)
@@ -398,14 +385,14 @@ class CustomItemDelegate(QStyledItemDelegate):
         return False
 
 
-class ProjectStructureSection(QWidget):
+class ProjectStructureSection(QWidget, ApiCallMixin):
     def __init__(self, api_client):
         super().__init__()
 
         self.setMinimumWidth(250)
 
         # Set api client:
-        self.api_client = api_client
+        self.setup_api_client(api_client)
 
         # Buttons:
         self.add_button = Button("Add")
@@ -450,24 +437,6 @@ class ProjectStructureSection(QWidget):
         section_layout.addWidget(self.tree_view)
 
         self.setLayout(section_layout)
-
-        self.api_client.dispatch_to_main.connect(self._on_dispatch_to_main)
-
-    def _on_dispatch_to_main(self, callback, data):
-        """
-        This method runs in the main thread.
-        It executes the callback with the given data
-        only if self (the current view/handler) is still alive.
-        """
-        self_weak = weakref.ref(self)
-
-        def safe_call():
-            self_obj = self_weak()
-            if self_obj is not None and callable(callback):
-                callback(data)
-            # else: do nothing if self was deleted
-
-        safe_call()
 
     def eventFilter(self, source, event):
         if source == self.tree_view.viewport() and event.type() == QEvent.Type.MouseButtonPress:
@@ -525,10 +494,11 @@ class ProjectStructureSection(QWidget):
             else:
                 parent_data = {}
 
-            self.api_client.create_item_request_from_handler(item_name=dialog.item_name,
-                                                             item_handler=dialog.item_handler,
-                                                             parent_item_id=parent_data.get("item_id"),
-                                                             callback=self.view_model.add_item)
+            self.call_api(api_method="create_item_request_from_handler",
+                          item_name=dialog.item_name,
+                          item_handler=dialog.item_handler,
+                          parent_item_id=parent_data.get("item_id"),
+                          callback=self.view_model.add_item)
 
             self.expand_tree_view_item(selected_item)
 
@@ -542,10 +512,10 @@ class ProjectStructureSection(QWidget):
 
     def edit_item(self, item):
         item_data = item.data(Qt.ItemDataRole.UserRole)
-        self.api_client.update_item_from_handler(item_handler=item_data["item_handler"],
-                                                 item_id=item_data["item_id"],
-                                                 name=item.text(),
-                                                 callback=None)
+        self.call_api(api_method="update_item_from_handler",
+                      item_handler=item_data["item_handler"],
+                      item_id=item_data["item_id"],
+                      name=item.text())
 
     def move_item(self, item):
         self.proxy_model.setSourceModel(None)
@@ -567,7 +537,8 @@ class ProjectStructureSection(QWidget):
             if reply == QMessageBox.StandardButton.Yes:
                 selected_item = self.get_item_from_selected_index(indexes[0])
                 item_data = selected_item.data(Qt.ItemDataRole.UserRole)
-                self.api_client.delete_item(item_id=item_data["item_id"])
+                self.call_api(api_method="delete_item",
+                              item_id=item_data["item_id"])
                 self.view_model.delete_item(item_id=item_data["item_id"])
                 self.set_add_button_visibility()
 

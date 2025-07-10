@@ -13,7 +13,8 @@ from PyQt6.QtWidgets import (
     QSizePolicy
 )
 
-from frontend.api_client import ApiClient
+from frontend.api.api_helper_mixin import ApiCallMixin
+from frontend.api.api_client import ApiClient
 from frontend.collection_detail_widget import CollectionDetail
 from frontend.common import ITEMS
 from frontend.project_structure_section import ProjectStructureSection
@@ -32,7 +33,7 @@ class Button(QPushButton):
         self.adjustSize()
 
 
-class MainWindow(QMainWindow):
+class MainWindow(QMainWindow, ApiCallMixin):
     def __init__(self, host: str, port: int):
         super().__init__()
 
@@ -43,6 +44,7 @@ class MainWindow(QMainWindow):
 
         # Set API client:
         self.api_client = ApiClient(host=host, port=port)
+        self.setup_api_client(self.api_client)
 
         # Divide window in two sections:
         self.main_window_sections_splitter = QSplitter()
@@ -72,30 +74,37 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
     def get_item_request(self):
+        print("get_item_request")
         item_id = self.project_structure_section.get_selected_item_data()
+        print("item_id", item_id)
         if item_id:
-            self.api_client.get_item_request(item_id, callback=self.set_detail_section)
+            self.call_api(api_method="get_item_request",
+                          item_id=item_id,
+                          callback=self.set_detail_section)
 
     def set_detail_section(self, item = None, *args, **kwargs):
-        if item is not None:
-            if item["item_handler"] == "ModbusRequest":
-                self.detail_section = ModbusDetail(self.api_client, item)
-            elif item["item_handler"] == "Collection":
-                self.detail_section = CollectionDetail(self.api_client, item)
-            else:
-                self.detail_section = QLabel("Not implemented yet")
-        else:
-            self.detail_section = QLabel("Select an item to display information")
-
-        if self.main_window_sections_splitter.count() > 1:
-            self.main_window_sections_splitter.replaceWidget(1, self.detail_section)
-            self.main_window_sections_splitter.setStretchFactor(1, 1)  # Index 1 (will expand)
+        print("set_detail_section")
+        print(item)
+        # if item is not None:
+        #     if item["item_handler"] == "ModbusRequest":
+        #         self.detail_section = ModbusDetail(self.api_client, item)
+        #     elif item["item_handler"] == "Collection":
+        #         self.detail_section = CollectionDetail(self.api_client, item)
+        #     else:
+        #         self.detail_section = QLabel("Not implemented yet")
+        # else:
+        #     self.detail_section = QLabel("Select an item to display information")
+        #
+        # if self.main_window_sections_splitter.count() > 1:
+        #     self.main_window_sections_splitter.replaceWidget(1, self.detail_section)
+        #     self.main_window_sections_splitter.setStretchFactor(1, 1)  # Index 1 (will expand)
+        self.detail_section = QLabel("Select an item to display information")
         return self.detail_section
 
     def closeEvent(self, *args, **kwargs):
         """Override the close event to perform custom actions."""
         # Wait until backend stops:
-        self.api_client.stop_item(item_id=0)
+        self.call_api(api_method="stop_item", item_id=0)
 
         super().closeEvent(*args, **kwargs)
 

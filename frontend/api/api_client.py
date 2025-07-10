@@ -10,7 +10,6 @@ class ApiClient(QObject):
     """
     API Client for interacting with the repository backend
     """
-    dispatch_to_main = pyqtSignal(object, object)
     response_received = pyqtSignal(object, int)  # Signal for successful responses
     error_occurred = pyqtSignal(dict, int)  # Signal for errors (message, status_code)
 
@@ -57,17 +56,20 @@ class ApiClient(QObject):
 
     def _handle_response(self, reply: QNetworkReply):
         """Handle API responses of any type"""
+
+        print("_handle_response")
+
         callback = None
         try:
             response_data = self._parse_response(reply)
             callback = self._callbacks.pop(reply, None)
             status_code = response_data.get("status", 500) if isinstance(response_data, dict) else 200
 
-            self.logger.debug(f"Response received: {status_code} {response_data}. Callback: {callback}")
+            print(f"Response received: {status_code} {response_data}. Callback: {callback}")
 
             if reply.error() == QNetworkReply.NetworkError.NoError:
                 if callback:
-                    self.dispatch_to_main.emit(callback, response_data["response"])
+                    callback(response_data["response"])
                 else:
                     # Emit the raw parsed data (could be dict or list)
                     self.response_received.emit(response_data, status_code)
@@ -77,7 +79,7 @@ class ApiClient(QObject):
                     "details": response_data if isinstance(response_data, dict) else {"response": response_data},
                     "status": status_code
                 }
-                self.logger.error(str(error_data))
+                print(str(error_data))
                 self.error_occurred.emit(error_data, status_code)
 
         except Exception as e:
@@ -86,7 +88,7 @@ class ApiClient(QObject):
                     "error": f"Unexpected error processing response: {str(e)}",
                     "status": 500
                 }
-                self.logger.error(str(error_data))
+                print(str(error_data))
                 self.error_occurred.emit(error_data, 500)
             else:
                 raise Exception(e)

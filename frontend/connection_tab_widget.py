@@ -59,6 +59,7 @@ class ModbusTcpConnectionGrid(BaseConnectionGrid):
                 item_handler=self.item_client["item_handler"],
                 item_id=self.item_client["item_id"],
                 **client,
+                request_id=self.request_id,
                 callback=self.update_view,
             )
         else:
@@ -137,6 +138,7 @@ class ModbusRtuConnectionGrid(BaseConnectionGrid):
                 item_handler=self.item_client["item_handler"],
                 item_id=self.item_client["item_id"],
                 **client,
+                request_id=self.request_id,
                 callback=self.update_view,
             )
         else:
@@ -144,6 +146,7 @@ class ModbusRtuConnectionGrid(BaseConnectionGrid):
                 item_name=self.item["name"],
                 item_handler="ModbusRtuClient",
                 parent_item_id=self.item["item_id"],
+                request_id=self.request_id,
                 callback=self.update_view,
             )
 
@@ -209,6 +212,7 @@ class ConnectionTabWidget(BaseRequest):
                 client_id=None,
                 client_type=new_connection_type,
                 client=None,
+                request_id=self.request_id,
                 callback=self.update_view
             )
 
