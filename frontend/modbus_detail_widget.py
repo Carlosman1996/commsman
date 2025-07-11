@@ -119,11 +119,11 @@ class ModbusRequestTabWidget(BaseRequest):
             "data_type": self.data_type_combo.currentText(),
             "values": self.values_table.get_values(),
         }
-        self.api_client.update_item_from_handler(item_handler=self.item["item_handler"],
-                                                 item_id=self.item["item_id"],
-                                                 **update_data,
-                                                 request_id=self.request_id,
-                                                 callback=self.update_view)
+        self.call_api(api_method="update_item_from_handler",
+                      item_handler=self.item["item_handler"],
+                      item_id=self.item["item_id"],
+                      **update_data,
+                      callback=self.update_view)
 
     def update_view(self, data: dict):
         if not data:

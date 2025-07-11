@@ -55,20 +55,18 @@ class ModbusTcpConnectionGrid(BaseConnectionGrid):
                 "timeout": int(self.timeout_spinbox.text()),
                 "retries": int(self.retries_spinbox.text()),
             }
-            self.api_client.update_item_from_handler(
-                item_handler=self.item_client["item_handler"],
-                item_id=self.item_client["item_id"],
-                **client,
-                request_id=self.request_id,
-                callback=self.update_view,
-            )
+
+            self.call_api(api_method="update_item_from_handler",
+                          item_handler=self.item_client["item_handler"],
+                          item_id=self.item_client["item_id"],
+                          **client,
+                          callback=self.update_view)
         else:
-            self.api_client.create_client_item(
-                item_name=self.item["name"],
-                item_handler="ModbusTcpClient",
-                parent_item_id=self.item["item_id"],
-                callback=self.update_view,
-            )
+            self.call_api(api_method="create_client_item",
+                          item_name=self.item["name"],
+                          item_handler="ModbusTcpClient",
+                          parent_item_id=self.item["item_id"],
+                          callback=self.update_view)
 
     def update_view(self, data: dict):
         if not data:
@@ -134,21 +132,18 @@ class ModbusRtuConnectionGrid(BaseConnectionGrid):
                 "timeout": int(self.timeout_spinbox.text()),
                 "retries": int(self.retries_spinbox.text()),
             }
-            self.api_client.update_item_from_handler(
-                item_handler=self.item_client["item_handler"],
-                item_id=self.item_client["item_id"],
-                **client,
-                request_id=self.request_id,
-                callback=self.update_view,
-            )
+
+            self.call_api(api_method="update_item_from_handler",
+                          item_handler=self.item_client["item_handler"],
+                          item_id=self.item_client["item_id"],
+                          **client,
+                          callback=self.update_view)
         else:
-            self.api_client.create_client_item(
-                item_name=self.item["name"],
-                item_handler="ModbusRtuClient",
-                parent_item_id=self.item["item_id"],
-                request_id=self.request_id,
-                callback=self.update_view,
-            )
+            self.call_api(api_method="create_client_item",
+                          item_name=self.item["name"],
+                          item_handler="ModbusRtuClient",
+                          parent_item_id=self.item["item_id"],
+                          callback=self.update_view)
 
     def update_view(self, data: dict):
         if not data:
@@ -206,15 +201,13 @@ class ConnectionTabWidget(BaseRequest):
     def update_item(self):
         new_connection_type = self.connection_type_combo.currentText()
         if self.item["client_type"] != new_connection_type:
-            self.api_client.update_item_from_handler(
-                item_handler=self.item["item_handler"],
-                item_id=self.item["item_id"],
-                client_id=None,
-                client_type=new_connection_type,
-                client=None,
-                request_id=self.request_id,
-                callback=self.update_view
-            )
+            self.call_api(api_method="update_item_from_handler",
+                          item_handler=self.item["item_handler"],
+                          item_id=self.item["item_id"],
+                          client_id=None,
+                          client_type=new_connection_type,
+                          client=None,
+                          callback=self.update_view)
 
     def update_view(self, data: dict = None):
         """Switch between GridLayouts when QComboBox changes value."""

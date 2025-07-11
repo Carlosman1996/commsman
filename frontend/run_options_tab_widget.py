@@ -51,21 +51,19 @@ class RunOptionsTabWidget(BaseRequest):
                 "delayed_start": int(self.delayed_start.text()),
                 "continuous_monitoring": bool(self.continuous_monitoring.isChecked()),
             }
-            self.api_client.update_item_from_handler(
-                item_handler=self.item_run_options["item_handler"],
-                item_id=self.item_run_options["item_id"],
-                **run_options,
-                request_id=self.request_id,
-                callback=self.update_view
+
+            self.call_api(api_method="update_item_from_handler",
+                            item_handler=self.item_run_options["item_handler"],
+                            item_id=self.item_run_options["item_id"],
+                            **run_options,
+                            callback=self.update_view
             )
         else:
-            self.api_client.create_run_options_item(
-                item_name=self.item["name"],
-                item_handler="RunOptions",
-                parent_item_id=self.item["item_id"],
-                request_id=self.request_id,
-                callback=self.update_view
-            )
+            self.call_api(api_method="create_run_options_item",
+                          item_name=self.item["name"],
+                          item_handler="RunOptions",
+                          parent_item_id=self.item["item_id"],
+                          callback=self.update_view)
 
     def update_view(self, data: dict):
         if not data:

@@ -1,3 +1,5 @@
+import traceback
+
 from PyQt6.QtCore import QObject, pyqtSignal, QUrl, QByteArray
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 import json
@@ -11,7 +13,7 @@ class ApiClient(QObject):
     API Client for interacting with the repository backend
     """
     response_received = pyqtSignal(object, int)  # Signal for successful responses
-    error_occurred = pyqtSignal(dict, int)  # Signal for errors (message, status_code)
+    error_occurred = pyqtSignal(object, int)  # Signal for errors (message, status_code)
 
     def __init__(self, host: str, port: int):
         super().__init__()
@@ -21,19 +23,18 @@ class ApiClient(QObject):
         self.base_url = f"http://{host}:{port}"
         self.network_manager = QNetworkAccessManager()
         self.network_manager.finished.connect(self._handle_response)
-        self._callbacks = {}  # Maps QNetworkReply to user callback
+        self._reply_map = {}
 
     def _parse_response(self, reply: QNetworkReply) -> object:
         """Convert QNetworkReply to Python dict or list"""
         status_code = reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute) or 500
         content_type = reply.header(QNetworkRequest.KnownHeaders.ContentTypeHeader) or ""
 
-        response_data = None
         try:
             response_data = bytes(reply.readAll()).decode('utf-8')
 
             if not response_data.strip():
-                return {"message": "Empty response", "status": status_code}
+                return {"response": None, "status": status_code}
 
             if "application/json" in content_type:
                 parsed = json.loads(response_data)
@@ -43,15 +44,13 @@ class ApiClient(QObject):
 
         except json.JSONDecodeError:
             return {
-                "error": "Invalid JSON response",
-                "response": response_data,
-                "status": status_code
+                "response": "Invalid JSON response",
+                "status": 500
             }
         except Exception as e:
             return {
-                "error": f"Response parsing failed: {str(e)}",
-                "response": None,
-                "status": status_code
+                "response": f"Response parsing failed: {str(e)}",
+                "status": 500
             }
 
     def _handle_response(self, reply: QNetworkReply):
@@ -59,43 +58,59 @@ class ApiClient(QObject):
 
         print("_handle_response")
 
-        callback = None
+        error_callback = None
         try:
+            # Grab details from reply and request
+            url = reply.request().url().toString()
+            method = reply.operation()  # QNetworkAccessManager.Operation enum
+            method_str = {
+                QNetworkAccessManager.Operation.GetOperation: "GET",
+                QNetworkAccessManager.Operation.PostOperation: "POST",
+                QNetworkAccessManager.Operation.PutOperation: "PUT",
+                QNetworkAccessManager.Operation.DeleteOperation: "DELETE"
+            }.get(method, "UNKNOWN")
+            error_string = reply.errorString()
             response_data = self._parse_response(reply)
-            callback = self._callbacks.pop(reply, None)
             status_code = response_data.get("status", 500) if isinstance(response_data, dict) else 200
 
-            print(f"Response received: {status_code} {response_data}. Callback: {callback}")
+            reply_map = self._reply_map.pop(reply, None)
+            callback = reply_map.get("callback")
+            error_callback = reply_map.get("error_callback")
+            request_payload = reply_map.get("payload")
 
-            if reply.error() == QNetworkReply.NetworkError.NoError:
+            log_msg = (
+                f"[API LOG]\n"
+                f"→ Method: {method_str}\n"
+                f"→ URL: {url}\n"
+                f"→ Status: {status_code}\n"
+                f"→ Error: {error_string}\n"
+                f"→ Payload: {json.dumps(request_payload, indent=2) if request_payload else 'None'}\n"
+                f"→ Response body:\n{response_data}"
+            )
+            print(log_msg)
+
+            if status_code % 200 < 100: # All 2XX responses are considered as correct
                 if callback:
                     callback(response_data["response"])
                 else:
                     # Emit the raw parsed data (could be dict or list)
                     self.response_received.emit(response_data, status_code)
+            elif reply.error() == QNetworkReply.NetworkError.NoError:
+                self.error_occurred.emit(response_data["response"], status_code)
             else:
-                error_data = {
-                    "error": reply.errorString(),
-                    "details": response_data if isinstance(response_data, dict) else {"response": response_data},
-                    "status": status_code
-                }
-                print(str(error_data))
-                self.error_occurred.emit(error_data, status_code)
+                print(f"API request reported error: {reply.errorString()}")
+                self.error_occurred.emit(reply.errorString(), status_code)
 
         except Exception as e:
-            if not callback:
-                error_data = {
-                    "error": f"Unexpected error processing response: {str(e)}",
-                    "status": 500
-                }
-                print(str(error_data))
-                self.error_occurred.emit(error_data, 500)
+            print(f"API request processing error: {str(e)}: {traceback.format_exc()}")
+            if error_callback:
+                pass
             else:
-                raise Exception(e)
+                self.error_occurred.emit(f"Unexpected error processing response: {str(e)}", 500)
         finally:
             reply.deleteLater()
 
-    def _send_request(self, method: str, endpoint: str, data: Optional[Dict] = None, callback: Callable = None) -> QNetworkReply:
+    def _send_request(self, method: str, endpoint: str, data: Optional[Dict] = None, callback: Callable = None, error_callback: Callable = None) -> QNetworkReply:
         """Generic request sender that returns the QNetworkReply"""
         url = QUrl(f"{self.base_url}/{endpoint}")
         request = QNetworkRequest(url)
@@ -115,7 +130,11 @@ class ApiClient(QObject):
         else:
             raise ValueError(f"Unsupported method: {method}")
 
-        self._callbacks[reply] = callback
+        self._reply_map[reply] = {
+            "callback": callback,
+            "error_callback": error_callback,
+            "payload": data  # ✅ Added for logging
+        }
         return reply
 
     # Repository methods matching your Flask routes

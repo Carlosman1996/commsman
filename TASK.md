@@ -2,9 +2,11 @@
 
 ## Priority
 
-TODO: 0.3.2 - _on_dispatch_to_main must be a general method, maybe a common, to be called from everywhere. At the moment, there are two instances.
+TODO: 0.3.2 - Execute button workflow. Loading -> Run -> Stop (Blocked) -> Stopping -> Run
 
 TODO: 0.3.2 - test multiplatform improvements: Windows and Linux
+
+TODO: improve logging.
 
 TODO: test collection executing two requests continuous only shows one. Missing last result in view.
 

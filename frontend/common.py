@@ -1,3 +1,4 @@
+import functools
 import traceback
 from datetime import datetime
 
@@ -85,3 +86,16 @@ def convert_time(seconds: str | float) -> str:
         return f"{seconds * 1e6:.3f} µs"
     else:
         return f"{seconds * 1e9:.3f} ns"
+
+
+def catch_exceptions(method):
+    @functools.wraps(method)
+    def wrapper(*args, **kwargs):
+        try:
+            return method(*args, **kwargs)
+        except Exception as e:
+            cls = args[0].__class__.__name__
+            method_name = method.__name__
+            print(f"[Exception] in {cls}.{method_name} with args {args} {kwargs}: {e}")
+            print(traceback.format_exc())
+    return wrapper

@@ -1,5 +1,6 @@
 import argparse
 import sys
+import traceback
 
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
@@ -83,28 +84,26 @@ class MainWindow(QMainWindow, ApiCallMixin):
                           callback=self.set_detail_section)
 
     def set_detail_section(self, item = None, *args, **kwargs):
-        print("set_detail_section")
-        print(item)
-        # if item is not None:
-        #     if item["item_handler"] == "ModbusRequest":
-        #         self.detail_section = ModbusDetail(self.api_client, item)
-        #     elif item["item_handler"] == "Collection":
-        #         self.detail_section = CollectionDetail(self.api_client, item)
-        #     else:
-        #         self.detail_section = QLabel("Not implemented yet")
-        # else:
-        #     self.detail_section = QLabel("Select an item to display information")
-        #
-        # if self.main_window_sections_splitter.count() > 1:
-        #     self.main_window_sections_splitter.replaceWidget(1, self.detail_section)
-        #     self.main_window_sections_splitter.setStretchFactor(1, 1)  # Index 1 (will expand)
-        self.detail_section = QLabel("Select an item to display information")
+        if item is not None:
+            if item["item_handler"] == "ModbusRequest":
+                self.detail_section = ModbusDetail(self.api_client, item)
+            elif item["item_handler"] == "Collection":
+                self.detail_section = CollectionDetail(self.api_client, item)
+            else:
+                self.detail_section = QLabel("Not implemented yet")
+        else:
+            self.detail_section = QLabel("Select an item to display information")
+
+        if self.main_window_sections_splitter.count() > 1:
+            self.main_window_sections_splitter.replaceWidget(1, self.detail_section)
+            self.main_window_sections_splitter.setStretchFactor(1, 1)  # Index 1 (will expand)
         return self.detail_section
 
     def closeEvent(self, *args, **kwargs):
         """Override the close event to perform custom actions."""
         # Wait until backend stops:
-        self.call_api(api_method="stop_item", item_id=0)
+        self.call_api(api_method="stop_item",
+                      item_id=0)
 
         super().closeEvent(*args, **kwargs)
 
@@ -113,14 +112,14 @@ def run(host: str, port: int):
     app = QApplication(sys.argv)
     apply_stylesheet(app, theme=f"{FRONTEND_PATH}/fixtures/theme.xml", css_file=f"{FRONTEND_PATH}/fixtures/styles.css")
 
-    window = MainWindow(host=host, port=port)
-    window.show()
-
     try:
+        window = MainWindow(host=host, port=port)
+        window.show()
+
         exec_obj = app.exec()
         sys.exit(exec_obj)
     except Exception as e:
-        print(e)
+        print(f"Main window critical error: {str(e)}: {traceback.format_exc()}")
 
 
 if __name__ == "__main__":
