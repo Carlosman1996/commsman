@@ -2,6 +2,8 @@
 
 ## Priority
 
+TODO: 0.3.2 - Inherit safe widget in critical classes like main window, project structure and base classes.
+
 TODO: 0.3.2 - Execute button workflow. Loading -> Run -> Stop (Blocked) -> Stopping -> Run
 
 TODO: 0.3.2 - test multiplatform improvements: Windows and Linux

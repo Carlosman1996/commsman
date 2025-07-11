@@ -6,9 +6,9 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy
 
 from frontend.api.api_helper_mixin import ApiCallMixin
-from frontend.common import ITEMS, get_model_value, convert_time, convert_timestamp, \
-    catch_exceptions
+from frontend.common import ITEMS, get_model_value, convert_time, convert_timestamp
 from frontend.components.components import IconTextWidget, InfoBox
+from frontend.safe_base import SafeWidget
 
 
 class ExecuteButton(QPushButton):
@@ -69,7 +69,7 @@ class ExecuteButton(QPushButton):
         """)
 
 
-class Base(QWidget, ApiCallMixin):
+class Base(SafeWidget, ApiCallMixin):
 
     def __init__(self, api_client, item, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -78,34 +78,6 @@ class Base(QWidget, ApiCallMixin):
         self.timer = QTimer(self)
 
         self.setup_api_client(api_client)
-
-    def __init_subclass__(cls, *args, **kwargs):
-        """
-        Objective: Defensive programming.
-
-        ⚙️ __init_subclass__ – Centralized Exception Handling
-
-        We use the __init_subclass__ method in our base UI class to automatically wrap all methods in child classes
-        with a generic exception handler (catch_exceptions). This helps ensure that unhandled exceptions in the UI
-        logic are caught and logged properly without requiring a try/except block in every method.
-
-        🧠 How It Works
-        When you define a new subclass of Base, Python automatically calls Base.__init_subclass__. This method:
-
-        1. Iterates over all methods defined in the subclass.
-        2. For each method that is a plain function (types.FunctionType):
-            - Wraps it with the catch_exceptions decorator.
-        3. Skips:
-            - Magic methods like __init__, __str__, etc.
-            - Inherited methods (e.g., from Base or other mixins).
-            - Static methods and class methods.
-        """
-        super().__init_subclass__(*args, **kwargs)
-
-        for attr_name, attr_value in cls.__dict__.items():
-            if isinstance(attr_value, types.FunctionType) and not attr_name.startswith("__"):
-                # Only wrap true functions, not descriptors or inherited methods
-                setattr(cls, attr_name, catch_exceptions(attr_value))
 
     @abstractmethod
     def update_view(self, data: dict):
