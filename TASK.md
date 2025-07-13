@@ -1,12 +1,24 @@
 # *TODOs KANBAN*
 
-## Priority
+## Priority infra
 
-TODO: 0.3.2 - Inherit safe widget in critical classes like main window, project structure and base classes.
+TODO: docs and landing page
 
-TODO: 0.3.2 - Execute button workflow. Loading -> Run -> Stop (Blocked) -> Stopping -> Run
+TODO: create project email and add a security section in readme.md:
 
-TODO: 0.3.2 - test multiplatform improvements: Windows and Linux
+```markdown
+# 🔐 Security Policy
+
+## Reporting a Vulnerability
+
+Please report security issues privately:
+
+📧 Email: carlos@example.com
+
+We’ll respond within 72 hours. Don’t post vulnerabilities publicly in GitHub issues or PRs.
+```
+
+## Priority functionalities
 
 TODO: improve logging.
 
@@ -26,7 +38,7 @@ TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
 
-TODO: Windows and MacOS support. Test the application in both platforms. https://www.pythonguis.com/tutorials/packaging-pyqt6-applications-windows-pyinstaller/
+TODO: Execute button workflow. Loading -> Run -> Stop (Blocked) -> Stopping -> Run
 
 TODO: create a way to remove the last results or to control the number of results to save.
 

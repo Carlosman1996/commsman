@@ -168,7 +168,7 @@ class BaseDetail(BaseResult):
         # Execute button at right side:
         header_layout.addStretch(1)
         # Execute request:
-        self.execute_button = ExecuteButton(backend_running=False, blocked=False)
+        self.execute_button = ExecuteButton(backend_running=False, blocked=True)
         self.execute_button.setVisible(False)
         header_layout.addWidget(self.execute_button)
 

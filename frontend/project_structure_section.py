@@ -24,6 +24,7 @@ from frontend.api.api_helper_mixin import ApiCallMixin
 from frontend.common import ITEMS
 from frontend.item_creation_dialog import ItemCreationDialog
 from config import FRONTEND_PATH, OUTPUTS_PATH
+from frontend.safe_base import SafeWidget
 
 
 class Button(QPushButton):
@@ -385,7 +386,7 @@ class CustomItemDelegate(QStyledItemDelegate):
         return False
 
 
-class ProjectStructureSection(QWidget, ApiCallMixin):
+class ProjectStructureSection(SafeWidget, ApiCallMixin):
     def __init__(self, api_client):
         super().__init__()
 

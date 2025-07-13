@@ -1,8 +1,8 @@
-# CommsMan
+# Commsman
 
-**CommsMan** (Communication Manager) is a powerful, extensible tool for testing, monitoring, and managing industrial communication protocols. It is designed to help engineers and testers interact with embedded systems, PLCs, and other field devices via common industrial protocols.
+**Commsman** (Communications Manager) is a powerful, extensible tool for testing, monitoring, and managing industrial communication protocols. It is designed to help engineers and testers interact with embedded systems, PLCs, and other field devices via common industrial protocols.
 
-Currently, CommsMan supports **Modbus TCP** and **Modbus RTU** protocols, with a focus on usability, structured data organization, and continuous monitoring.
+Currently, Commsman supports **Modbus TCP** and **Modbus RTU** protocols, with a focus on usability, structured data organization, and continuous monitoring.
 
 ---
 
@@ -38,31 +38,12 @@ Prebuilt executables for **Windows**, **Linux**, and **macOS** are available in 
 You can download the latest version of Commsman for your platform without needing to install Python or any dependencies.
 
 > ⚠️ **Important Note for Windows Users:**  
-> When downloading the `.exe` version of CommsMan, **Windows Defender or your antivirus may falsely detect it as a virus or unknown app**.  
+> When downloading the `.exe` version of Commsman, **Windows Defender or your antivirus may falsely detect it as a virus or unknown app**.  
 > This is a **false positive** — the code is **100% open source and trustworthy**.  
-> However, since CommsMan is an independent project and does **not have funding for a code-signing certificate**, Windows marks it as "unrecognized."  
+> However, since Commsman is an independent project and does **not have funding for a code-signing certificate**, Windows marks it as "unrecognized."  
 > You can safely run the application after allowing it through your antivirus.
 
 The source code is fully available and verifiable in this repository.
-
----
-
-## 📦 Installation & Setup
-
-### 1. Create and Activate Virtual Environment
-
-```bash
-python3 -m pip install virtualenv
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-```
-
-### 2. Run the Application
-
-```bash
-python start.py
-```
 
 ---
 
@@ -102,7 +83,7 @@ python start.py
 
 ### 🖥️ Modbus Server Mode
 
-* Run CommsMan as a Modbus TCP/RTU server
+* Run Commsman as a Modbus TCP/RTU server
 * Simulate responses based on predefined registers or logic
 
 ### 🧪 Integration Testing
@@ -121,4 +102,48 @@ python start.py
 
 ## 🧠 Philosophy
 
-CommsMan is designed with the mindset of being **protocol-agnostic**, **extensible**, and **integrated into real engineering workflows**. Whether you're debugging a single device or validating a full industrial system, CommsMan aims to be your go-to companion for communication diagnostics and automation.
+Commsman is designed with the mindset of being **protocol-agnostic**, **extensible**, and **integrated into real engineering workflows**. Whether you're debugging a single device or validating a full industrial system, Commsman aims to be your go-to companion for communication diagnostics and automation.
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions!
+
+### 📦 Installation & Setup
+
+#### 1. Requirements
+
+- Python 3.12+
+
+#### 2. Create and Activate Virtual Environment
+
+```bash
+python3 -m pip install virtualenv
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+#### 3. Run the Application
+
+```bash
+python start.py
+```
+
+### 📦 How to Contribute
+
+- Fork the repo
+- Create a branch (`git checkout -b feature/xyz`)
+- Make your changes
+- Submit a PR
+
+### 🔧 Code Style
+
+- Follow PEP8
+- Use `flake8` for linting
+- Add comments/docstrings
+
+---
+
+While working with this project, you agree your code will be licensed under the Apache 2.0 license.

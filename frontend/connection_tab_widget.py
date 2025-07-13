@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import (QWidget, QLabel,
+from PyQt6.QtWidgets import (QLabel,
                              QLineEdit, QSpinBox, QVBoxLayout)
 
 from frontend.base_detail_widget import BaseRequest
