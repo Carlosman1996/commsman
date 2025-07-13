@@ -1,7 +1,7 @@
 # build.py
+import multiprocessing
 import sys
 import platform
-import subprocess
 import shutil
 from pathlib import Path
 
@@ -23,6 +23,12 @@ def build_add_data_args(items, sep):
         elif path.is_dir():
             args.append(f"--add-data={path}{sep}{path}")
     return args
+
+
+def run_pyinstaller_in_process(args):
+    import PyInstaller.__main__
+    print("Running PyInstaller with args:", args)
+    PyInstaller.__main__.run(args)
 
 
 def run_pyinstaller():
@@ -49,8 +55,7 @@ def run_pyinstaller():
 
     add_data_args = build_add_data_args(items_to_include, sep)
 
-    cmd = [
-        "pyinstaller",
+    args = [
         "--name", name,
         "--icon=frontend/fixtures/icons/commsman.ico",
         "--onefile",
@@ -62,8 +67,10 @@ def run_pyinstaller():
         ENTRY_SCRIPT
     ]
 
-    print("Running:", " ".join(cmd))
-    subprocess.run(cmd, check=True)
+    print("Running:", " ".join(args))
+    p = multiprocessing.Process(target=run_pyinstaller_in_process, args=(args,))
+    p.start()
+    p.join()
     print(f"Build complete. Executable in: dist/{APP_NAME}")
 
 

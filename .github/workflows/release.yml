@@ -28,7 +28,7 @@ jobs:
 
       - name: Build executable
         run: |
-          python install/build.py
+          python build.py
 
       - name: Upload release asset
         uses: softprops/action-gh-release@v1
