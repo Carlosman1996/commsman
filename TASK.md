@@ -1,10 +1,26 @@
 # *TODOs KANBAN*
 
-## Priority
+## Priority infra
 
-TODO: 0.3.2 - _on_dispatch_to_main must be a general method, maybe a common, to be called from everywhere. At the moment, there are two instances.
+TODO: docs and landing page
 
-TODO: 0.3.2 - test multiplatform improvements: Windows and Linux
+TODO: create project email and add a security section in readme.md:
+
+```markdown
+# 🔐 Security Policy
+
+## Reporting a Vulnerability
+
+Please report security issues privately:
+
+📧 Email: carlos@example.com
+
+We’ll respond within 72 hours. Don’t post vulnerabilities publicly in GitHub issues or PRs.
+```
+
+## Priority functionalities
+
+TODO: improve logging.
 
 TODO: test collection executing two requests continuous only shows one. Missing last result in view.
 
@@ -22,7 +38,7 @@ TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
 
-TODO: Windows and MacOS support. Test the application in both platforms. https://www.pythonguis.com/tutorials/packaging-pyqt6-applications-windows-pyinstaller/
+TODO: Execute button workflow. Loading -> Run -> Stop (Blocked) -> Stopping -> Run
 
 TODO: create a way to remove the last results or to control the number of results to save.
 

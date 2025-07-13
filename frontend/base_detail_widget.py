@@ -1,13 +1,14 @@
-import weakref
+import types
 from abc import abstractmethod
-from functools import wraps
 
-from PyQt6.QtCore import Qt, QSize, pyqtSignal, QPropertyAnimation, QEasingCurve, QTimer
+from PyQt6.QtCore import QSize, QTimer
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy, QLabel
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy
 
+from frontend.api.api_helper_mixin import ApiCallMixin
 from frontend.common import ITEMS, get_model_value, convert_time, convert_timestamp
-from frontend.components.components import IconTextWidget, CustomGridLayout, InfoBox, CustomTable
+from frontend.components.components import IconTextWidget, InfoBox
+from frontend.safe_base import SafeWidget
 
 
 class ExecuteButton(QPushButton):
@@ -68,45 +69,19 @@ class ExecuteButton(QPushButton):
         """)
 
 
-class Base(QWidget):
+class Base(SafeWidget, ApiCallMixin):
 
     def __init__(self, api_client, item, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.api_client = api_client
         self.item = item
         self.timer = QTimer(self)
 
-        self.api_client.dispatch_to_main.connect(self._on_dispatch_to_main)
-
-    def _on_dispatch_to_main(self, callback, data):
-        """
-        This method runs in the main thread.
-        It executes the callback with the given data
-        only if self (the current view/handler) is still alive.
-        """
-        self_weak = weakref.ref(self)
-
-        def safe_call():
-            self_obj = self_weak()
-            if self_obj is not None and callable(callback):
-                callback(data)
-            # else: do nothing if self was deleted
-
-        safe_call()
+        self.setup_api_client(api_client)
 
     @abstractmethod
     def update_view(self, data: dict):
         raise NotImplementedError
-
-    def closeEvent(self, event):
-        self.timer.stop()
-        try:
-            self.api_client.dispatch_to_main.disconnect(self._on_dispatch_to_main)
-        except TypeError:
-            pass  # Already disconnected
-
-        super().closeEvent(event)
 
 
 class BaseRequest(Base):
@@ -123,7 +98,6 @@ class BaseResult(Base):
     def __init__(self, api_client, item, *args, **kwargs):
         super().__init__(api_client, item, *args, **kwargs)
 
-        self.api_client = api_client
         self.item = item
         self.item_last_result = self.item["last_result"]
         self.item_results_history = self.item["results_history"]
@@ -132,13 +106,16 @@ class BaseResult(Base):
 
         # Update the UI every 500 ms:
         self.timer.timeout.connect(self.reload_data)
-        self.timer.start(500)
+        self.timer.start(1000)
 
     def reload_data(self):
         if self.backend_running:
-            self.api_client.get_item_last_result_tree(item_id=self.item["item_id"], callback=self.update_view)
+            self.call_api(api_method="get_item_last_result_tree",
+                          item_id=self.item["item_id"],
+                          callback=self.update_view)
 
-        self.api_client.get_running_threads(callback=self.set_backend_running_status)
+        self.call_api(api_method="get_running_threads",
+                      callback=self.set_backend_running_status)
 
     def set_backend_running_status(self, data):
         self.running_threads = data["running_threads"]
@@ -191,7 +168,7 @@ class BaseDetail(BaseResult):
         # Execute button at right side:
         header_layout.addStretch(1)
         # Execute request:
-        self.execute_button = ExecuteButton(backend_running=False, blocked=False)
+        self.execute_button = ExecuteButton(backend_running=False, blocked=True)
         self.execute_button.setVisible(False)
         header_layout.addWidget(self.execute_button)
 
@@ -229,16 +206,18 @@ class BaseDetail(BaseResult):
 
         self.execute_button.clicked.connect(self.execute)
 
-    def execute(self):
+    def execute(self, *args, **kwargs):
         if self.execute_button.run:
             # Backend running should be initialized to True to read, at least, one result from backend. If not, in fast
             # executions the results might not be reported:
             self.backend_running = True
             # Create and start the backend_manager thread
-            self.api_client.run_item(item_id=self.item["item_id"])
+            self.call_api(api_method="run_item",
+                          item_id=self.item["item_id"])
         else:
             # Stop the backend_manager thread
-            self.api_client.stop_item(item_id=self.item["item_id"])
+            self.call_api(api_method="stop_item",
+                          item_id=self.item["item_id"])
 
     def on_finished(self):
         self.execute_button.set_run()

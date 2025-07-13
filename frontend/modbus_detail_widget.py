@@ -12,7 +12,7 @@ from frontend.components.components import CustomGridLayout, CustomTable, Custom
 from frontend.connection_tab_widget import ConnectionTabWidget
 from frontend.history_tab_widget import HistoryTabWidget
 from frontend.run_options_tab_widget import RunOptionsTabWidget
-
+from frontend.safe_base import SafeWidget
 
 FUNCTIONS_DICT = {
     "read": ["Read Holding Registers", "Read Input Registers", "Read Coils", "Read Discrete Inputs"],
@@ -119,10 +119,11 @@ class ModbusRequestTabWidget(BaseRequest):
             "data_type": self.data_type_combo.currentText(),
             "values": self.values_table.get_values(),
         }
-        self.api_client.update_item_from_handler(item_handler=self.item["item_handler"],
-                                                 item_id=self.item["item_id"],
-                                                 **update_data,
-                                                 callback=self.update_view)
+        self.call_api(api_method="update_item_from_handler",
+                      item_handler=self.item["item_handler"],
+                      item_id=self.item["item_id"],
+                      **update_data,
+                      callback=self.update_view)
 
     def update_view(self, data: dict):
         if not data:
@@ -157,7 +158,7 @@ class ModbusRequestTabWidget(BaseRequest):
                 self.values_table.removeRow(current_rows - index - 1)
 
 
-class ModbusRequestWidget(QWidget):
+class ModbusRequestWidget(SafeWidget):
 
     def __init__(self, api_client, item):
         super().__init__()

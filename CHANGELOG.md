@@ -1,16 +1,17 @@
 # Changelog
 
 
-## [0.3.0] - 2025-07-02
+## [0.3.0] - 2025-07-13
 
 ### Added
 
-- Create executables for Linux on every release.
+- Create executables for Linux and Windows on every release.
 - Automate deploy procedure using a GitHub action.
 
 ### Fixed
 - Bugfix related to the execution button. When the user tries to stop, it did a strange Stop -> Run -> Stop transition.
-- The execute button is not shown until the response data is received.
+- The Execute button is not shown until the response data is received.
+- Important bugfixes related to frontend stability: critical errors solved.
 
 ## [0.2.0] - 2025-06-29
 

@@ -20,8 +20,11 @@ def create_app(database_url):
 
 
 def run(host: str, port: int, debug: bool, database_url: str):
-    app = create_app(database_url=database_url)
-    app.run(debug=debug, host=host, port=port)
+    try:
+        app = create_app(database_url=database_url)
+        app.run(debug=debug, host=host, port=port)
+    except Exception as error:
+        print(f"Backend critical error: {error}")
 
 
 if __name__ == "__main__":

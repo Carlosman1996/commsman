@@ -55,6 +55,8 @@ def run_pyinstaller():
         "--icon=frontend/fixtures/icons/commsman.ico",
         "--onefile",
         "--windowed",
+        "--clean",
+        "--noconfirm",
         "--hidden-import=logging.config",
         *add_data_args,
         ENTRY_SCRIPT
