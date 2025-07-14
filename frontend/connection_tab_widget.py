@@ -41,7 +41,7 @@ class ModbusTcpConnectionGrid(BaseConnectionGrid):
 
         self.retries_spinbox = QSpinBox()
         self.retries_spinbox.setRange(1, 65535)
-        self.grid_layout.add_widget(QLabel("Timeout:"), self.retries_spinbox)
+        self.grid_layout.add_widget(QLabel("Retries:"), self.retries_spinbox)
 
         # Set initial state and connect signals:
         self.update_view(data=self.item_client)

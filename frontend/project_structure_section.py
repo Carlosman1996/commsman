@@ -483,7 +483,7 @@ class ProjectStructureSection(SafeWidget, ApiCallMixin):
         model_index = self.proxy_model.mapToSource(index)
         return self.view_model.itemFromIndex(model_index)
 
-    def create_item(self):
+    def create_item(self, *args, **kwargs):
         selected_item = self.get_selected_item()
         dialog = ItemCreationDialog(selected_item)
         if not selected_item:
@@ -503,7 +503,7 @@ class ProjectStructureSection(SafeWidget, ApiCallMixin):
 
             self.expand_tree_view_item(selected_item)
 
-    def set_add_button_visibility(self):
+    def set_add_button_visibility(self, *args, **kwargs):
         selected_item = self.get_selected_item()
         item_data = selected_item.data(Qt.ItemDataRole.UserRole)
         if item_data["item_handler"] == "Collection":
@@ -518,7 +518,7 @@ class ProjectStructureSection(SafeWidget, ApiCallMixin):
                       item_id=item_data["item_id"],
                       name=item.text())
 
-    def move_item(self, item):
+    def move_item(self, item, *args, **kwargs):
         self.proxy_model.setSourceModel(None)
         self.proxy_model.setSourceModel(self.view_model)
         self.expand_tree_view_item(item)
@@ -543,7 +543,7 @@ class ProjectStructureSection(SafeWidget, ApiCallMixin):
                 self.view_model.delete_item(item_id=item_data["item_id"])
                 self.set_add_button_visibility()
 
-    def export_selected_item(self, index):
+    def export_selected_item(self, index, *args, **kwargs):
         item = self.get_item_from_selected_index(index)
 
         reply = QMessageBox.question(

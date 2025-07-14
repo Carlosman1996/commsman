@@ -1,5 +1,9 @@
 # *TODOs KANBAN*
 
+## 0.3.2
+
+TODO: add logs and database path. All logs must be saved on the same folder.
+
 ## Priority infra
 
 TODO: docs and landing page
