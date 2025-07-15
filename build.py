@@ -57,6 +57,7 @@ def run_pyinstaller():
         "--windowed",
         "--clean",
         "--noconfirm",
+        "--hidden-import=logging.config",
         *add_data_args,
         ENTRY_SCRIPT
     ]
