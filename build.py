@@ -38,6 +38,8 @@ def run_pyinstaller():
     items_to_include = [
         "config.json",
         "alembic.ini",
+        "README.md",
+        "LICENSE.txt",
         "frontend/fixtures",
         "alembic"
     ]

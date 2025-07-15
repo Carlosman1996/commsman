@@ -11,18 +11,19 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QPushButton,
-    QSizePolicy
+    QSizePolicy, QMessageBox
 )
 
 from frontend.api.api_helper_mixin import ApiCallMixin
 from frontend.api.api_client import ApiClient
 from frontend.collection_detail_widget import CollectionDetail
 from frontend.common import ITEMS
+from frontend.menu_widget import AppInfo
 from frontend.project_structure_section import ProjectStructureSection
 from qt_material import apply_stylesheet
 from frontend.modbus_detail_widget import ModbusDetail
 
-from config import FRONTEND_PATH, load_app_config
+from config import FRONTEND_PATH, load_app_config, PROJECT_DATA_PATH
 
 
 class Button(QPushButton):
@@ -46,6 +47,10 @@ class MainWindow(QMainWindow, ApiCallMixin):
         # Set API client:
         self.api_client = ApiClient(host=host, port=port)
         self.setup_api_client(self.api_client)
+
+        # Setup menu
+        self.app_info = AppInfo()
+        self.setup_menu()
 
         # Divide window in two sections:
         self.main_window_sections_splitter = QSplitter()
@@ -73,6 +78,24 @@ class MainWindow(QMainWindow, ApiCallMixin):
         container = QWidget()
         container.setLayout(self.main_window_layout)
         self.setCentralWidget(container)
+
+    def setup_menu(self):
+        """Create the application menu bar"""
+        menubar = self.menuBar()
+
+        # Help menu
+        help_menu = menubar.addMenu("&Help")
+
+        # Add actions
+        help_menu.addAction("Logs Path", lambda: QMessageBox.information(
+            self,
+            "Logs Location",
+            f"Logs are stored at:\n{PROJECT_DATA_PATH}"
+        ))
+        help_menu.addSeparator()
+        help_menu.addAction("License", lambda: self.app_info.show_license(self))
+        help_menu.addAction("Documentation", lambda: self.app_info.show_readme(self))
+        help_menu.addAction("About", lambda: self.app_info.show_about(self))
 
     def get_item_request(self):
         print("get_item_request")

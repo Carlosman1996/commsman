@@ -7,6 +7,7 @@
 
 - Create executables for Linux and Windows on every release.
 - Automate deploy procedure using a GitHub action.
+- Application Menu with main information.
 
 ### Fixed
 - Bugfix related to the execution button. When the user tries to stop, it did a strange Stop -> Run -> Stop transition.

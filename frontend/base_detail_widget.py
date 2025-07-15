@@ -106,7 +106,7 @@ class BaseResult(Base):
 
         # Update the UI every 500 ms:
         self.timer.timeout.connect(self.reload_data)
-        self.timer.start(1000)
+        self.timer.start(500)
 
     def reload_data(self):
         if self.backend_running:

@@ -2,7 +2,6 @@
 
 ## 0.3.2
 
-TODO: add logs and database path. All logs must be saved on the same folder.
 
 ## Priority infra
 
@@ -32,13 +31,11 @@ TODO: tab to show description
 
 TODO: execution session as header
 
-TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
+TODO: multiple running instances in parallel
 
 TODO: HOME page with running instances.
 
 TODO: migrate QT to PYSIDE
-
-TODO: MVP 1 documentation
 
 ## Future LOW PRIORITY
 
