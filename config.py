@@ -9,7 +9,9 @@ import platform
 from pathlib import Path
 
 
-APP_NAME = "commsman"
+APP_NAME = "Commsman"
+VERSION = "0.3.2"
+AUTHOR = "Carlosman1996"
 
 
 if hasattr(sys, '_MEIPASS'):

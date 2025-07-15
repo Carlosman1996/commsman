@@ -1,9 +1,13 @@
+import functools
+import traceback
 from datetime import datetime
 
 import tzlocal
 from PyQt6.QtGui import QIcon
+import weakref
 
 from config import FRONTEND_PATH
+from utils.logger import CustomLogger
 
 
 ITEMS = {

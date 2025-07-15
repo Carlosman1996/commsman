@@ -1,22 +1,45 @@
 # *TODOs KANBAN*
 
-## Priority
+## 0.3.2
+
+
+## Priority infra
+
+TODO: docs and landing page
+
+TODO: create project email and add a security section in readme.md:
+
+```markdown
+# 🔐 Security Policy
+
+## Reporting a Vulnerability
+
+Please report security issues privately:
+
+📧 Email: carlos@example.com
+
+We’ll respond within 72 hours. Don’t post vulnerabilities publicly in GitHub issues or PRs.
+```
+
+## Priority functionalities
+
+TODO: improve logging.
+
+TODO: test collection executing two requests continuous only shows one. Missing last result in view.
 
 TODO: tab to show description
 
 TODO: execution session as header
 
-TODO: STUDY - continuous requests in a request type, like a background process or a number of consecutive calls
+TODO: multiple running instances in parallel
 
 TODO: HOME page with running instances.
 
 TODO: migrate QT to PYSIDE
 
-TODO: MVP 1 documentation
-
 ## Future LOW PRIORITY
 
-TODO: Windows and MacOS support. Test the application in both platforms.
+TODO: Execute button workflow. Loading -> Run -> Stop (Blocked) -> Stopping -> Run
 
 TODO: create a way to remove the last results or to control the number of results to save.
 

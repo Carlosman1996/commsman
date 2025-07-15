@@ -6,8 +6,10 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel,
                              QHBoxLayout, QTableWidget, QAbstractItemView, QHeaderView, QGroupBox,
                              QTableWidgetItem, QSplitter, QMessageBox, QFrame, QSizePolicy, QCheckBox)
 
+from frontend.safe_base import SafeWidget
 
-class IconTextWidget(QWidget):
+
+class IconTextWidget(SafeWidget):
     def __init__(self, text, icon_path, icon_size, parent=None):
         super().__init__(parent)
 

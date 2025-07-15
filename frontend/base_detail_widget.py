@@ -1,13 +1,14 @@
-import weakref
+import types
 from abc import abstractmethod
-from functools import wraps
 
-from PyQt6.QtCore import Qt, QSize, pyqtSignal, QPropertyAnimation, QEasingCurve, QTimer
+from PyQt6.QtCore import QSize, QTimer
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy, QLabel
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSplitter, QSizePolicy
 
+from frontend.api.api_helper_mixin import ApiCallMixin
 from frontend.common import ITEMS, get_model_value, convert_time, convert_timestamp
-from frontend.components.components import IconTextWidget, CustomGridLayout, InfoBox, CustomTable
+from frontend.components.components import IconTextWidget, InfoBox
+from frontend.safe_base import SafeWidget
 
 
 class ExecuteButton(QPushButton):
@@ -68,33 +69,35 @@ class ExecuteButton(QPushButton):
         """)
 
 
-
-class BaseRequest(QWidget):
+class Base(SafeWidget, ApiCallMixin):
 
     def __init__(self, api_client, item, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.api_client = api_client
         self.item = item
+        self.timer = QTimer(self)
 
-    @abstractmethod
-    def reload_data(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def update_item(self):
-        raise NotImplementedError
+        self.setup_api_client(api_client)
 
     @abstractmethod
     def update_view(self, data: dict):
         raise NotImplementedError
 
 
-class BaseResult(QWidget):
-    def __init__(self, api_client, item, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class BaseRequest(Base):
 
-        self.api_client = api_client
+    def __init__(self, api_client, item, *args, **kwargs):
+        super().__init__(api_client, item, *args, **kwargs)
+
+    @abstractmethod
+    def update_item(self):
+        raise NotImplementedError
+
+
+class BaseResult(Base):
+    def __init__(self, api_client, item, *args, **kwargs):
+        super().__init__(api_client, item, *args, **kwargs)
+
         self.item = item
         self.item_last_result = self.item["last_result"]
         self.item_results_history = self.item["results_history"]
@@ -102,15 +105,17 @@ class BaseResult(QWidget):
         self.backend_running = False
 
         # Update the UI every 500 ms:
-        self.timer = QTimer(self)
         self.timer.timeout.connect(self.reload_data)
         self.timer.start(500)
 
     def reload_data(self):
         if self.backend_running:
-            self.api_client.get_item_last_result_tree(item_id=self.item["item_id"], callback=self.update_view)
+            self.call_api(api_method="get_item_last_result_tree",
+                          item_id=self.item["item_id"],
+                          callback=self.update_view)
 
-        self.api_client.get_running_threads(callback=self.set_backend_running_status)
+        self.call_api(api_method="get_running_threads",
+                      callback=self.set_backend_running_status)
 
     def set_backend_running_status(self, data):
         self.running_threads = data["running_threads"]
@@ -126,10 +131,6 @@ class BaseResult(QWidget):
 
     @abstractmethod
     def on_finished(self):
-        pass
-
-    @abstractmethod
-    def update_view(self, data: dict):
         pass
 
 
@@ -167,7 +168,7 @@ class BaseDetail(BaseResult):
         # Execute button at right side:
         header_layout.addStretch(1)
         # Execute request:
-        self.execute_button = ExecuteButton(backend_running=False, blocked=False)
+        self.execute_button = ExecuteButton(backend_running=False, blocked=True)
         self.execute_button.setVisible(False)
         header_layout.addWidget(self.execute_button)
 
@@ -205,16 +206,18 @@ class BaseDetail(BaseResult):
 
         self.execute_button.clicked.connect(self.execute)
 
-    def execute(self):
+    def execute(self, *args, **kwargs):
         if self.execute_button.run:
             # Backend running should be initialized to True to read, at least, one result from backend. If not, in fast
             # executions the results might not be reported:
             self.backend_running = True
             # Create and start the backend_manager thread
-            self.api_client.run_item(item_id=self.item["item_id"])
+            self.call_api(api_method="run_item",
+                          item_id=self.item["item_id"])
         else:
             # Stop the backend_manager thread
-            self.api_client.stop_item(item_id=self.item["item_id"])
+            self.call_api(api_method="stop_item",
+                          item_id=self.item["item_id"])
 
     def on_finished(self):
         self.execute_button.set_run()
@@ -240,7 +243,7 @@ class BaseDetail(BaseResult):
         self.frame_result.setText(get_model_value(data, "result"))
         self.frame_elapsed_time.setText(convert_time(get_model_value(data, "elapsed_time", 0)))
         self.frame_timestamp.setText(convert_timestamp(get_model_value(data, "timestamp")))
-        self.frame_iterations.setText(f"Iterations: {get_model_value(data, "iterations")}")
+        self.frame_iterations.setText(f"Iterations: {get_model_value(data, 'iterations')}")
         self.frame_results.setText(f"Total OK / KO: "
-                                   f"{get_model_value(data, "total_ok")} / "
-                                   f"{get_model_value(data, "total_failed")}")
+                                   f"{get_model_value(data, 'total_ok')} / "
+                                   f"{get_model_value(data, 'total_failed')}")

@@ -1,11 +1,11 @@
 # build.py
 import sys
 import platform
-import subprocess
-import shutil
 from pathlib import Path
+import PyInstaller.__main__
 
 from config import PROJECT_PATH
+
 
 APP_NAME = "Commsman"
 ENTRY_SCRIPT = "start.py"
@@ -28,41 +28,45 @@ def build_add_data_args(items, sep):
 def run_pyinstaller():
     print(f"Building {APP_NAME}...")
 
-    shutil.rmtree(DIST_PATH, ignore_errors=True)
-
     system = platform.system()
-    if system == "Windows":
-        name = f"{APP_NAME}.exe"
-    elif system == "Darwin":
-        name = f"{APP_NAME}-mac"
-    else:
-        name = f"{APP_NAME}-linux"
+    name = {
+        "Windows": f"{APP_NAME}.exe",
+        "Darwin": f"{APP_NAME}-mac",
+        "Linux": f"{APP_NAME}-linux"
+    }.get(system, APP_NAME)
 
     items_to_include = [
         "config.json",
         "alembic.ini",
+        "README.md",
+        "LICENSE.txt",
         "frontend/fixtures",
         "alembic"
     ]
     sep = ";" if sys.platform.startswith("win") else ":"
-    # List any files or folders to include
 
     add_data_args = build_add_data_args(items_to_include, sep)
 
-    cmd = [
-        "pyinstaller",
+    # Essential PyInstaller arguments
+    args = [
         "--name", name,
         "--icon=frontend/fixtures/icons/commsman.ico",
+        # "--onedir", # Test mode
         "--onefile",
+        # "--console",  # Test mode
         "--windowed",
+        "--clean",
+        "--noconfirm",
         "--hidden-import=logging.config",
         *add_data_args,
         ENTRY_SCRIPT
     ]
 
-    print("Running:", " ".join(cmd))
-    subprocess.run(cmd, check=True)
-    print(f"Build complete. Executable in: dist/{APP_NAME}")
+    # Filter out multiprocessing arguments that might interfere
+    print("Running PyInstaller with args:", args)
+    PyInstaller.__main__.run(args)
+
+    print(f"Build complete. Executable in: dist/{name}")
 
 
 if __name__ == "__main__":

@@ -23,7 +23,6 @@ class HistoryTabWidget(BaseResult):
         self.main_layout.addStretch()
 
         # Update the UI every 1 s:
-        self.timer = QTimer(self)
         self.timer.timeout.connect(self.reload_data)
         self.timer.start(1000)
 
@@ -31,7 +30,9 @@ class HistoryTabWidget(BaseResult):
         self.update_view(data=self.item_results_history)
 
     def reload_data(self):
-        self.api_client.get_item_results_history(item_id=self.item["item_id"], callback=self.update_view)
+        self.call_api(api_method="get_item_results_history",
+                      item_id=self.item["item_id"],
+                      callback=self.update_view)
 
     def update_view(self, data: dict):
         if data is None:

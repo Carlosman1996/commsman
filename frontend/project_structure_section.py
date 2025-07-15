@@ -20,9 +20,11 @@ from PyQt6.QtWidgets import (
 )
 
 from backend.core.backend_manager import BackendManager
+from frontend.api.api_helper_mixin import ApiCallMixin
 from frontend.common import ITEMS
 from frontend.item_creation_dialog import ItemCreationDialog
 from config import FRONTEND_PATH, OUTPUTS_PATH
+from frontend.safe_base import SafeWidget
 
 
 class Button(QPushButton):
@@ -42,18 +44,21 @@ class CustomStandardItem(QStandardItem):
         self.setEditable(True)
 
 
-class CustomStandardItemModel(QStandardItemModel):
+class CustomStandardItemModel(QStandardItemModel, ApiCallMixin):
 
     signal_move_item = pyqtSignal(CustomStandardItem)
     signal_update_item = pyqtSignal()
 
     def __init__(self, api_client, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.api_client = api_client
+
+        self.setup_api_client(api_client)
+
         self.view_items = {}
 
         # Load all model by calling the API:
-        self.api_client.get_items_request_tree(callback=self.load_model)
+        self.call_api(api_method="get_items_request_tree",
+                      callback=self.load_model)
 
     def create_view_item(self, item) -> CustomStandardItem:
         view_item = CustomStandardItem(item["name"], item["item_handler"])
@@ -107,9 +112,10 @@ class CustomStandardItemModel(QStandardItemModel):
                 item_data = child_item.data(Qt.ItemDataRole.UserRole)  # Retrieve the unique identifier
 
                 # Update position based on index within the parent
-                self.api_client.update_item_from_handler(item_handler=item_data["item_handler"],
-                                                         item_id=item_data["item_id"],
-                                                         position=index)
+                self.call_api(api_method="update_item_from_handler",
+                              item_handler=item_data["item_handler"],
+                              item_id=item_data["item_id"],
+                              position=index)
 
                 # Recursively update children
                 update_positions_recursive(child_item)
@@ -191,9 +197,10 @@ class CustomStandardItemModel(QStandardItemModel):
         self.layoutChanged.emit()
 
         # Update backend repository
-        self.api_client.update_item_from_handler(item_handler=item_data["item_handler"],
-                                                 item_id=item_data["item_id"],
-                                                 parent_id=parent_data.get("item_id"))
+        self.call_api(api_method="update_item_from_handler",
+                      item_handler=item_data["item_handler"],
+                      item_id=item_data["item_id"],
+                      parent_id=parent_data.get("item_id"))
 
         if destination_item != self.invisibleRootItem():
             self.signal_move_item.emit(destination_item)
@@ -379,14 +386,14 @@ class CustomItemDelegate(QStyledItemDelegate):
         return False
 
 
-class ProjectStructureSection(QWidget):
+class ProjectStructureSection(SafeWidget, ApiCallMixin):
     def __init__(self, api_client):
         super().__init__()
 
         self.setMinimumWidth(250)
 
         # Set api client:
-        self.api_client = api_client
+        self.setup_api_client(api_client)
 
         # Buttons:
         self.add_button = Button("Add")
@@ -476,7 +483,7 @@ class ProjectStructureSection(QWidget):
         model_index = self.proxy_model.mapToSource(index)
         return self.view_model.itemFromIndex(model_index)
 
-    def create_item(self):
+    def create_item(self, *args, **kwargs):
         selected_item = self.get_selected_item()
         dialog = ItemCreationDialog(selected_item)
         if not selected_item:
@@ -488,14 +495,15 @@ class ProjectStructureSection(QWidget):
             else:
                 parent_data = {}
 
-            self.api_client.create_item_request_from_handler(item_name=dialog.item_name,
-                                                             item_handler=dialog.item_handler,
-                                                             parent_item_id=parent_data.get("item_id"),
-                                                             callback=self.view_model.add_item)
+            self.call_api(api_method="create_item_request_from_handler",
+                          item_name=dialog.item_name,
+                          item_handler=dialog.item_handler,
+                          parent_item_id=parent_data.get("item_id"),
+                          callback=self.view_model.add_item)
 
             self.expand_tree_view_item(selected_item)
 
-    def set_add_button_visibility(self):
+    def set_add_button_visibility(self, *args, **kwargs):
         selected_item = self.get_selected_item()
         item_data = selected_item.data(Qt.ItemDataRole.UserRole)
         if item_data["item_handler"] == "Collection":
@@ -505,12 +513,12 @@ class ProjectStructureSection(QWidget):
 
     def edit_item(self, item):
         item_data = item.data(Qt.ItemDataRole.UserRole)
-        self.api_client.update_item_from_handler(item_handler=item_data["item_handler"],
-                                                 item_id=item_data["item_id"],
-                                                 name=item.text(),
-                                                 callback=None)
+        self.call_api(api_method="update_item_from_handler",
+                      item_handler=item_data["item_handler"],
+                      item_id=item_data["item_id"],
+                      name=item.text())
 
-    def move_item(self, item):
+    def move_item(self, item, *args, **kwargs):
         self.proxy_model.setSourceModel(None)
         self.proxy_model.setSourceModel(self.view_model)
         self.expand_tree_view_item(item)
@@ -530,11 +538,12 @@ class ProjectStructureSection(QWidget):
             if reply == QMessageBox.StandardButton.Yes:
                 selected_item = self.get_item_from_selected_index(indexes[0])
                 item_data = selected_item.data(Qt.ItemDataRole.UserRole)
-                self.api_client.delete_item(item_id=item_data["item_id"])
+                self.call_api(api_method="delete_item",
+                              item_id=item_data["item_id"])
                 self.view_model.delete_item(item_id=item_data["item_id"])
                 self.set_add_button_visibility()
 
-    def export_selected_item(self, index):
+    def export_selected_item(self, index, *args, **kwargs):
         item = self.get_item_from_selected_index(index)
 
         reply = QMessageBox.question(

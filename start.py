@@ -1,13 +1,14 @@
 # start.py
-import sys
+import multiprocessing
 import os
 import time
 import requests
 import argparse
 from multiprocessing import Process
-from config import load_app_config, ALEMBIC_INI, DB_FILE, LOG_BACKEND_PATH, LOG_FRONTEND_PATH, LOG_PATH, ALEMBIC_PATH
+from config import load_app_config, ALEMBIC_INI, DB_FILE, ALEMBIC_PATH, LOG_PATH
 from alembic.config import Config
 from alembic import command
+import traceback
 
 from backend import main as backend_main
 from frontend import main_window as frontend_main
@@ -29,21 +30,21 @@ def rebuild_database(db_url):
 
 
 def run_backend(host, port, db_url):
-    if not os.path.exists(LOG_BACKEND_PATH):
-        os.makedirs(LOG_BACKEND_PATH)
-    with open(str(LOG_BACKEND_PATH) + "/logs.txt", "w") as f:
-        sys.stdout = f
-        sys.stderr = f
+    try:
         backend_main.run(debug=False, database_url=db_url, host=host, port=port)
+    except Exception:
+        with open(f"{LOG_PATH}/backend_error.log", "w") as f:
+            f.write(traceback.format_exc())
+        raise
 
 
 def run_frontend(host, port):
-    if not os.path.exists(LOG_FRONTEND_PATH):
-        os.makedirs(LOG_FRONTEND_PATH)
-    with open(str(LOG_FRONTEND_PATH) + "/logs.txt", "w") as f:
-        sys.stdout = f
-        sys.stderr = f
+    try:
         frontend_main.run(host=host, port=port)
+    except Exception:
+        with open(f"{LOG_PATH}/frontend_error.log", "w") as f:
+            f.write(traceback.format_exc())
+        raise
 
 
 def wait_for_backend(config, timeout=10):
@@ -123,4 +124,5 @@ def main():
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     main()

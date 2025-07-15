@@ -12,7 +12,7 @@ from frontend.components.components import CustomGridLayout, CustomTable, Custom
 from frontend.connection_tab_widget import ConnectionTabWidget
 from frontend.history_tab_widget import HistoryTabWidget
 from frontend.run_options_tab_widget import RunOptionsTabWidget
-
+from frontend.safe_base import SafeWidget
 
 FUNCTIONS_DICT = {
     "read": ["Read Holding Registers", "Read Input Registers", "Read Coils", "Read Discrete Inputs"],
@@ -119,10 +119,11 @@ class ModbusRequestTabWidget(BaseRequest):
             "data_type": self.data_type_combo.currentText(),
             "values": self.values_table.get_values(),
         }
-        self.api_client.update_item_from_handler(item_handler=self.item["item_handler"],
-                                                 item_id=self.item["item_id"],
-                                                 **update_data,
-                                                 callback=self.update_view)
+        self.call_api(api_method="update_item_from_handler",
+                      item_handler=self.item["item_handler"],
+                      item_id=self.item["item_id"],
+                      **update_data,
+                      callback=self.update_view)
 
     def update_view(self, data: dict):
         if not data:
@@ -157,7 +158,7 @@ class ModbusRequestTabWidget(BaseRequest):
                 self.values_table.removeRow(current_rows - index - 1)
 
 
-class ModbusRequestWidget(QWidget):
+class ModbusRequestWidget(SafeWidget):
 
     def __init__(self, api_client, item):
         super().__init__()
@@ -347,7 +348,7 @@ class ModbusResponseWidget(BaseResult):
         else:
             self.headers_layout.hide_row(0, 5)
 
-        self.raw_data_edit.setText(f"SEND: {response["raw_packet_send"]}\n\nRECV: {response["raw_packet_recv"]}")
+        self.raw_data_edit.setText(f"SEND: {response['raw_packet_send']}\n\nRECV: {response['raw_packet_recv']}")
 
         if response["result"] == "Failed":
             self.data_type_label.hide()
@@ -356,8 +357,7 @@ class ModbusResponseWidget(BaseResult):
 
             self.status_label.setText(response["result"])
             self.status_label.setStyleSheet("color: red;")
-            self.error_data_edit.setText(
-                f"Status: {self.status_label.text()}\n\nError: {response["error_message"]}")
+            self.error_data_edit.setText(f"Status: {self.status_label.text()}\n\nError: {response['error_message']}")
             self.error_data_edit.show()  # Show error group
         else:
             self.error_data_edit.hide()
@@ -367,7 +367,9 @@ class ModbusResponseWidget(BaseResult):
 
             self.status_label.setText(response["result"])
             self.status_label.setStyleSheet("color: green;")
-            self.data_type_combo.set_item(response["data_type"])
+            # Detect any change in data type selector that changes the default value:
+            if self.data_type_combo.currentText() == "16-bit Integer":
+                self.data_type_combo.set_item(response["data_type"])
             self.update_table()
 
     def update_table(self):
