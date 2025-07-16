@@ -17,6 +17,7 @@
 * [ ] Add "Clear Results" button
 * [ ] Filter/sort results by status (OK, KO, error)
 * [ ] Show results inside collections
+* [ ] Allow results to be printed in different format types (e.g., JSON, raw, interpreted)
 
 ## 🏠 Home & Parallel Execution
 
@@ -28,11 +29,18 @@
 
 * [ ] Logging system: structured logs, per-session log files
 * [ ] Improve SQLite performance:
-
   * Avoid full UI reload on update
   * Background thread/process for update ops
 * [ ] UI responsiveness on low-performance devices
 * [ ] Decimal values for polling interval and delay
+
+## 🧩 Technical Tasks (Infrastructure)
+
+* [ ] 🔁 **Migrate from PyQt6 to PySide6**
+  *(Reduces licensing concerns for commercial use and simplifies future contributions)*
+* [ ] Use `QGridLayout` custom component that saves widgets by key (dictionary-based access)
+* [ ] `add_widget()` in custom grid must support key-based retrieval (e.g., `grid["input_a"]`)
+* [ ] `QGridLayout` and Splitter improvements: respect stretch policy (don’t expand 1st panel)
 
 ## 🔧 Misc Technical Cleanup
 
@@ -102,6 +110,18 @@
 * [ ] Support raw register parsing for `write multiple registers`
 * [ ] Control number of saved results globally
 
+🔄 Repository Refactor
+
+* [ ] Repository layer must use relationships, not manual joins
+* [ ] Cascade deletes via SQLAlchemy ORM (foreign keys)
+
+## 💽 Data Modeling Tasks
+
+* [ ] Separate repository models and backend DTOs
+* [ ] ✔️ Use SQLAlchemy models for persistence
+* [ ] ✔️ Use dataclasses / Pydantic / dicts for business logic and API layer
+* [ ] Create reusable converters (SQLAlchemy ↔ DTOs)
+
 ---
 
 # 🔌 **v0.6.0 — Plugin Architecture & Licensing (If userbase grows)**
@@ -110,12 +130,12 @@
 
 * [ ] Load plugins from external folder or via entry\_points
 * [ ] Allow plugins to define:
-
   * New protocols (CAN, SPI, Serial Raw, etc.)
   * Validators
   * Exporters
   * UI tabs or tools
 * [ ] Simple plugin config system
+* [ ] Future plugin system should allow alternate exporters
 
 ## 🔑 Licensing (Optional)
 
