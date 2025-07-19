@@ -1,3 +1,6 @@
+> ⚠️ **Important Note:**
+> This project has been moved to GitLab: https://gitlab.com/Carlosman1996/commsman
+
 # Commsman
 
 **Commsman** (Communications Manager) is a powerful, extensible tool for testing, monitoring, and managing industrial communication protocols. It is designed to help engineers and testers interact with embedded systems, PLCs, and other field devices via common industrial protocols.
